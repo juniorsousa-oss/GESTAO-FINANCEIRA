@@ -281,10 +281,15 @@ def render(view_mode: str = "Desktop") -> None:
         ),
     ]
 
-    show_metric_grid(cards, view_mode=view_mode)
+    # Uma faixa própria contém os seis cards. O separador é um elemento real,
+    # não uma margem que possa desaparecer por regras de notebook.
+    with st.container(key="gf_dashboard_kpis"):
+        show_metric_grid(cards, view_mode=view_mode)
+
+    st.markdown("<div class='gf-dashboard-band-gap' aria-hidden='true'></div>", unsafe_allow_html=True)
 
     # Camada independente para os dois gráficos, mantendo Altair dentro do Streamlit.
-    with st.container(border=True):
+    with st.container(border=True, key="gf_dashboard_charts"):
         st.markdown("<div class='gf-panel-layer-marker'></div>", unsafe_allow_html=True)
         if view_mode == "Desktop":
             chart_left, chart_right = st.columns([1.55, .75], gap="small")
@@ -308,8 +313,10 @@ def render(view_mode: str = "Desktop") -> None:
                 )
                 st.altair_chart(_category_chart(movements).properties(height=182 if view_mode == "Desktop" else 215), use_container_width=True)
 
+    st.markdown("<div class='gf-dashboard-band-gap' aria-hidden='true'></div>", unsafe_allow_html=True)
+
     # Camada independente para previsões e conciliação; mesmas margens e padding.
-    with st.container(border=True):
+    with st.container(border=True, key="gf_dashboard_bottom"):
         st.markdown("<div class='gf-panel-layer-marker'></div>", unsafe_allow_html=True)
         if view_mode == "Desktop":
             bottom_left, bottom_right = st.columns([1.55, .75], gap="small")
