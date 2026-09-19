@@ -138,7 +138,7 @@ def render(view_mode: str = "Desktop"):
                 value_name="Valor",
             )
             bars = alt.Chart(bars_df).mark_bar(
-                size=24,
+                size=19,
                 cornerRadiusTopLeft=3,
                 cornerRadiusTopRight=3,
             ).encode(
@@ -154,14 +154,14 @@ def render(view_mode: str = "Desktop"):
             )
             line = alt.Chart(chart_data).mark_line(
                 point=True,
-                strokeWidth=2.4,
+                strokeWidth=2.0,
                 color="#16a69d",
             ).encode(
                 x=alt.X("Competência:N", sort=list(chart_data["Competência"])),
                 y=alt.Y("Saldo:Q"),
                 tooltip=["Competência", alt.Tooltip("Saldo:Q", format=",.2f")],
             )
-            st.altair_chart((bars + line).properties(height=220), use_container_width=True)
+            st.altair_chart((bars + line).properties(height=178), use_container_width=True)
 
     with chart_right:
         with st.container(border=True):
@@ -185,7 +185,7 @@ def render(view_mode: str = "Desktop"):
                 else:
                     colors = ["#2b77c7", "#2d9ec9", "#18a79e", "#6a8dd6", "#8aa7cc", "#8ccfc0", "#c7d2df"]
 
-            pie = alt.Chart(by_cat).mark_arc(innerRadius=58, outerRadius=88).encode(
+            pie = alt.Chart(by_cat).mark_arc(innerRadius=46, outerRadius=72).encode(
                 theta=alt.Theta(field="value", type="quantitative"),
                 color=alt.Color(
                     field="category",
@@ -197,7 +197,7 @@ def render(view_mode: str = "Desktop"):
                     alt.Tooltip("category", title="Categoria"),
                     alt.Tooltip("value", title="Valor", format=",.2f"),
                 ],
-            ).properties(height=220)
+            ).properties(height=178)
             st.altair_chart(pie, use_container_width=True)
 
     st.markdown("<div class='gf-gap-sm'></div>", unsafe_allow_html=True)
@@ -211,7 +211,7 @@ def render(view_mode: str = "Desktop"):
             table = _forecast_table(forecasts)
             if table.empty:
                 st.caption("Nenhuma previsão carregada ainda.")
-            st.dataframe(table, hide_index=True, use_container_width=True, height=155)
+            st.dataframe(table, hide_index=True, use_container_width=True, height=128)
 
     with bottom_right:
         with st.container(border=True):
