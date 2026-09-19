@@ -56,6 +56,12 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
     css = """
     <style>
+        /* Tema claro único, independente do modo escuro do sistema/navegador.
+           A identidade azul do cabeçalho e da lateral é preservada. */
+        :root, html, body, .stApp {
+            color-scheme: light !important;
+        }
+
         :root {
             --page: #f4f7fb;
             --panel: #ffffff;
@@ -701,6 +707,16 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             border-color: var(--line) !important;
             border-radius: 8px !important;
             background: #fff !important;
+            color: var(--ink) !important;
+        }
+
+        /* Legibilidade dos campos mesmo quando o dispositivo utiliza tema escuro. */
+        [data-testid="stMain"] input,
+        [data-testid="stMain"] textarea,
+        [data-testid="stMain"] select,
+        [data-testid="stMain"] [data-baseweb="select"],
+        [data-testid="stMain"] [data-baseweb="input"] {
+            color-scheme: light !important;
         }
 
         .stDataFrame,
