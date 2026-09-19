@@ -487,6 +487,45 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             }
         }
 
+        /* Faixas de gráficos e painéis inferiores: mesma camada externa dos KPIs. */
+        .gf-panel-layer-marker { display: none; }
+
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-panel-layer-marker) {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            margin: 0 0 18px !important;
+            padding: 0 !important;
+            border: 1px solid var(--line) !important;
+            border-radius: 14px !important;
+            background: #edf3f8 !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+        }
+
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-panel-layer-marker) > div {
+            padding: 12px !important;
+        }
+
+        /* O marcador apenas identifica a camada; não consome espaço na grade. */
+        div[data-testid="stElementContainer"]:has(.gf-panel-layer-marker) {
+            display: none !important;
+        }
+
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-panel-layer-marker) div[data-testid="stHorizontalBlock"] {
+            gap: var(--gf-dashboard-gap) !important;
+            align-items: stretch !important;
+        }
+
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-panel-layer-marker) div[data-testid="column"] {
+            min-width: 0;
+        }
+
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-panel-layer-marker) div[data-testid="stVerticalBlockBorderWrapper"]:not(:has(.gf-panel-layer-marker)) {
+            margin: 0 !important;
+            width: 100%;
+        }
+
         /* KPI CARDS */
         .gf-kpi {
             min-height: 94px;
