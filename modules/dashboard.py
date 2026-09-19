@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 import altair as alt
 import pandas as pd
 import streamlit as st
@@ -9,17 +11,27 @@ from services.finance import brl, competence_key, numeric, to_df
 from services.ui import metric_card, section_header, show_metric_grid
 
 
-def _safe_percent(base: float, value: float) -> str:
+def _safe_percent(base: float, value: float) -> str | None:
     if base == 0:
-        return "Referência inicial"
+        return None
     pct = ((value - base) / abs(base)) * 100
     arrow = "↑" if pct >= 0 else "↓"
-    return f"{arrow} {abs(pct):.1f}% vs. mês anterior"
+    return f"{arrow} {abs(pct):.1f}%"
+
+
+def _recent_competences(n: int = 6) -> list[str]:
+    now = pd.Timestamp(datetime.now().date())
+    periods = pd.period_range(end=now.to_period("M"), periods=n, freq="M")
+    return [f"{p.month:02d}/{p.year}" for p in periods]
 
 
 def _monthly_movements(movements: pd.DataFrame) -> pd.DataFrame:
+    base = pd.DataFrame({"competence": _recent_competences(6)})
     if movements.empty:
-        return pd.DataFrame(columns=["competence", "Receitas", "Despesas", "Saldo"])
+        base["Receitas"] = 0.0
+        base["Despesas"] = 0.0
+        base["Saldo"] = 0.0
+        return base
 
     work = movements.copy()
     work["value"] = numeric(work["value"])
@@ -38,17 +50,19 @@ def _monthly_movements(movements: pd.DataFrame) -> pd.DataFrame:
         .rename(columns={"value": "Despesas"})
     )
     merged = receipts.merge(expenses, how="outer", on="competence").fillna(0)
+    merged = base.merge(merged, how="left", on="competence").fillna(0)
     merged["Saldo"] = merged["Receitas"] - merged["Despesas"]
-    merged = merged.sort_values("competence", key=lambda s: s.map(competence_key))
-    return merged.tail(6)
+    return merged.sort_values("competence", key=lambda s: s.map(competence_key))
 
 
 def _forecast_table(forecasts: pd.DataFrame) -> pd.DataFrame:
+    columns = ["Vencimento", "Descrição", "Categoria", "Tipo", "Valor", "Status"]
     if forecasts.empty:
-        return pd.DataFrame(columns=["Vencimento", "Descrição", "Categoria", "Tipo", "Valor", "Status"])
+        return pd.DataFrame(columns=columns)
+
     work = forecasts.copy()
     work["final_value"] = numeric(work["final_value"])
-    work = work.sort_values(["status", "due_date"], ascending=[True, True]).head(6)
+    work = work.sort_values(["status", "due_date"], ascending=[True, True]).head(5)
     out = pd.DataFrame()
     out["Vencimento"] = work["due_date"].fillna("-")
     out["Descrição"] = work["description"]
@@ -65,9 +79,7 @@ def render(view_mode: str = "Desktop"):
     accounts = to_df(select_rows(TABLES["accounts"], order="name.asc"))
     debts = to_df(select_rows(TABLES["debts"], order="id.asc"))
 
-    if movements.empty and forecasts.empty and accounts.empty and debts.empty:
-        st.info("Ainda não há dados. Use **Importar Excel** para carregar o ACOMPANHAMENTOS.xlsx ou cadastre registros manualmente.")
-        return
+    has_data = not (movements.empty and forecasts.empty and accounts.empty and debts.empty)
 
     entradas = saidas = 0.0
     if not movements.empty:
@@ -98,114 +110,155 @@ def render(view_mode: str = "Desktop"):
 
     saldo_projetado = saldo_realizado + a_receber - a_pagar
     divergencia = saldo_localizado - saldo_realizado
-
     monthly = _monthly_movements(movements)
     prev_saldo = float(monthly["Saldo"].iloc[-2]) if len(monthly) >= 2 else 0.0
-    prev_divida = float(debts["open_value"].sum() * 1.021) if not debts.empty else 0.0
 
     cards = [
-        metric_card("Saldo Realizado", brl(saldo_realizado), "caixa já consolidado", "success", "💼", _safe_percent(prev_saldo, saldo_realizado)),
-        metric_card("Saldo Localizado", brl(saldo_localizado), f"divergência de {brl(divergencia)}", "info", "🏦", None),
-        metric_card("A Receber", brl(a_receber), "entradas ainda pendentes", "success", "⬇️", None),
-        metric_card("A Pagar", brl(a_pagar), "saídas ainda pendentes", "danger", "⬆️", None),
-        metric_card("Saldo Projetado", brl(saldo_projetado), "cenário com realizado + previsões", "info", "📈", None),
-        metric_card("Dívida em Aberto", brl(divida_aberta), "acompanhamento do passivo atual", "danger", "📌", _safe_percent(prev_divida, divida_aberta) if divida_aberta else None),
+        metric_card("Saldo Realizado", brl(saldo_realizado), "caixa consolidado", "success", "▣", _safe_percent(prev_saldo, saldo_realizado)),
+        metric_card("Saldo Localizado", brl(saldo_localizado), f"diferença {brl(divergencia)}", "info", "▦"),
+        metric_card("A Receber", brl(a_receber), "próximos compromissos", "success", "↓"),
+        metric_card("A Pagar", brl(a_pagar), "próximos compromissos", "danger", "↑"),
+        metric_card("Saldo Projetado", brl(saldo_projetado), "realizado + previsões", "info", "↗"),
+        metric_card("Dívida em Aberto", brl(divida_aberta), "passivo atual", "danger", "▧"),
     ]
     show_metric_grid(cards, view_mode=view_mode)
 
-    chart_slots = st.columns(2, gap="large") if view_mode == "Desktop" else [st.container(), st.container()]
+    if not has_data:
+        st.markdown(
+            "<div class='gf-empty-note'>A base ainda não foi importada. O painel permanece visível para você validar o layout; os valores serão preenchidos após importar o ACOMPANHAMENTOS.xlsx.</div>",
+            unsafe_allow_html=True,
+        )
+
+    chart_slots = st.columns([1.62, .78], gap="small") if view_mode == "Desktop" else [st.container(), st.container()]
     chart_left, chart_right = chart_slots
 
     with chart_left:
         with st.container(border=True):
-            section_header("Evolução Financeira Mensal", "Receitas, despesas e resultado consolidado por competência.")
-            if monthly.empty:
-                st.caption("Sem movimentações suficientes para o gráfico.")
-            else:
-                chart_data = monthly.rename(columns={"competence": "Competência"})
-                line = alt.Chart(chart_data).mark_line(point=True, strokeWidth=3).encode(
-                    x=alt.X("Competência:N", sort=list(chart_data["Competência"])),
-                    y=alt.Y("Saldo:Q", title="R$"),
-                    color=alt.value("#16a6a1"),
-                    tooltip=["Competência", alt.Tooltip("Saldo:Q", format=",.2f")],
-                )
-                bars_df = chart_data.melt(id_vars=["Competência"], value_vars=["Receitas", "Despesas"], var_name="Série", value_name="Valor")
-                bars = alt.Chart(bars_df).mark_bar(size=28, cornerRadiusTopLeft=5, cornerRadiusTopRight=5).encode(
-                    x=alt.X("Competência:N", sort=list(chart_data["Competência"])),
-                    y=alt.Y("Valor:Q", title="R$"),
-                    color=alt.Color("Série:N", scale=alt.Scale(domain=["Receitas", "Despesas"], range=["#5dc596", "#264b74"]), legend=alt.Legend(orient="top")),
-                    xOffset="Série:N",
-                    tooltip=["Competência", "Série", alt.Tooltip("Valor:Q", format=",.2f")],
-                )
-                st.altair_chart((bars + line).properties(height=320), use_container_width=True)
+            section_header("▥  Evolução Financeira Mensal", "Receitas, despesas e saldo nos últimos 6 meses.")
+            chart_data = monthly.rename(columns={"competence": "Competência"})
+            bars_df = chart_data.melt(
+                id_vars=["Competência"],
+                value_vars=["Receitas", "Despesas"],
+                var_name="Série",
+                value_name="Valor",
+            )
+            bars = alt.Chart(bars_df).mark_bar(
+                size=22,
+                cornerRadiusTopLeft=3,
+                cornerRadiusTopRight=3,
+            ).encode(
+                x=alt.X("Competência:N", sort=list(chart_data["Competência"]), axis=alt.Axis(labelAngle=0, title=None)),
+                y=alt.Y("Valor:Q", title=None, axis=alt.Axis(gridColor="#eef2f6", labelColor="#7c8b9c")),
+                color=alt.Color(
+                    "Série:N",
+                    scale=alt.Scale(domain=["Receitas", "Despesas"], range=["#55bf90", "#234a72"]),
+                    legend=alt.Legend(orient="top", title=None),
+                ),
+                xOffset="Série:N",
+                tooltip=["Competência", "Série", alt.Tooltip("Valor:Q", format=",.2f")],
+            )
+            line = alt.Chart(chart_data).mark_line(
+                point=True,
+                strokeWidth=2.4,
+                color="#16a69d",
+            ).encode(
+                x=alt.X("Competência:N", sort=list(chart_data["Competência"])),
+                y=alt.Y("Saldo:Q"),
+                tooltip=["Competência", alt.Tooltip("Saldo:Q", format=",.2f")],
+            )
+            st.altair_chart((bars + line).properties(height=250), use_container_width=True)
 
     with chart_right:
         with st.container(border=True):
-            section_header("Despesas por Categoria", "Visualize rapidamente onde o dinheiro está sendo consumido.")
+            section_header("◉  Despesas por Categoria", "Distribuição das saídas registradas.")
             if movements.empty:
-                st.caption("Sem movimentações suficientes para o gráfico.")
+                by_cat = pd.DataFrame({"category": ["Sem dados"], "value": [1.0]})
+                colors = ["#dbe5ef"]
             else:
-                out = movements[movements["classification"].astype(str).str.upper().str.contains("SAÍDA|SAIDA", regex=True)].copy()
-                if out.empty:
-                    st.caption("Nenhuma saída registrada.")
+                out = movements[
+                    movements["classification"].astype(str).str.upper().str.contains("SAÍDA|SAIDA", regex=True)
+                ].copy()
+                by_cat = (
+                    out.groupby("category", as_index=False)["value"]
+                    .sum()
+                    .sort_values("value", ascending=False)
+                    .head(7)
+                )
+                if by_cat.empty:
+                    by_cat = pd.DataFrame({"category": ["Sem dados"], "value": [1.0]})
+                    colors = ["#dbe5ef"]
                 else:
-                    by_cat = out.groupby("category", as_index=False)["value"].sum().sort_values("value", ascending=False)
-                    pie = alt.Chart(by_cat).mark_arc(innerRadius=70).encode(
-                        theta=alt.Theta(field="value", type="quantitative"),
-                        color=alt.Color(field="category", type="nominal", legend=alt.Legend(title=None, orient="right")),
-                        tooltip=[alt.Tooltip("category", title="Categoria"), alt.Tooltip("value", title="Valor", format=",.2f")],
-                    ).properties(height=320)
-                    st.altair_chart(pie, use_container_width=True)
-                    top_cats = by_cat.copy()
-                    top_cats["Valor"] = top_cats["value"].map(brl)
-                    st.dataframe(top_cats[["category", "Valor"]].rename(columns={"category": "Categoria"}), hide_index=True, use_container_width=True)
+                    colors = ["#2b77c7", "#2d9ec9", "#18a79e", "#6a8dd6", "#8aa7cc", "#8ccfc0", "#c7d2df"]
 
-    bottom_slots = st.columns(2, gap="large") if view_mode == "Desktop" else [st.container(), st.container()]
+            pie = alt.Chart(by_cat).mark_arc(innerRadius=55, outerRadius=86).encode(
+                theta=alt.Theta(field="value", type="quantitative"),
+                color=alt.Color(
+                    field="category",
+                    type="nominal",
+                    scale=alt.Scale(range=colors),
+                    legend=alt.Legend(title=None, orient="bottom", columns=2),
+                ),
+                tooltip=[
+                    alt.Tooltip("category", title="Categoria"),
+                    alt.Tooltip("value", title="Valor", format=",.2f"),
+                ],
+            ).properties(height=250)
+            st.altair_chart(pie, use_container_width=True)
+
+    bottom_slots = st.columns([1.62, .78], gap="small") if view_mode == "Desktop" else [st.container(), st.container()]
     bottom_left, bottom_right = bottom_slots
 
     with bottom_left:
         with st.container(border=True):
-            section_header("Próximas Contas e Previsões", "Itens mais relevantes da agenda financeira para acompanhamento rápido.")
-            st.dataframe(_forecast_table(forecasts), hide_index=True, use_container_width=True)
+            section_header("▣  Próximas Contas e Previsões", "Agenda financeira para acompanhamento imediato.")
+            table = _forecast_table(forecasts)
+            if table.empty:
+                st.caption("Nenhuma previsão carregada ainda.")
+            st.dataframe(table, hide_index=True, use_container_width=True, height=190)
 
     with bottom_right:
         with st.container(border=True):
-            section_header("Conciliação de Saldo", "Quanto mais perto de 100%, mais alinhada está sua base de gestão.")
-            conciliacao = 100.0 if abs(divergencia) < 0.01 else max(0.0, 100.0 - (abs(divergencia) / max(abs(saldo_realizado), 1)) * 100)
-            st.progress(conciliacao / 100)
-            conciliation_slots = st.columns([1, 2]) if view_mode == "Desktop" else [st.container(), st.container()]
-            c1, c2 = conciliation_slots
-            with c1:
-                st.metric("Conciliação", f"{conciliacao:.0f}%")
-            with c2:
-                st.markdown(
-                    f"""
-                    <div class='gf-card-footnote'>
-                        <strong style='color:#10223e;'>Dados conciliados</strong><br>
-                        Suas movimentações e saldos estão sendo acompanhados com foco em confiabilidade.<br><br>
-                        <ul class='gf-checklist'>
-                            <li>Extratos e bases podem ser importados via Excel</li>
-                            <li>Movimentações permanecem separadas das previsões</li>
-                            <li>Saldos localizados são comparados ao saldo do sistema</li>
-                            <li>Divergência atual: {brl(divergencia)}</li>
-                        </ul>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
+            section_header("▰  Conciliação de Saldo", "Conferência entre o saldo do sistema e o dinheiro localizado.")
+            conciliacao = (
+                0.0
+                if not has_data
+                else (
+                    100.0
+                    if abs(divergencia) < 0.01
+                    else max(0.0, 100.0 - (abs(divergencia) / max(abs(saldo_realizado), 1)) * 100)
                 )
+            )
+            st.progress(conciliacao / 100)
+            st.markdown(
+                f"<div style='font-size:1.55rem;font-weight:850;color:#10243f;margin:.25rem 0 .1rem'>{conciliacao:.0f}%</div>",
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                f"""
+                <div style='font-size:.75rem;font-weight:800;color:#244663;margin-bottom:6px;'>Dados conciliados</div>
+                <ul class='gf-checklist'>
+                    <li>Movimentações separadas das previsões</li>
+                    <li>Saldos localizados comparados ao sistema</li>
+                    <li>Divergência atual: {brl(divergencia)}</li>
+                    <li>{'Base pronta para conferência' if has_data else 'Aguardando importação da base'}</li>
+                </ul>
+                """,
+                unsafe_allow_html=True,
+            )
 
     settings = get_settings()
     if settings.get("net_income", 0) > 0:
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        with st.container(border=True):
-            section_header("Metas Financeiras", "Parâmetros de planejamento derivados das configurações do aplicativo.")
+        with st.expander("Metas financeiras", expanded=False):
             net = settings["net_income"]
             goal_cards = [
-                metric_card("Reserva de Emergência", brl(net * settings["emergency_months"]), f"{settings['emergency_months']:.0f} meses de renda", "info", "🛡️"),
-                metric_card("Investimento Mensal", brl(net * settings["investment_pct"] / 100), f"{settings['investment_pct']:.0f}% da renda líquida", "success", "💹"),
-                metric_card("Limite de Contas Fixas", brl(net * settings["fixed_pct"] / 100), f"{settings['fixed_pct']:.0f}% da renda líquida", "neutral", "🏠"),
-                metric_card("Limite de Lazer", brl(net * settings["leisure_pct"] / 100), f"{settings['leisure_pct']:.0f}% da renda líquida", "neutral", "✨"),
+                metric_card("Reserva de Emergência", brl(net * settings["emergency_months"]), f"{settings['emergency_months']:.0f} meses", "info", "▣"),
+                metric_card("Investimento Mensal", brl(net * settings["investment_pct"] / 100), f"{settings['investment_pct']:.0f}% da renda", "success", "↗"),
+                metric_card("Contas Fixas", brl(net * settings["fixed_pct"] / 100), f"{settings['fixed_pct']:.0f}% da renda", "neutral", "▤"),
+                metric_card("Lazer", brl(net * settings["leisure_pct"] / 100), f"{settings['leisure_pct']:.0f}% da renda", "neutral", "◇"),
             ]
             show_metric_grid(goal_cards, view_mode=view_mode)
 
-    st.markdown("<div class='gf-footer-note'>Disciplina financeira hoje, mais segurança para as decisões de amanhã.</div>", unsafe_allow_html=True)
+    st.markdown(
+        "<div class='gf-footer-note'>Mais controle para decisões melhores.</div>",
+        unsafe_allow_html=True,
+    )
