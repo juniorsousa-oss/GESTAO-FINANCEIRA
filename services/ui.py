@@ -98,57 +98,85 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             box-shadow: none !important;
         }
 
-        [data-testid="stToolbar"],
-        [data-testid="stAppToolbar"],
+        /* Oculta apenas ações do cabeçalho, NÃO o contêiner que pode conter
+           o botão de expansão em diferentes versões do Streamlit. */
+        [data-testid="stHeaderActionElements"],
         [data-testid="stDecoration"],
         [data-testid="stAppDeployButton"],
         #MainMenu {
             display: none !important;
         }
 
-        /* Não ocultar nem remover os botões nativos: o mesmo controle
-           reabre a sidebar e fecha a lateral inclusive no celular. */
-        [data-testid="collapsedControl"] {
-            position: fixed !important;
-            top: 5px !important;
-            left: 9px !important;
-            z-index: 99999 !important;
+        header[data-testid="stHeader"],
+        [data-testid="stToolbar"],
+        [data-testid="stAppToolbar"] {
             visibility: visible !important;
-            opacity: 1 !important;
-        }
-        [data-testid="collapsedControl"] button,
-        button[aria-label="Open sidebar"] {
-            min-width: 34px !important;
-            min-height: 34px !important;
-            border-radius: 8px !important;
-            border: 1px solid var(--line) !important;
-            color: var(--nav) !important;
-            background: #fff !important;
-            box-shadow: 0 3px 12px rgba(9,38,67,.10) !important;
             pointer-events: auto !important;
         }
+
+        /* O controle de abrir tem nome diferente entre versões do Streamlit.
+           Ambas as variantes são posicionadas fora da largura da sidebar. */
+        [data-testid="stSidebarCollapsedControl"],
+        [data-testid="collapsedControl"] {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            position: fixed !important;
+            top: 4px !important;
+            left: 8px !important;
+            z-index: 2147483000 !important;
+            width: 40px !important;
+            height: 40px !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        [data-testid="stSidebarCollapsedControl"] button,
+        [data-testid="collapsedControl"] button,
+        button[aria-label="Open sidebar"],
+        button[aria-label="Expand sidebar"] {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 36px !important;
+            min-width: 36px !important;
+            height: 36px !important;
+            min-height: 36px !important;
+            border-radius: 9px !important;
+            background: #ffffff !important;
+            color: #082643 !important;
+            border: 1px solid #dce5ee !important;
+            box-shadow: 0 3px 12px rgba(9,38,67,.12) !important;
+        }
+
+        /* O fechamento continua dentro da lateral; não deixar invisível no mobile. */
         [data-testid="stSidebarCollapseButton"] {
             display: flex !important;
             visibility: visible !important;
             opacity: 1 !important;
-            position: sticky !important;
-            top: 4px !important;
+            pointer-events: auto !important;
             z-index: 1000 !important;
-            justify-content: flex-end !important;
-            padding-right: 8px !important;
         }
         [data-testid="stSidebarCollapseButton"] button,
-        button[aria-label="Close sidebar"] {
-            min-width: 34px !important;
-            min-height: 34px !important;
+        button[aria-label="Close sidebar"],
+        button[aria-label="Collapse sidebar"] {
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
             color: #ffffff !important;
             background: rgba(255,255,255,.13) !important;
-            border: 1px solid rgba(255,255,255,.18) !important;
             border-radius: 8px !important;
-            pointer-events: auto !important;
+            min-width: 34px !important;
+            min-height: 34px !important;
         }
-        [data-testid="stSidebarCollapseButton"] svg,
-        [data-testid="collapsedControl"] svg {
+
+        [data-testid="stSidebarCollapsedControl"] svg,
+        [data-testid="collapsedControl"] svg,
+        [data-testid="stSidebarCollapseButton"] svg {
             visibility: visible !important;
             opacity: 1 !important;
         }
@@ -167,13 +195,18 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, var(--nav) 0%, var(--nav-2) 100%) !important;
             border-right: 1px solid rgba(255,255,255,.06) !important;
+        }
+
+        /* Nunca forçar largura zero no estado recolhido: o próprio Streamlit
+           gerencia a animação, o espaço principal e o controle de reabrir. */
+        section[data-testid="stSidebar"][aria-expanded="true"],
+        [data-testid="stSidebar"][aria-expanded="true"] {
             min-width: 238px !important;
             width: 238px !important;
             max-width: 238px !important;
         }
 
-        section[data-testid="stSidebar"] > div,
-        [data-testid="stSidebar"] > div:first-child {
+        section[data-testid="stSidebar"][aria-expanded="true"] > div {
             width: 238px !important;
             padding: 0 !important;
         }
@@ -181,15 +214,6 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         [data-testid="stSidebarUserContent"],
         [data-testid="stSidebarContent"] {
             padding: 0 !important;
-        }
-
-        section[data-testid="stSidebar"][aria-expanded="false"],
-        [data-testid="stSidebar"][aria-expanded="false"] {
-            min-width: 0 !important;
-            width: 0 !important;
-            max-width: 0 !important;
-            border-right: 0 !important;
-            overflow: hidden !important;
         }
 
         .gf-brand {
@@ -768,15 +792,13 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 padding: 9px 12px 16px !important;
             }
 
-            section[data-testid="stSidebar"]:not([aria-expanded="false"]),
-            [data-testid="stSidebar"]:not([aria-expanded="false"]) {
+            section[data-testid="stSidebar"][aria-expanded="true"],
+            [data-testid="stSidebar"][aria-expanded="true"] {
                 min-width: 212px !important;
                 width: 212px !important;
                 max-width: 212px !important;
             }
-
-            section[data-testid="stSidebar"] > div,
-            [data-testid="stSidebar"] > div:first-child {
+            section[data-testid="stSidebar"][aria-expanded="true"] > div {
                 width: 212px !important;
             }
 
@@ -838,15 +860,13 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         @media (max-width: 900px) {
-            section[data-testid="stSidebar"],
-            [data-testid="stSidebar"] {
+            section[data-testid="stSidebar"][aria-expanded="true"],
+            [data-testid="stSidebar"][aria-expanded="true"] {
                 min-width: 210px !important;
                 width: 210px !important;
                 max-width: 210px !important;
             }
-
-            section[data-testid="stSidebar"] > div,
-            [data-testid="stSidebar"] > div:first-child {
+            section[data-testid="stSidebar"][aria-expanded="true"] > div {
                 width: 210px !important;
             }
 
