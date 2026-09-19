@@ -122,7 +122,7 @@ def render(view_mode: str = "Desktop"):
         metric_card("Dívida em Aberto", brl(divida_aberta), "passivo atual", "danger", "▧"),
     ]
     show_metric_grid(cards, view_mode=view_mode)
-    st.markdown("<div class='gf-gap-md'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='gf-gap-sm'></div>", unsafe_allow_html=True)
 
     chart_slots = st.columns([1.58, .72], gap="small") if view_mode == "Desktop" else [st.container(), st.container()]
     chart_left, chart_right = chart_slots
@@ -161,7 +161,7 @@ def render(view_mode: str = "Desktop"):
                 y=alt.Y("Saldo:Q"),
                 tooltip=["Competência", alt.Tooltip("Saldo:Q", format=",.2f")],
             )
-            st.altair_chart((bars + line).properties(height=175), use_container_width=True)
+            st.altair_chart((bars + line).properties(height=135), use_container_width=True)
 
     with chart_right:
         with st.container(border=True):
@@ -185,7 +185,7 @@ def render(view_mode: str = "Desktop"):
                 else:
                     colors = ["#2b77c7", "#2d9ec9", "#18a79e", "#6a8dd6", "#8aa7cc", "#8ccfc0", "#c7d2df"]
 
-            pie = alt.Chart(by_cat).mark_arc(innerRadius=55, outerRadius=86).encode(
+            pie = alt.Chart(by_cat).mark_arc(innerRadius=42, outerRadius=68).encode(
                 theta=alt.Theta(field="value", type="quantitative"),
                 color=alt.Color(
                     field="category",
@@ -197,10 +197,10 @@ def render(view_mode: str = "Desktop"):
                     alt.Tooltip("category", title="Categoria"),
                     alt.Tooltip("value", title="Valor", format=",.2f"),
                 ],
-            ).properties(height=175)
+            ).properties(height=135)
             st.altair_chart(pie, use_container_width=True)
 
-    st.markdown("<div class='gf-gap-md'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='gf-gap-sm'></div>", unsafe_allow_html=True)
 
     bottom_slots = st.columns([1.58, .72], gap="small") if view_mode == "Desktop" else [st.container(), st.container()]
     bottom_left, bottom_right = bottom_slots
@@ -211,7 +211,7 @@ def render(view_mode: str = "Desktop"):
             table = _forecast_table(forecasts)
             if table.empty:
                 st.caption("Nenhuma previsão carregada ainda.")
-            st.dataframe(table, hide_index=True, use_container_width=True, height=132)
+            st.dataframe(table, hide_index=True, use_container_width=True, height=102)
 
     with bottom_right:
         with st.container(border=True):
@@ -227,12 +227,12 @@ def render(view_mode: str = "Desktop"):
             )
             st.progress(conciliacao / 100)
             st.markdown(
-                f"<div style='font-size:1.55rem;font-weight:850;color:#10243f;margin:.25rem 0 .1rem'>{conciliacao:.0f}%</div>",
+                f"<div style='font-size:1.20rem;font-weight:850;color:#10243f;margin:.12rem 0 .05rem'>{conciliacao:.0f}%</div>",
                 unsafe_allow_html=True,
             )
             st.markdown(
                 f"""
-                <div style='font-size:.75rem;font-weight:800;color:#244663;margin-bottom:8px;'>Dados conciliados</div>
+                <div style='font-size:.64rem;font-weight:800;color:#244663;margin-bottom:4px;'>Dados conciliados</div>
                 <ul class='gf-checklist'>
                     <li>Movimentações separadas das previsões</li>
                     <li>Saldos localizados comparados ao sistema</li>
