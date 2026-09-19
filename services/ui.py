@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 from datetime import datetime
 from textwrap import dedent
+from urllib.parse import quote_plus
 
 import streamlit as st
 
@@ -80,14 +81,13 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             }}
 
             .block-container {{
-                padding-top: .22rem !important;
+                padding-top: .05rem !important;
                 padding-bottom: .65rem !important;
                 padding-left: .72rem !important;
                 padding-right: .72rem !important;
                 max-width: {max_width};
             }}
 
-            /* SIDEBAR FIXA E SEM O ESPAÇO SUPERIOR PADRÃO DO STREAMLIT */
             section[data-testid="stSidebar"],
             [data-testid="stSidebar"] {{
                 background: linear-gradient(180deg, #071d37 0%, #0c3158 58%, #092541 100%) !important;
@@ -108,26 +108,33 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             [data-testid="stSidebarUserContent"],
             [data-testid="stSidebarContent"],
             section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
-                padding-top: .35rem !important;
+                padding-top: 0 !important;
                 margin-top: 0 !important;
             }}
 
             [data-testid="stSidebarUserContent"],
             [data-testid="stSidebarContent"] {{
-                padding-left: .70rem !important;
-                padding-right: .70rem !important;
-                padding-bottom: .65rem !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                padding-bottom: 0 !important;
             }}
 
             [data-testid="stSidebar"] * {{ color: #dce9f7; }}
             [data-testid="stSidebarNav"] {{ display: none !important; }}
 
+            .gf-sidebar-shell {{
+                margin-top: -4.65rem;
+                padding: .60rem .72rem .72rem;
+                min-height: 100vh;
+                box-sizing: border-box;
+            }}
+
             .gf-brand {{
                 display: flex;
                 align-items: center;
                 gap: 9px;
-                padding: 3px 5px 10px;
-                margin: 0 0 6px 0;
+                padding: 0 5px 10px;
+                margin: 0 0 7px 0;
                 border-bottom: 1px solid rgba(255,255,255,.08);
             }}
 
@@ -149,60 +156,57 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             .gf-brand-mark span:nth-child(1) {{ height:8px; opacity:.8; }}
             .gf-brand-mark span:nth-child(2) {{ height:13px; }}
             .gf-brand-mark span:nth-child(3) {{ height:18px; opacity:.92; }}
+
             .gf-brand-title {{ color:#fff; font-size:.94rem; font-weight:800; line-height:1.1; }}
             .gf-brand-sub {{ color:#9fb7cf; font-size:.60rem; margin-top:2px; }}
 
-            /* MENU LATERAL: RADIO TRANSFORMADO EM NAVEGAÇÃO DE APP */
-            [data-testid="stSidebar"] [data-testid="stRadio"] > div[role="radiogroup"] {{
-                gap: 4px !important;
+            .gf-nav {{
+                display:flex;
+                flex-direction:column;
+                gap:4px;
+                margin-top:4px;
             }}
 
-            [data-testid="stSidebar"] [data-baseweb="radio"] {{
-                width: 100% !important;
-                min-height: 37px !important;
-                padding: 0 9px !important;
-                border-radius: 7px !important;
-                background: transparent !important;
-                border-left: 3px solid transparent !important;
-                display: flex !important;
-                align-items: center !important;
-                transition: background .14s ease, border-color .14s ease !important;
-                cursor: pointer !important;
+            .gf-nav-item {{
+                display:flex;
+                align-items:center;
+                gap:9px;
+                min-height:37px;
+                padding:0 10px;
+                border-radius:8px;
+                border-left:3px solid transparent;
+                color:#d7e5f3 !important;
+                text-decoration:none !important;
+                font-size:.78rem;
+                line-height:1;
+                font-weight:620;
+                transition:background .14s ease,border-color .14s ease,color .14s ease;
             }}
 
-            [data-testid="stSidebar"] [data-baseweb="radio"]:hover {{
-                background: rgba(255,255,255,.055) !important;
+            .gf-nav-item:hover {{
+                background:rgba(255,255,255,.06);
+                color:#fff !important;
             }}
 
-            [data-testid="stSidebar"] [data-baseweb="radio"] > div:first-child {{
-                display: none !important;
+            .gf-nav-item.active {{
+                background:linear-gradient(90deg,#154b78,#174a75);
+                border-left-color:#20c6bb;
+                color:#fff !important;
+                font-weight:760;
+                box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);
             }}
 
-            [data-testid="stSidebar"] [data-baseweb="radio"] [data-testid="stMarkdownContainer"] {{
-                width: 100% !important;
+            .gf-nav-icon {{
+                width:16px;
+                display:inline-flex;
+                justify-content:center;
+                align-items:center;
+                color:#a9c4dc;
+                font-size:.86rem;
+                flex:0 0 16px;
             }}
 
-            [data-testid="stSidebar"] [data-baseweb="radio"] [data-testid="stMarkdownContainer"] p {{
-                margin: 0 !important;
-                color: #d7e5f3 !important;
-                font-size: .77rem !important;
-                line-height: 1.2 !important;
-                font-weight: 620 !important;
-                white-space: nowrap !important;
-            }}
-
-            [data-testid="stSidebar"] [data-baseweb="radio"]:has(input:checked),
-            [data-testid="stSidebar"] [data-baseweb="radio"][aria-checked="true"] {{
-                background: linear-gradient(90deg, #154b78, #174a75) !important;
-                border-left-color: #20c6bb !important;
-                box-shadow: inset 0 0 0 1px rgba(255,255,255,.025) !important;
-            }}
-
-            [data-testid="stSidebar"] [data-baseweb="radio"]:has(input:checked) [data-testid="stMarkdownContainer"] p,
-            [data-testid="stSidebar"] [data-baseweb="radio"][aria-checked="true"] [data-testid="stMarkdownContainer"] p {{
-                color: #ffffff !important;
-                font-weight: 760 !important;
-            }}
+            .gf-nav-item.active .gf-nav-icon {{ color:#fff; }}
 
             .gf-view-label {{
                 color:#7896b5;
@@ -210,25 +214,52 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 font-weight:800;
                 letter-spacing:.10em;
                 text-transform:uppercase;
-                margin: 12px 4px 5px;
+                margin:13px 4px 6px;
             }}
 
-            /* SEGMENTO DESKTOP / MOBILE */
-            [data-testid="stSidebar"] .gf-mode-wrap + div [data-testid="stRadio"] > div[role="radiogroup"] {{
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                gap: 5px !important;
+            .gf-mode {{
+                display:grid;
+                grid-template-columns:1fr 1fr;
+                gap:5px;
+            }}
+
+            .gf-mode-item {{
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                min-height:34px;
+                border-radius:8px;
+                color:#a9c4dc !important;
+                text-decoration:none !important;
+                font-size:.72rem;
+                font-weight:700;
+                background:rgba(255,255,255,.025);
+                border:1px solid rgba(255,255,255,.04);
+            }}
+
+            .gf-mode-item:hover {{
+                background:rgba(255,255,255,.06);
+                color:#fff !important;
+            }}
+
+            .gf-mode-item.active {{
+                background:#174d79;
+                border-color:rgba(32,198,187,.36);
+                color:#fff !important;
+                box-shadow:inset 3px 0 0 #20c6bb;
             }}
 
             .gf-trust {{
-                margin-top: 14px;
-                padding: 11px 10px;
-                border-radius: 11px;
-                background: rgba(255,255,255,.052);
-                border: 1px solid rgba(255,255,255,.065);
+                margin-top:14px;
+                padding:11px 10px;
+                border-radius:11px;
+                background:rgba(255,255,255,.052);
+                border:1px solid rgba(255,255,255,.065);
             }}
+
             .gf-trust-title {{ color:#f4fbff; font-size:.72rem; font-weight:800; margin-bottom:4px; }}
             .gf-trust-text {{ color:#9fb7cf; font-size:.61rem; line-height:1.38; }}
+
             .gf-status {{
                 display:inline-flex;
                 align-items:center;
@@ -239,43 +270,44 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 font-size:.60rem;
                 font-weight:800;
             }}
+
             .gf-status-ok {{ background:rgba(20,166,158,.14); color:#80e8dd; }}
             .gf-status-test {{ background:rgba(234,155,57,.14); color:#ffd39e; }}
 
-            /* CABEÇALHO PRINCIPAL COM ALTURA MÍNIMA */
             .gf-page-header {{
-                padding: 0 .02rem .28rem !important;
-                margin: 0 !important;
+                padding:0 .02rem .14rem !important;
+                margin:0 !important;
+                min-height:0 !important;
             }}
 
             .gf-page-eyebrow {{
-                color: var(--teal);
-                font-size: .58rem !important;
-                font-weight: 850;
-                letter-spacing: .11em;
-                text-transform: uppercase;
-                margin: 0 0 1px !important;
+                color:var(--teal);
+                font-size:.58rem;
+                font-weight:850;
+                letter-spacing:.11em;
+                text-transform:uppercase;
+                margin:0 0 1px;
             }}
 
             .gf-title-row {{
-                display: grid;
-                grid-template-columns: minmax(0,1fr) auto;
-                align-items: center;
-                gap: 12px;
+                display:grid;
+                grid-template-columns:minmax(0,1fr) auto;
+                align-items:center;
+                gap:12px;
             }}
 
             .gf-page-title {{
-                color: var(--text);
-                font-size: 1.23rem !important;
-                font-weight: 850;
-                line-height: 1 !important;
-                margin: 0;
+                color:var(--text);
+                font-size:1.23rem;
+                font-weight:850;
+                line-height:1;
+                margin:0;
             }}
 
             .gf-page-subtitle {{
-                color: var(--muted);
-                font-size: .64rem !important;
-                margin: 2px 0 0 !important;
+                color:var(--muted);
+                font-size:.64rem;
+                margin:2px 0 0;
             }}
 
             .gf-month {{
@@ -303,6 +335,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 min-height:92px;
                 height:100%;
             }}
+
             .gf-card-tonal-success {{ background:linear-gradient(180deg,#f0fbf7,#ffffff); }}
             .gf-card-tonal-info {{ background:linear-gradient(180deg,#f2f7fd,#ffffff); }}
             .gf-card-tonal-danger {{ background:linear-gradient(180deg,#fff4f5,#ffffff); }}
@@ -318,6 +351,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 margin-bottom:6px;
                 white-space:nowrap;
             }}
+
             .gf-card-icon {{
                 width:26px;
                 height:26px;
@@ -329,6 +363,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 font-size:.76rem;
                 flex:0 0 auto;
             }}
+
             .gf-card-value {{
                 color:var(--text);
                 font-size:1.06rem;
@@ -337,12 +372,13 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 margin-bottom:5px;
                 white-space:nowrap;
             }}
+
             .gf-card-footnote {{ color:#78899c; font-size:.60rem; line-height:1.32; }}
             .gf-card-trend-up {{ color:var(--success); font-weight:850; }}
             .gf-card-trend-down {{ color:var(--danger); font-weight:850; }}
 
-            div[data-testid="stVerticalBlock"] {{ gap: .42rem !important; }}
-            div[data-testid="stHorizontalBlock"] {{ gap: .42rem !important; }}
+            div[data-testid="stVerticalBlock"] {{ gap:.30rem !important; }}
+            div[data-testid="stHorizontalBlock"] {{ gap:.36rem !important; }}
 
             div[data-testid="stVerticalBlockBorderWrapper"] {{
                 background:#fff;
@@ -350,6 +386,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 border-radius:11px !important;
                 box-shadow:var(--shadow);
             }}
+
             div[data-testid="stVerticalBlockBorderWrapper"] > div {{
                 padding-top:.54rem;
                 padding-bottom:.46rem;
@@ -371,32 +408,33 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             .gf-checklist {{ margin:0; padding-left:.9rem; color:var(--muted); }}
             .gf-checklist li {{ margin:.16rem 0; font-size:.62rem; }}
             .gf-footer-note {{ text-align:center; color:#8998aa; font-size:.63rem; margin-top:.55rem; }}
-            .gf-empty-note {{
-                margin:.20rem 0 .32rem;
-                border:1px dashed #c9d7e6;
-                border-radius:9px;
-                background:#f8fbff;
-                color:#66809a;
-                font-size:.64rem;
-                padding:6px 9px;
-            }}
 
-            @media (max-width: 900px) {{
+            @media (max-width:900px) {{
                 section[data-testid="stSidebar"],
                 [data-testid="stSidebar"] {{
-                    min-width: 220px !important;
-                    width: 220px !important;
-                    max-width: 220px !important;
+                    min-width:220px !important;
+                    width:220px !important;
+                    max-width:220px !important;
                 }}
+
                 section[data-testid="stSidebar"] > div,
                 [data-testid="stSidebar"] > div:first-child {{
-                    width: 220px !important;
+                    width:220px !important;
                 }}
+
+                .gf-sidebar-shell {{
+                    margin-top:-4.3rem;
+                    padding-left:.60rem;
+                    padding-right:.60rem;
+                }}
+
                 .gf-title-row {{
-                    grid-template-columns: 1fr;
+                    grid-template-columns:1fr;
                     gap:5px;
                 }}
+
                 .gf-month {{ justify-self:start; }}
+
                 .block-container {{
                     padding-left:.55rem !important;
                     padding-right:.55rem !important;
@@ -409,66 +447,75 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
 
 def render_sidebar(is_db_configured: bool) -> str:
+    params = st.query_params
+
+    page_param = params.get("page", st.session_state.get("current_page", "Dashboard"))
+    if isinstance(page_param, list):
+        page_param = page_param[0] if page_param else "Dashboard"
+    current = page_param if page_param in NAV_OPTIONS else "Dashboard"
+
+    view_param = params.get("view", st.session_state.get("view_mode", "Desktop"))
+    if isinstance(view_param, list):
+        view_param = view_param[0] if view_param else "Desktop"
+    view = view_param if view_param in {"Desktop", "Mobile"} else "Desktop"
+
+    st.session_state["current_page"] = current
+    st.session_state["view_mode"] = view
+
+    nav_html = []
+    for option in NAV_OPTIONS:
+        active = " active" if option == current else ""
+        href = f"?page={quote_plus(option)}&view={quote_plus(view)}"
+        nav_html.append(
+            f'<a class="gf-nav-item{active}" href="{href}" target="_self">'
+            f'<span class="gf-nav-icon">{NAV_ICONS.get(option, "")}</span>'
+            f'<span>{option}</span></a>'
+        )
+
+    desktop_active = " active" if view == "Desktop" else ""
+    mobile_active = " active" if view == "Mobile" else ""
+
+    state_class = "gf-status-ok" if is_db_configured else "gf-status-test"
+    state_text = "Banco conectado" if is_db_configured else "Modo de teste"
+
+    sidebar_html = f"""
+    <div class="gf-sidebar-shell">
+        <div class="gf-brand">
+            <div class="gf-brand-mark"><span></span><span></span><span></span></div>
+            <div>
+                <div class="gf-brand-title">Gestão Financeira</div>
+                <div class="gf-brand-sub">Controle, clareza e confiança.</div>
+            </div>
+        </div>
+
+        <nav class="gf-nav">
+            {''.join(nav_html)}
+        </nav>
+
+        <div class="gf-view-label">Visualização</div>
+        <div class="gf-mode">
+            <a class="gf-mode-item{desktop_active}" href="?page={quote_plus(current)}&view=Desktop" target="_self">Desktop</a>
+            <a class="gf-mode-item{mobile_active}" href="?page={quote_plus(current)}&view=Mobile" target="_self">Mobile</a>
+        </div>
+
+        <div class="gf-trust">
+            <div class="gf-trust-title">▱ Seus dados estão protegidos</div>
+            <div class="gf-trust-text">Segurança, privacidade e confiabilidade como base do controle financeiro.</div>
+            <div class="gf-status {state_class}">● {state_text}</div>
+        </div>
+    </div>
+    """
+
     with st.sidebar:
-        st.markdown(
-            """
-            <div class="gf-brand">
-                <div class="gf-brand-mark"><span></span><span></span><span></span></div>
-                <div>
-                    <div class="gf-brand-title">Gestão Financeira</div>
-                    <div class="gf-brand-sub">Controle, clareza e confiança.</div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown(sidebar_html, unsafe_allow_html=True)
 
-        current = st.session_state.get("current_page", "Dashboard")
-        selected = st.radio(
-            "Navegação",
-            NAV_OPTIONS,
-            index=NAV_OPTIONS.index(current),
-            format_func=lambda option: f"{NAV_ICONS.get(option, '')}  {option}",
-            key="nav_menu",
-            label_visibility="collapsed",
-        )
-        if selected != current:
-            st.session_state["current_page"] = selected
-            st.rerun()
-
-        st.markdown("<div class='gf-view-label'>Visualização</div><div class='gf-mode-wrap'></div>", unsafe_allow_html=True)
-        view = st.session_state.get("view_mode", "Desktop")
-        selected_view = st.radio(
-            "Modo de visualização",
-            ["Desktop", "Mobile"],
-            index=0 if view == "Desktop" else 1,
-            horizontal=True,
-            key="view_mode_radio",
-            label_visibility="collapsed",
-        )
-        if selected_view != view:
-            st.session_state["view_mode"] = selected_view
-            st.rerun()
-
-        state_class = "gf-status-ok" if is_db_configured else "gf-status-test"
-        state_text = "Banco conectado" if is_db_configured else "Modo de teste"
-        st.markdown(
-            f"""
-            <div class="gf-trust">
-                <div class="gf-trust-title">▱ Seus dados estão protegidos</div>
-                <div class="gf-trust-text">Segurança, privacidade e confiabilidade como base do controle financeiro.</div>
-                <div class="gf-status {state_class}">● {state_text}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    return st.session_state.get("current_page", "Dashboard")
+    return current
 
 
 def render_page_header(page_title: str, subtitle: str) -> str:
     now = datetime.now()
     month_label = f"{MONTHS_PT[now.month]} de {now.year}"
+
     st.markdown(
         f"""
         <div class="gf-page-header">
@@ -482,6 +529,7 @@ def render_page_header(page_title: str, subtitle: str) -> str:
         """,
         unsafe_allow_html=True,
     )
+
     return st.session_state.get("view_mode", "Desktop")
 
 
@@ -523,10 +571,12 @@ def show_metric_grid(cards: list[str], view_mode: str = "Desktop") -> None:
     if view_mode == "Desktop":
         cols_per_row = 6
         total_rows = math.ceil(len(cards) / cols_per_row)
+
         for row in range(total_rows):
             cols = st.columns(cols_per_row, gap="small")
             start = row * cols_per_row
             end = start + cols_per_row
+
             for col, card in zip(cols, cards[start:end]):
                 with col:
                     st.markdown(card, unsafe_allow_html=True)
