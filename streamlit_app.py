@@ -18,6 +18,8 @@ if "current_page" not in st.session_state:
     st.session_state["current_page"] = "Dashboard"
 if "gf_sidebar_open" not in st.session_state:
     st.session_state["gf_sidebar_open"] = True
+if "gf_sidebar_width" not in st.session_state:
+    st.session_state["gf_sidebar_width"] = 320
 
 PAGE_META = {
     "Dashboard": ("Visão Financeira", "Tudo o que você precisa para manter suas finanças sob controle."),
