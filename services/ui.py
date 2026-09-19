@@ -91,6 +91,17 @@ def render_sidebar_toggle() -> None:
                 pointer-events: {pointer_events} !important;
                 border-right-width: {border} !important;
             }}
+            /* O corpo e os widgets internos não podem manter a largura
+               que o Streamlit atribuiu antes da preferência do usuário. */
+            section[data-testid="stSidebar"] > div,
+            section[data-testid="stSidebar"] > div > div,
+            section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
+            section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
+                width: {width} !important;
+                min-width: {width} !important;
+                max-width: {width} !important;
+                box-sizing: border-box !important;
+            }}
             [data-testid="stMain"] {{
                 margin-left: {width} !important;
                 width: calc(100% - {width}) !important;
@@ -528,7 +539,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             border-right: 1px solid rgba(255,255,255,.06) !important;
             box-sizing: border-box !important;
             overflow: hidden !important;
-            z-index: 100001 !important;
+            z-index: 2147482000 !important;
+            pointer-events: auto !important;
             transition: width .23s ease, min-width .23s ease,
                         max-width .23s ease, opacity .18s ease !important;
         }
@@ -558,6 +570,11 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             overflow-x: hidden !important;
             overflow-y: auto !important;
             scrollbar-gutter: stable;
+            pointer-events: auto !important;
+        }
+        section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
+        section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] button {
+            pointer-events: auto !important;
         }
         section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
             overflow-x: hidden !important;
@@ -578,11 +595,17 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             gap: 5px !important;
         }
         [data-testid="stSidebar"] .stButton {
-            width: 100% !important;
-            max-width: 292px !important;
-            padding: 0 14px !important;
+            width: min(100%, 290px) !important;
+            max-width: min(100%, 290px) !important;
+            min-width: 0 !important;
+            padding: 0 12px !important;
             margin: 0 !important;
             box-sizing: border-box !important;
+            pointer-events: auto !important;
+        }
+        [data-testid="stSidebar"] .stButton > button,
+        [data-testid="stSidebar"] .stButton > button * {
+            pointer-events: auto !important;
         }
         [data-testid="stSidebar"] .stButton > button {
             display: flex !important;
@@ -601,13 +624,13 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             font-weight: 500 !important;
             text-align: left !important;
             white-space: nowrap !important;
-            overflow: hidden !important;
+            overflow: visible !important;
         }
         [data-testid="stSidebar"] .stButton > button p {
             display: block !important;
             min-width: 0 !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
             white-space: nowrap !important;
             margin: 0 !important;
             text-align: left !important;
