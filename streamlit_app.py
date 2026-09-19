@@ -2,6 +2,7 @@ import streamlit as st
 
 from modules import configuracoes, dashboard, dividas, importacao, movimentacoes, previsoes, saldos
 from services.db import is_configured
+from services.ui import inject_global_css, render_sidebar, render_topbar
 
 
 st.set_page_config(
@@ -11,64 +12,29 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.markdown(
-    """
-    <style>
-        .stApp { background: #f8fafc; }
-        [data-testid="stSidebar"] { background: #0f172a; }
-        [data-testid="stSidebar"] * { color: #e2e8f0; }
-        [data-testid="stSidebar"] .stRadio label { padding: .15rem 0; }
-        .block-container { padding-top: 2rem; padding-bottom: 3rem; max-width: 1500px; }
-        div[data-testid="stMetric"] {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 14px 16px;
-            box-shadow: 0 1px 2px rgba(15,23,42,.04);
-        }
-        div[data-testid="stMetric"] label { color: #475569 !important; }
-        h1, h2, h3 { color: #0f172a; }
-        .status-pill {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 999px;
-            font-size: .78rem;
-            font-weight: 700;
-            margin-top: 2px;
-        }
-        .status-ok { background:#dcfce7; color:#166534; }
-        .status-test { background:#fef3c7; color:#92400e; }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+if "view_mode" not in st.session_state:
+    st.session_state["view_mode"] = "Desktop"
+if "current_page" not in st.session_state:
+    st.session_state["current_page"] = "Dashboard"
 
-with st.sidebar:
-    st.markdown("## Gestão Financeira")
-    st.caption("Controle pessoal • V1")
-    if is_configured():
-        st.markdown('<span class="status-pill status-ok">● Banco conectado</span>', unsafe_allow_html=True)
-    else:
-        st.markdown('<span class="status-pill status-test">● Modo de teste</span>', unsafe_allow_html=True)
-    st.divider()
-    page = st.radio(
-        "Navegação",
-        [
-            "Dashboard",
-            "Movimentações",
-            "Contas e Previsões",
-            "Contas e Saldos",
-            "Dívidas",
-            "Importar Excel",
-            "Configurações",
-        ],
-        label_visibility="collapsed",
-    )
-    st.divider()
-    st.caption("Base inicial: ACOMPANHAMENTOS.xlsx")
+PAGE_META = {
+    "Dashboard": ("Visão Financeira", "Tudo o que você precisa para manter suas finanças sob controle."),
+    "Movimentações": ("Movimentações", "Controle de tudo o que efetivamente entrou ou saiu do caixa."),
+    "Contas e Previsões": ("Contas e Previsões", "Agenda financeira das entradas e saídas futuras, separada do realizado."),
+    "Contas e Saldos": ("Contas e Saldos", "Concilie rapidamente onde o dinheiro está com o saldo do sistema."),
+    "Dívidas": ("Dívidas", "Acompanhe renegociações, parcelas e saldos em aberto com mais clareza."),
+    "Importar Excel": ("Importar Excel", "Leve a base atual do ACOMPANHAMENTOS.xlsx para dentro do aplicativo com segurança."),
+    "Configurações": ("Configurações", "Defina metas, parâmetros financeiros e prepare a infraestrutura do sistema."),
+}
+
+inject_global_css(st.session_state["view_mode"])
+page = render_sidebar(is_configured())
+page_title, subtitle = PAGE_META[page]
+view_mode = render_topbar(page_title, subtitle)
+inject_global_css(view_mode)
 
 if page == "Dashboard":
-    dashboard.render()
+    dashboard.render(view_mode=view_mode)
 elif page == "Movimentações":
     movimentacoes.render()
 elif page == "Contas e Previsões":
