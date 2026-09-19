@@ -89,13 +89,109 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             display: none !important;
         }
 
-        /* Sem faixa superior: preserva somente o controle nativo da lateral. */
+        /* Cabeçalho único azul, sem duplicar a barra do Streamlit. */
         header[data-testid="stHeader"] {
-            height: 40px !important;
-            min-height: 40px !important;
-            background: var(--page) !important;
+            height: 70px !important;
+            min-height: 70px !important;
+            background: var(--nav) !important;
             border: 0 !important;
-            box-shadow: none !important;
+            box-shadow: 0 2px 10px rgba(4,23,42,.12) !important;
+            z-index: 100001 !important;
+        }
+
+        /* A estrutura visível é fixa; este wrapper não cria espaço no fluxo. */
+        div[data-testid="stElementContainer"]:has(.gf-app-header) {
+            height: 0 !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+        }
+        .gf-app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            z-index: 100002;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 0 24px 0 70px;
+            color: #fff;
+            background: var(--nav);
+            border-bottom: 1px solid rgba(255,255,255,.08);
+            pointer-events: none; /* não cobre o botão nativo da sidebar */
+        }
+        .gf-header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+        .gf-header-logo {
+            width: 40px;
+            height: 40px;
+            flex: 0 0 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 3px;
+            padding: 9px 0;
+            box-sizing: border-box;
+            background: linear-gradient(145deg,#14bdb1,#43d0b2);
+        }
+        .gf-header-logo i {
+            width: 5px;
+            border-radius: 3px;
+            background: white;
+            display: block;
+        }
+        .gf-header-logo i:nth-child(1) { height: 12px; opacity: .8; }
+        .gf-header-logo i:nth-child(2) { height: 18px; }
+        .gf-header-logo i:nth-child(3) { height: 24px; }
+        .gf-header-name {
+            font-size: 21px;
+            font-weight: 800;
+            line-height: 1.12;
+            white-space: nowrap;
+            letter-spacing: -.02em;
+        }
+        .gf-header-tagline {
+            font-size: 10px;
+            color: #b3c8dc;
+            margin-top: 3px;
+            white-space: nowrap;
+        }
+        .gf-header-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 750;
+            white-space: nowrap;
+            color: #f4f9ff;
+        }
+        .gf-header-user-avatar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,.74);
+            background: rgba(255,255,255,.13);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 800;
+        }
+        .gf-header-user-caption {
+            margin-top: 2px;
+            color: #b3c8dc;
+            font-size: 9px;
+            font-weight: 500;
         }
 
         /* Oculta somente ações nomeadas, nunca containers de toolbar:
@@ -129,8 +225,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             opacity: 1 !important;
             pointer-events: auto !important;
             position: fixed !important;
-            top: 4px !important;
-            left: 8px !important;
+            top: 15px !important;
+            left: 12px !important;
             z-index: 2147483000 !important;
             width: 40px !important;
             height: 40px !important;
@@ -153,10 +249,10 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             height: 36px !important;
             min-height: 36px !important;
             border-radius: 9px !important;
-            background: #ffffff !important;
-            color: #082643 !important;
-            border: 1px solid #dce5ee !important;
-            box-shadow: 0 3px 12px rgba(9,38,67,.12) !important;
+            background: rgba(255,255,255,.12) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255,255,255,.2) !important;
+            box-shadow: none !important;
         }
 
         /* O fechamento continua dentro da lateral; não deixar invisível no mobile. */
@@ -165,7 +261,12 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             visibility: visible !important;
             opacity: 1 !important;
             pointer-events: auto !important;
-            z-index: 1000 !important;
+            position: fixed !important;
+            top: 15px !important;
+            left: 12px !important;
+            width: 40px !important;
+            height: 40px !important;
+            z-index: 2147483000 !important;
         }
         [data-testid="stSidebarCollapseButton"] button,
         button[aria-label="Close sidebar"],
@@ -192,7 +293,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             width: 100% !important;
             max-width: __CONTENT_MAX__ !important;
             margin-inline: auto !important;
-            padding: 10px 14px 18px !important;
+            padding: 83px 14px 18px !important;
             box-sizing: border-box !important;
         }
 
@@ -219,53 +320,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         [data-testid="stSidebarUserContent"],
         [data-testid="stSidebarContent"] {
-            padding: 0 !important;
-        }
-
-        .gf-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 12px 14px 10px;
-            padding: 4px 2px 15px;
-            border-bottom: 1px solid rgba(255,255,255,.09);
-        }
-
-        .gf-brand-mark {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
-            padding: 7px;
-            display: flex;
-            gap: 2px;
-            align-items: flex-end;
-            justify-content: center;
-            flex: 0 0 34px;
-            background: linear-gradient(145deg, #14bdb1, #43d0b2);
-            box-shadow: 0 7px 18px rgba(14,178,165,.18);
-        }
-
-        .gf-brand-mark span {
-            width: 4px;
-            background: #fff;
-            border-radius: 3px;
-        }
-
-        .gf-brand-mark span:nth-child(1) { height: 9px; opacity: .78; }
-        .gf-brand-mark span:nth-child(2) { height: 15px; }
-        .gf-brand-mark span:nth-child(3) { height: 21px; opacity: .92; }
-
-        .gf-brand-title {
-            color: #fff;
-            font-size: 15px;
-            font-weight: 800;
-            line-height: 1.05;
-        }
-
-        .gf-brand-sub {
-            color: #a6bdd3;
-            font-size: 9px;
-            margin-top: 3px;
+            padding: 78px 0 12px !important;
         }
 
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
@@ -667,7 +722,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
             .block-container {
                 max-width: min(100%, 1380px) !important;
-                padding: 9px 12px 16px !important;
+                padding: 82px 12px 16px !important;
             }
 
             section[data-testid="stSidebar"][aria-expanded="true"],
@@ -689,10 +744,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             }
             .gf-trust { margin: 12px 11px 0; padding: 10px; }
 
-            header[data-testid="stHeader"] {
-                height: 40px !important;
-                min-height: 40px !important;
-            }
+
             .gf-page-header { padding: 0 2px 8px; }
             .gf-page-title { font-size: 23px !important; }
             .gf-page-subtitle { font-size: 10px; margin-top: 4px; }
@@ -728,6 +780,32 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         @media (max-width: 900px) {
+            .gf-app-header {
+                height: 64px;
+                padding: 0 12px 0 60px;
+                gap: 8px;
+            }
+            header[data-testid="stHeader"] {
+                height: 64px !important;
+                min-height: 64px !important;
+            }
+            .gf-header-logo { width: 32px; height: 32px; flex-basis: 32px; padding: 6px 0; gap: 2px; }
+            .gf-header-logo i { width: 4px; }
+            .gf-header-logo i:nth-child(1) { height: 9px; }
+            .gf-header-logo i:nth-child(2) { height: 14px; }
+            .gf-header-logo i:nth-child(3) { height: 19px; }
+            .gf-header-brand { gap: 7px; }
+            .gf-header-name { font-size: 13px; }
+            .gf-header-tagline { display: none; }
+            .gf-header-user { gap: 5px; font-size: 10px; }
+            .gf-header-user-avatar { width: 25px; height: 25px; font-size: 10px; border-width: 1px; }
+            .gf-header-user-caption { display: none; }
+            [data-testid="stSidebarUserContent"],
+            [data-testid="stSidebarContent"] { padding-top: 70px !important; }
+            [data-testid="stSidebarCollapsedControl"],
+            [data-testid="collapsedControl"],
+            [data-testid="stSidebarCollapseButton"] { top: 12px !important; left: 7px !important; }
+
             section[data-testid="stSidebar"][aria-expanded="true"],
             [data-testid="stSidebar"][aria-expanded="true"] {
                 min-width: 210px !important;
@@ -739,7 +817,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             }
 
             .block-container {
-                padding: 10px 10px 18px !important;
+                padding: 80px 10px 18px !important;
             }
 
             .gf-page-header {
@@ -757,6 +835,28 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
     st.markdown(css.replace("__CONTENT_MAX__", content_max), unsafe_allow_html=True)
 
 
+
+def render_app_header() -> None:
+    """Faixa de identidade fixa, sem controles falsos ou uma segunda navegação."""
+    st.markdown(
+        """
+        <div class="gf-app-header" role="banner">
+            <div class="gf-header-brand">
+                <div class="gf-header-logo" aria-label="Marca Gestão Financeira"><i></i><i></i><i></i></div>
+                <div>
+                    <div class="gf-header-name">Gestão Financeira</div>
+                    <div class="gf-header-tagline">Controle, clareza e confiança.</div>
+                </div>
+            </div>
+            <div class="gf-header-user">
+                <div class="gf-header-user-avatar" aria-hidden="true">U</div>
+                <div>Olá, Usuário<div class="gf-header-user-caption">Conta principal</div></div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def render_sidebar(is_db_configured: bool) -> str:
     current = st.session_state.get("current_page", "Dashboard")
     if current not in NAV_OPTIONS:
@@ -764,19 +864,6 @@ def render_sidebar(is_db_configured: bool) -> str:
         st.session_state["current_page"] = current
 
     with st.sidebar:
-        st.markdown(
-            """
-            <div class="gf-brand">
-                <div class="gf-brand-mark"><span></span><span></span><span></span></div>
-                <div>
-                    <div class="gf-brand-title">Gestão Financeira</div>
-                    <div class="gf-brand-sub">Controle, clareza e confiança.</div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
         for option in NAV_OPTIONS:
             st.button(
                 f"{NAV_ICONS.get(option, '')}   {option}",
