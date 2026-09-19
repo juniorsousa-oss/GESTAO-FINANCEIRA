@@ -89,17 +89,68 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             display: none !important;
         }
 
-        /* Header nativo permanece funcional: Share, GitHub, menu e recolhimento da sidebar. */
+        /* Sem faixa superior: preserva somente o controle nativo da lateral. */
         header[data-testid="stHeader"] {
-            height: 46px !important;
-            min-height: 46px !important;
+            height: 40px !important;
+            min-height: 40px !important;
             background: var(--page) !important;
-            border-bottom: 1px solid var(--line-soft) !important;
+            border: 0 !important;
+            box-shadow: none !important;
         }
 
         [data-testid="stToolbar"],
-        [data-testid="stAppToolbar"] {
-            align-items: center !important;
+        [data-testid="stAppToolbar"],
+        [data-testid="stDecoration"],
+        [data-testid="stAppDeployButton"],
+        #MainMenu {
+            display: none !important;
+        }
+
+        /* Não ocultar nem remover os botões nativos: o mesmo controle
+           reabre a sidebar e fecha a lateral inclusive no celular. */
+        [data-testid="collapsedControl"] {
+            position: fixed !important;
+            top: 5px !important;
+            left: 9px !important;
+            z-index: 99999 !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        [data-testid="collapsedControl"] button,
+        button[aria-label="Open sidebar"] {
+            min-width: 34px !important;
+            min-height: 34px !important;
+            border-radius: 8px !important;
+            border: 1px solid var(--line) !important;
+            color: var(--nav) !important;
+            background: #fff !important;
+            box-shadow: 0 3px 12px rgba(9,38,67,.10) !important;
+            pointer-events: auto !important;
+        }
+        [data-testid="stSidebarCollapseButton"] {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: sticky !important;
+            top: 4px !important;
+            z-index: 1000 !important;
+            justify-content: flex-end !important;
+            padding-right: 8px !important;
+        }
+        [data-testid="stSidebarCollapseButton"] button,
+        button[aria-label="Close sidebar"] {
+            min-width: 34px !important;
+            min-height: 34px !important;
+            color: #ffffff !important;
+            background: rgba(255,255,255,.13) !important;
+            border: 1px solid rgba(255,255,255,.18) !important;
+            border-radius: 8px !important;
+            pointer-events: auto !important;
+        }
+        [data-testid="stSidebarCollapseButton"] svg,
+        [data-testid="collapsedControl"] svg {
+            visibility: visible !important;
+            opacity: 1 !important;
         }
 
         /* Conteúdo sempre ocupa a largura liberada pela sidebar. */
@@ -266,7 +317,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             background: rgba(235,157,60,.14);
         }
 
-        /* TOPBAR DO APP */
+        /* TOPBAR DO APP (legado, não renderizado). */
         div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) {
             margin: 0 0 14px !important;
             background: rgba(255,255,255,.50) !important;
@@ -739,8 +790,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             .gf-trust { margin: 12px 11px 0; padding: 10px; }
 
             header[data-testid="stHeader"] {
-                height: 44px !important;
-                min-height: 44px !important;
+                height: 40px !important;
+                min-height: 40px !important;
             }
             div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) {
                 margin-bottom: 10px !important;
@@ -854,6 +905,18 @@ def render_sidebar(is_db_configured: bool) -> str:
                 on_click=_set_page,
                 args=(option,),
             )
+
+        # O seletor de visualização migra para a lateral ao retirar a topbar.
+        view_mode = st.session_state.get("view_mode", "Desktop")
+        if st.session_state.get("_view_selector") != view_mode:
+            st.session_state["_view_selector"] = view_mode
+        st.radio(
+            "Visualização",
+            ["Desktop", "Mobile"],
+            horizontal=True,
+            key="_view_selector",
+            on_change=_sync_view,
+        )
 
         state_class = "gf-status-ok" if is_db_configured else "gf-status-test"
         state_text = "Banco conectado" if is_db_configured else "Modo de teste"
