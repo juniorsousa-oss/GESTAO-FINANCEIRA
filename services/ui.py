@@ -330,9 +330,9 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 background:#fff;
                 border:1px solid var(--border);
                 border-radius:12px;
-                padding:9px 10px 7px;
+                padding:11px 11px 9px;
                 box-shadow:var(--shadow);
-                min-height:92px;
+                min-height:102px;
                 height:100%;
             }}
 
@@ -388,8 +388,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             }}
 
             div[data-testid="stVerticalBlockBorderWrapper"] > div {{
-                padding-top:.54rem;
-                padding-bottom:.46rem;
+                padding-top:.68rem;
+                padding-bottom:.60rem;
             }}
 
             .gf-section-title {{ color:var(--text); font-size:.80rem; font-weight:850; margin-bottom:2px; }}
