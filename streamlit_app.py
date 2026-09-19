@@ -2,7 +2,7 @@ import streamlit as st
 
 from modules import configuracoes, dashboard, dividas, importacao, movimentacoes, previsoes, saldos
 from services.db import is_configured
-from services.ui import inject_global_css, render_sidebar, render_topbar
+from services.ui import inject_global_css, render_page_header, render_sidebar
 
 
 st.set_page_config(
@@ -30,7 +30,7 @@ PAGE_META = {
 inject_global_css(st.session_state["view_mode"])
 page = render_sidebar(is_configured())
 page_title, subtitle = PAGE_META[page]
-view_mode = render_topbar(page_title, subtitle)
+view_mode = render_page_header(page_title, subtitle)
 inject_global_css(view_mode)
 
 if page == "Dashboard":
