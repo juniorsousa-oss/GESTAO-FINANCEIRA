@@ -95,14 +95,24 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             display: none !important;
         }
 
-        /* Cabeçalho único azul, sem duplicar a barra do Streamlit. */
+        /* O cabeçalho nativo fica transparente ACIMA da marca personalizada:
+           seu botão real de abrir a sidebar não pode ficar atrás da faixa azul. */
         header[data-testid="stHeader"] {
+            display: flex !important;
             height: 70px !important;
             min-height: 70px !important;
-            background: var(--nav) !important;
+            background: transparent !important;
             border: 0 !important;
-            box-shadow: 0 2px 10px rgba(4,23,42,.12) !important;
-            z-index: 100001 !important;
+            box-shadow: none !important;
+            z-index: 100010 !important;
+            pointer-events: none !important;
+        }
+
+        header[data-testid="stHeader"] [data-testid="stToolbar"],
+        header[data-testid="stHeader"] [data-testid="stAppToolbar"],
+        header[data-testid="stHeader"] [data-testid="stSidebarCollapsedControl"],
+        header[data-testid="stHeader"] [data-testid="collapsedControl"] {
+            pointer-events: auto !important;
         }
 
         /* A estrutura visível é fixa; este wrapper não cria espaço no fluxo. */
@@ -219,6 +229,14 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         [data-testid="stToolbar"],
         [data-testid="stAppToolbar"] {
             visibility: visible !important;
+        }
+        /* O topo transparente não intercepta cliques no corpo do aplicativo. */
+        header[data-testid="stHeader"] {
+            pointer-events: none !important;
+        }
+        header[data-testid="stHeader"] button,
+        header[data-testid="stHeader"] [data-testid="stToolbar"],
+        header[data-testid="stHeader"] [data-testid="stAppToolbar"] {
             pointer-events: auto !important;
         }
 
@@ -325,6 +343,10 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, var(--nav) 0%, var(--nav-2) 100%) !important;
             border-right: 1px solid rgba(255,255,255,.06) !important;
+        }
+        /* Quando aberta, a lateral e o botão de fechar permanecem acima do topo. */
+        section[data-testid="stSidebar"][aria-expanded="true"] {
+            z-index: 100020 !important;
         }
 
         /* Nunca forçar largura zero no estado recolhido: o próprio Streamlit
