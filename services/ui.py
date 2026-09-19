@@ -326,6 +326,19 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             display: none !important;
         }
 
+        /* Oculta apenas o botão Share (incluindo variantes do Streamlit).
+           Não esconder stToolbar/stHeaderActionElements: os demais ícones
+           e o controle próprio de abrir e fechar devem permanecer visíveis. */
+        header[data-testid="stHeader"] button[aria-label="Share"],
+        header[data-testid="stHeader"] button[title="Share"],
+        header[data-testid="stHeader"] [data-testid="stShareButton"],
+        header[data-testid="stHeader"] [data-testid="stShareButton"] button,
+        [data-testid="stToolbar"] [data-testid="stShareButton"],
+        [data-testid="stAppToolbar"] button[aria-label="Share"],
+        [data-testid="stHeaderActionElements"] button[aria-label="Share"] {
+            display: none !important;
+        }
+
         [data-testid="stToolbar"],
         [data-testid="stAppToolbar"],
         [data-testid="stHeaderActionElements"] {
