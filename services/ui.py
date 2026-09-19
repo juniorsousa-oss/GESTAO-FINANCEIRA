@@ -69,8 +69,8 @@ def render_sidebar_toggle() -> None:
         args=(not opened,),
     )
 
-    # Estilo emitido pelo fragmento: o próprio navegador anima a largura,
-    # sem reconstruir os indicadores ou os gráficos financeiros.
+    # A mesma largura governa o painel, sua área rolável e o conteúdo.
+    # O slider em Configurações gera rerun do app; o toggle continua isolado.
     selected_width = max(220, min(600, int(st.session_state.get("gf_sidebar_width", 320))))
     width = f"min({selected_width}px, 90vw)" if opened else "0px"
     opacity = "1" if opened else "0"
@@ -515,11 +515,31 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             will-change: width;
         }
 
-        section[data-testid="stSidebar"] > div {
+        /* O scroll pertence ao painel todo, não ao antigo contêiner de
+           largura padrão (~210 px); acompanha a borda enquanto redimensiona. */
+        section[data-testid="stSidebar"] > div,
+        section[data-testid="stSidebar"] > div > div,
+        section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
+        section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
             width: 100% !important;
+            max-width: 100% !important;
             min-width: 0 !important;
+            flex: 1 1 auto !important;
             box-sizing: border-box !important;
-            padding: 0 !important;
+        }
+        section[data-testid="stSidebar"] > div,
+        section[data-testid="stSidebar"] > div > div {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+            height: 100% !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            scrollbar-gutter: stable;
+        }
+        section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
+            overflow-x: hidden !important;
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -542,6 +562,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         [data-testid="stSidebar"] .stButton > button {
             width: 100% !important;
+            min-width: 0 !important;
             min-height: 38px !important;
             justify-content: flex-start !important;
             padding: 0 11px !important;
@@ -550,6 +571,9 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             box-shadow: none !important;
             font-size: 12px !important;
             font-weight: 650 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
         }
 
         [data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"] {
@@ -1103,17 +1127,6 @@ def render_sidebar(is_db_configured: bool) -> str:
         st.session_state["current_page"] = current
 
     with st.sidebar:
-        # Ajuste manual em vez de fixar a largura em CSS.
-        # O estado permanece na sessão ao abrir, fechar e navegar.
-        with st.expander("Ajustar largura do menu", expanded=False):
-            st.slider(
-                "Largura (px)",
-                min_value=220,
-                max_value=600,
-                step=10,
-                key="gf_sidebar_width",
-            )
-
         for option in NAV_OPTIONS:
             st.button(
                 f"{NAV_ICONS.get(option, '')}   {option}",
