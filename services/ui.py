@@ -52,7 +52,7 @@ def _sync_view() -> None:
 
 
 def inject_global_css(view_mode: str = "Desktop") -> None:
-    content_max = "100%" if view_mode == "Desktop" else "760px"
+    content_max = "1460px" if view_mode == "Desktop" else "760px"
 
     css = """
     <style>
@@ -106,7 +106,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         .block-container {
             width: 100% !important;
             max-width: __CONTENT_MAX__ !important;
-            padding: 12px 16px 20px !important;
+            margin-inline: auto !important;
+            padding: 10px 14px 18px !important;
             box-sizing: border-box !important;
         }
 
@@ -686,6 +687,86 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             text-align: center;
             color: #92a0af;
             font-size: 8px;
+        }
+
+        /* Notebook: escala intermediária sem redimensionar o mobile.
+           A sidebar usa o recolhimento nativo; não travar transform/flex dos pais. */
+        @media (min-width: 901px) and (max-width: 1600px) {
+            :root { --gf-dashboard-gap: 10px; }
+
+            .block-container {
+                max-width: min(100%, 1380px) !important;
+                padding: 9px 12px 16px !important;
+            }
+
+            section[data-testid="stSidebar"]:not([aria-expanded="false"]),
+            [data-testid="stSidebar"]:not([aria-expanded="false"]) {
+                min-width: 212px !important;
+                width: 212px !important;
+                max-width: 212px !important;
+            }
+
+            section[data-testid="stSidebar"] > div,
+            [data-testid="stSidebar"] > div:first-child {
+                width: 212px !important;
+            }
+
+            .gf-brand { margin: 10px 11px 8px; padding-bottom: 11px; }
+            [data-testid="stSidebar"] .stButton { padding: 0 11px !important; }
+            [data-testid="stSidebar"] .stButton > button {
+                min-height: 34px !important;
+                padding: 0 9px !important;
+                font-size: 11px !important;
+            }
+            .gf-trust { margin: 12px 11px 0; padding: 10px; }
+
+            header[data-testid="stHeader"] {
+                height: 44px !important;
+                min-height: 44px !important;
+            }
+            div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) {
+                margin-bottom: 10px !important;
+            }
+            div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) > div {
+                padding: 7px 9px !important;
+            }
+            .gf-search { height: 31px; }
+            .gf-top-icon { width: 30px; height: 30px; }
+            .gf-user { min-height: 31px; }
+
+            .gf-page-header { padding: 0 2px 8px; }
+            .gf-page-title { font-size: 23px !important; }
+            .gf-page-subtitle { font-size: 10px; margin-top: 4px; }
+            .gf-eyebrow { margin-bottom: 3px; }
+            .gf-period { padding: 5px 8px; }
+
+            /* Cada camada decide seu padding e suas margens.
+               Evita somar margens externas a gaps globais do Streamlit. */
+            .gf-kpi-layer {
+                margin: 0 !important;
+                padding: 10px;
+                border-radius: 12px;
+            }
+            .gf-kpi { min-height: 84px; padding: 9px; border-radius: 10px; }
+            .gf-kpi-head { gap: 6px; margin-bottom: 5px; font-size: 9px; }
+            .gf-kpi-icon { width: 22px; height: 22px; flex-basis: 22px; }
+            .gf-kpi-value { font-size: 16px; margin-bottom: 4px; }
+            .gf-kpi-note { font-size: 8.5px; }
+
+            div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-panel-layer-marker) {
+                margin: 0 !important;
+                border-radius: 12px !important;
+            }
+            div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-panel-layer-marker) > div {
+                padding: 10px !important;
+            }
+            div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-panel-layer-marker)
+            div[data-testid="stVerticalBlockBorderWrapper"]:not(:has(.gf-panel-layer-marker)) > div {
+                padding-top: 7px;
+                padding-bottom: 7px;
+            }
+            .gf-section-title { font-size: 11px; }
+            .gf-section-caption { margin-bottom: 4px; }
         }
 
         @media (max-width: 900px) {
