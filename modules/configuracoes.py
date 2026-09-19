@@ -6,8 +6,6 @@ from services.db import get_settings, is_configured, save_setting
 
 
 def render():
-    st.title("Configurações")
-    st.caption("Parâmetros financeiros e estado da infraestrutura.")
 
     if is_configured():
         st.success("Supabase conectado — persistência habilitada.")
