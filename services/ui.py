@@ -462,14 +462,15 @@ def render_sidebar(is_db_configured: bool) -> str:
     st.session_state["current_page"] = current
     st.session_state["view_mode"] = view
 
-    nav_html = []
+    nav_items = []
     for option in NAV_OPTIONS:
         active = " active" if option == current else ""
         href = f"?page={quote_plus(option)}&view={quote_plus(view)}"
-        nav_html.append(
+        nav_items.append(
             f'<a class="gf-nav-item{active}" href="{href}" target="_self">'
             f'<span class="gf-nav-icon">{NAV_ICONS.get(option, "")}</span>'
-            f'<span>{option}</span></a>'
+            f'<span>{option}</span>'
+            f'</a>'
         )
 
     desktop_active = " active" if view == "Desktop" else ""
@@ -478,39 +479,33 @@ def render_sidebar(is_db_configured: bool) -> str:
     state_class = "gf-status-ok" if is_db_configured else "gf-status-test"
     state_text = "Banco conectado" if is_db_configured else "Modo de teste"
 
-    sidebar_html = dedent(f"""
-    <div class="gf-sidebar-shell">
-        <div class="gf-brand">
-            <div class="gf-brand-mark"><span></span><span></span><span></span></div>
-            <div>
-                <div class="gf-brand-title">Gestão Financeira</div>
-                <div class="gf-brand-sub">Controle, clareza e confiança.</div>
-            </div>
-        </div>
-
-        <nav class="gf-nav">
-            {''.join(nav_html)}
-        </nav>
-
-        <div class="gf-view-label">Visualização</div>
-        <div class="gf-mode">
-            <a class="gf-mode-item{desktop_active}" href="?page={quote_plus(current)}&view=Desktop" target="_self">Desktop</a>
-            <a class="gf-mode-item{mobile_active}" href="?page={quote_plus(current)}&view=Mobile" target="_self">Mobile</a>
-        </div>
-
-        <div class="gf-trust">
-            <div class="gf-trust-title">▱ Seus dados estão protegidos</div>
-            <div class="gf-trust-text">Segurança, privacidade e confiabilidade como base do controle financeiro.</div>
-            <div class="gf-status {state_class}">● {state_text}</div>
-        </div>
-    </div>
-    """)
+    sidebar_html = (
+        '<div class="gf-sidebar-shell">'
+        '<div class="gf-brand">'
+        '<div class="gf-brand-mark"><span></span><span></span><span></span></div>'
+        '<div><div class="gf-brand-title">Gestão Financeira</div>'
+        '<div class="gf-brand-sub">Controle, clareza e confiança.</div></div>'
+        '</div>'
+        '<nav class="gf-nav">'
+        + ''.join(nav_items) +
+        '</nav>'
+        '<div class="gf-view-label">Visualização</div>'
+        '<div class="gf-mode">'
+        f'<a class="gf-mode-item{desktop_active}" href="?page={quote_plus(current)}&view=Desktop" target="_self">Desktop</a>'
+        f'<a class="gf-mode-item{mobile_active}" href="?page={quote_plus(current)}&view=Mobile" target="_self">Mobile</a>'
+        '</div>'
+        '<div class="gf-trust">'
+        '<div class="gf-trust-title">▱ Seus dados estão protegidos</div>'
+        '<div class="gf-trust-text">Segurança, privacidade e confiabilidade como base do controle financeiro.</div>'
+        f'<div class="gf-status {state_class}">● {state_text}</div>'
+        '</div>'
+        '</div>'
+    )
 
     with st.sidebar:
-        st.markdown(dedent(sidebar_html), unsafe_allow_html=True)
+        st.markdown(sidebar_html, unsafe_allow_html=True)
 
     return current
-
 
 def render_page_header(page_title: str, subtitle: str) -> str:
     now = datetime.now()
