@@ -6,18 +6,6 @@ from services.db import get_settings, is_configured, save_setting
 
 
 def render():
-    st.subheader("Aparência e navegação")
-    st.slider(
-        "Largura do menu lateral (px)",
-        min_value=220,
-        max_value=600,
-        step=10,
-        key="gf_sidebar_width",
-        help="Ajuste a largura da lateral. A barra de rolagem acompanhará a borda do menu.",
-    )
-    st.caption("A largura selecionada é mantida durante esta sessão.")
-    st.divider()
-
     if is_configured():
         st.success("Supabase conectado — persistência habilitada.")
     else:
