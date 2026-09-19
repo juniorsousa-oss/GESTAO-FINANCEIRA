@@ -171,7 +171,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             --success: #159769;
             --danger: #d95b65;
             --shadow: 0 6px 18px rgba(20, 48, 78, .055);
-            --gf-sidebar-width: 238px;
+            --gf-sidebar-width: 450px;
         }
 
         html, body, [class*="css"] {
@@ -508,7 +508,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             border-right: 1px solid rgba(255,255,255,.06) !important;
             box-sizing: border-box !important;
             overflow: hidden !important;
-            z-index: 100020 !important;
+            z-index: 100020 !important; /* Acima da marca e da toolbar do cabeçalho. */
             transition: width .23s ease, min-width .23s ease,
                         max-width .23s ease, flex-basis .23s ease,
                         opacity .18s ease !important;
@@ -957,7 +957,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         @media (min-width: 901px) and (max-width: 1600px) {
             :root {
                 --gf-dashboard-gap: 10px;
-                --gf-sidebar-width: 212px;
+                --gf-sidebar-width: 450px;
             }
 
             .gf-header-user { right: 228px; }
@@ -1056,7 +1056,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             [data-testid="stSidebarContent"] { padding-top: 112px !important; }
             .st-key-gf_sidebar_toggle { top: 12px !important; left: 7px !important; }
 
-            :root { --gf-sidebar-width: 210px; }
+            :root { --gf-sidebar-width: min(450px, 90vw); }
 
             .block-container {
                 padding: 96px 10px 18px !important;
