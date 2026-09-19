@@ -439,6 +439,36 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             white-space: nowrap;
         }
 
+        /* Uma só régua de espaçamento para os seis KPIs e as faixas do Dashboard. */
+        :root { --gf-dashboard-gap: 12px; }
+
+        .gf-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: var(--gf-dashboard-gap);
+            width: 100%;
+        }
+
+        .gf-kpi-grid--mobile { grid-template-columns: minmax(0, 1fr); }
+
+        .gf-kpi-grid > .gf-kpi {
+            min-width: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        @media (max-width: 1100px) {
+            .gf-kpi-grid:not(.gf-kpi-grid--mobile) {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .gf-kpi-grid {
+                grid-template-columns: minmax(0, 1fr) !important;
+            }
+        }
+
         /* KPI CARDS */
         .gf-kpi {
             min-height: 94px;
@@ -523,16 +553,15 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         div[data-testid="stVerticalBlock"] {
-            gap: .52rem !important;
+            gap: var(--gf-dashboard-gap) !important;
         }
 
         div[data-testid="stHorizontalBlock"] {
-            gap: .58rem !important;
+            gap: var(--gf-dashboard-gap) !important;
         }
 
-        .gf-gap {
-            height: 4px;
-        }
+        /* Separadores antigos deixavam distâncias diferentes entre as faixas. */
+        .gf-gap { display: none !important; }
 
         /* COMPONENTES PADRÃO DAS PÁGINAS INTERNAS */
         h1 {
@@ -795,17 +824,14 @@ def metric_card(
 
 
 def show_metric_grid(cards: list[str], view_mode: str = "Desktop") -> None:
-    cols_per_row = 6 if view_mode == "Desktop" else 1
-    total_rows = math.ceil(len(cards) / cols_per_row)
+    """Renderiza KPIs numa única grade, com o mesmo vão em todas as direções."""
+    if not cards:
+        return
 
-    for row in range(total_rows):
-        cols = st.columns(cols_per_row, gap="small")
-        start = row * cols_per_row
-        end = start + cols_per_row
-
-        for col, card in zip(cols, cards[start:end]):
-            with col:
-                st.markdown(card, unsafe_allow_html=True)
+    layout = "gf-kpi-grid--mobile" if view_mode == "Mobile" else ""
+    # Um único bloco HTML evita margens individuais do Markdown/colunas Streamlit.
+    html = f'<div class="gf-kpi-grid {layout}">' + "".join(card.strip() for card in cards) + "</div>"
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def section_header(title: str, caption: str = "") -> None:
