@@ -49,10 +49,6 @@ def _set_page(page: str) -> None:
     st.session_state["current_page"] = page
 
 
-def _sync_view() -> None:
-    st.session_state["view_mode"] = st.session_state.get("_view_selector", "Desktop")
-
-
 def _set_sidebar_open(opened: bool) -> None:
     """O controle próprio é a única fonte de estado da navegação lateral."""
     st.session_state["gf_sidebar_open"] = opened
@@ -70,10 +66,9 @@ def render_sidebar_toggle() -> None:
         args=(not opened,),
     )
 
-    # Este painel pertence ao aplicativo, e não à sidebar nativa do
-    # Streamlit. Os botões internos continuam ativos em ambos os estados.
-    selected_width = max(220, min(600, int(st.session_state.get("gf_sidebar_width", 320))))
-    width = f"min({selected_width}px, 90vw)" if opened else "0px"
+    # Um único painel de 220 px; somente o controle de abrir/fechar
+    # altera o estado e a tela continua responsiva no celular.
+    width = "min(220px, 90vw)" if opened else "0px"
     opacity = "1" if opened else "0"
     pointer_events = "auto" if opened else "none"
     st.markdown(
@@ -525,7 +520,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             height: calc(100dvh - 70px) !important;
             max-height: calc(100dvh - 70px) !important;
             box-sizing: border-box !important;
-            padding: 14px 12px 18px !important;
+            padding: 14px 10px 18px !important;
             background: linear-gradient(180deg, var(--nav) 0%, var(--nav-2) 100%) !important;
             border-right: 1px solid rgba(255,255,255,.08) !important;
             border-radius: 0 !important;
@@ -548,23 +543,27 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             width: 100% !important;
             min-width: 0 !important;
         }
+        /* Cada botão utiliza a mesma grade: ícone de 18 px, texto na
+           segunda coluna e largura total do menu (sem centralização). */
         .st-key-gf_custom_side .stButton {
-            width: min(100%, 290px) !important;
-            max-width: min(100%, 290px) !important;
+            width: 100% !important;
+            max-width: 100% !important;
             min-width: 0 !important;
             padding: 0 !important;
             margin: 0 !important;
             box-sizing: border-box !important;
         }
         .st-key-gf_custom_side .stButton > button {
+            display: grid !important;
+            grid-template-columns: 18px minmax(0, 1fr) !important;
+            column-gap: 10px !important;
+            align-items: center !important;
+            justify-items: start !important;
+            justify-content: start !important;
             width: 100% !important;
             min-width: 0 !important;
             height: 39px !important;
             min-height: 39px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: flex-start !important;
-            gap: 10px !important;
             padding: 0 11px !important;
             border: 0 !important;
             border-radius: 8px !important;
@@ -576,18 +575,23 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             cursor: pointer !important;
         }
         .st-key-gf_custom_side .stButton > button p {
+            grid-column: 2 !important;
+            justify-self: start !important;
+            width: 100% !important;
             min-width: 0 !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
             white-space: nowrap !important;
             margin: 0 !important;
+            padding: 0 !important;
             text-align: left !important;
             color: inherit !important;
             font-size: inherit !important;
         }
         .st-key-gf_custom_side .stButton > button [data-testid="stIconMaterial"],
         .st-key-gf_custom_side .stButton > button svg {
-            flex: 0 0 18px !important;
+            grid-column: 1 !important;
+            justify-self: center !important;
             width: 18px !important;
             height: 18px !important;
             font-size: 18px !important;
@@ -1163,18 +1167,6 @@ def render_sidebar(is_db_configured: bool) -> str:
                 on_click=_set_page,
                 args=(option,),
             )
-
-        # O seletor de visualização migra para a lateral ao retirar a topbar.
-        view_mode = st.session_state.get("view_mode", "Desktop")
-        if st.session_state.get("_view_selector") != view_mode:
-            st.session_state["_view_selector"] = view_mode
-        st.radio(
-            "Visualização",
-            ["Desktop", "Mobile"],
-            horizontal=True,
-            key="_view_selector",
-            on_change=_sync_view,
-        )
 
         state_class = "gf-status-ok" if is_db_configured else "gf-status-test"
         state_text = "Banco conectado" if is_db_configured else "Modo de teste"
