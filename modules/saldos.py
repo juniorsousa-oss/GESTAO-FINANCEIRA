@@ -8,8 +8,6 @@ from services.finance import brl, numeric, to_df
 
 
 def render():
-    st.title("Contas e Saldos")
-    st.caption("Onde o dinheiro está e conferência com o saldo calculado pelas movimentações.")
 
     accounts = to_df(select_rows(TABLES["accounts"], order="name.asc"))
     movements = to_df(select_rows(TABLES["movements"]))
