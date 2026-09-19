@@ -3,7 +3,6 @@ from __future__ import annotations
 import math
 from datetime import datetime
 from textwrap import dedent
-from urllib.parse import quote_plus
 
 import streamlit as st
 
@@ -35,8 +34,16 @@ MONTHS_PT = {
 }
 
 
+def _set_page(page: str) -> None:
+    st.session_state["current_page"] = page
+
+
+def _set_view(view: str) -> None:
+    st.session_state["view_mode"] = view
+
+
 def inject_global_css(view_mode: str = "Desktop") -> None:
-    max_width = "1480px" if view_mode == "Desktop" else "760px"
+    max_width = "1500px" if view_mode == "Desktop" else "760px"
     css = """
     <style>
         :root {
@@ -80,7 +87,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         .block-container {
             max-width: __MAX_WIDTH__;
-            padding: 10px 14px 18px !important;
+            padding: 12px 16px 20px !important;
         }
 
         section[data-testid="stSidebar"],
@@ -104,121 +111,76 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             padding: 0 !important;
         }
 
-        .gf-sidebar-shell {
-            min-height: 100vh;
-            box-sizing: border-box;
-            padding: 16px 14px;
+        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+            gap: .28rem !important;
         }
 
-        .gf-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 4px 4px 14px;
-            border-bottom: 1px solid rgba(255,255,255,.08);
-            margin-bottom: 10px;
+        .gf-sidebar-brand {
+            display:flex;
+            align-items:center;
+            gap:10px;
+            margin:16px 14px 12px;
+            padding:4px 4px 15px;
+            border-bottom:1px solid rgba(255,255,255,.08);
         }
 
         .gf-brand-mark {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
-            background: linear-gradient(145deg, #12b9ae, #45d4b6);
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            gap: 2px;
-            padding: 7px;
-            box-shadow: 0 5px 14px rgba(20,166,158,.20);
+            width:34px;
+            height:34px;
+            border-radius:10px;
+            background:linear-gradient(145deg,#12b9ae,#45d4b6);
+            display:flex;
+            align-items:flex-end;
+            justify-content:center;
+            gap:2px;
+            padding:7px;
+            box-shadow:0 5px 14px rgba(20,166,158,.20);
+            flex:0 0 auto;
         }
 
-        .gf-brand-mark span { display:block; width:4px; border-radius:3px; background:white; }
+        .gf-brand-mark span { display:block; width:4px; border-radius:3px; background:#fff; }
         .gf-brand-mark span:nth-child(1) { height:9px; opacity:.8; }
         .gf-brand-mark span:nth-child(2) { height:15px; }
         .gf-brand-mark span:nth-child(3) { height:21px; opacity:.92; }
-
         .gf-brand-title { color:#fff; font-size:15px; font-weight:800; line-height:1.1; }
-        .gf-brand-sub { color:#9fb7cf; font-size:10px; margin-top:3px; }
+        .gf-brand-sub { color:#9fb7cf; font-size:9px; margin-top:3px; }
 
-        .gf-nav {
-            display:flex;
-            flex-direction:column;
-            gap:5px;
+        [data-testid="stSidebar"] .stButton {
+            padding:0 14px;
         }
 
-        .gf-nav-item {
-            display:flex;
-            align-items:center;
-            gap:9px;
-            min-height:38px;
-            padding:0 10px;
-            border-radius:9px;
-            border-left:3px solid transparent;
+        [data-testid="stSidebar"] .stButton > button {
+            width:100% !important;
+            min-height:38px !important;
+            justify-content:flex-start !important;
+            border-radius:9px !important;
+            padding:0 11px !important;
+            font-size:12px !important;
+            font-weight:650 !important;
+            border:0 !important;
+            box-shadow:none !important;
+            transition:background .14s ease,color .14s ease !important;
+        }
+
+        [data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"] {
+            background:transparent !important;
             color:#d7e5f3 !important;
-            text-decoration:none !important;
-            font-size:12px;
-            font-weight:650;
-            transition:background .14s ease,border-color .14s ease,color .14s ease;
         }
 
-        .gf-nav-item:hover {
-            background:rgba(255,255,255,.055);
+        [data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"]:hover {
+            background:rgba(255,255,255,.055) !important;
             color:#fff !important;
         }
 
-        .gf-nav-item.active {
-            background:linear-gradient(90deg,#164b78,#174a75);
-            border-left-color:#20c6bb;
+        [data-testid="stSidebar"] button[data-testid="stBaseButton-primary"] {
+            background:linear-gradient(90deg,#164b78,#174a75) !important;
             color:#fff !important;
-            font-weight:760;
-        }
-
-        .gf-nav-icon {
-            width:16px;
-            flex:0 0 16px;
-            text-align:center;
-            color:#a9c4dc;
-            font-size:14px;
-        }
-
-        .gf-view-label {
-            color:#7896b5;
-            font-size:10px;
-            font-weight:800;
-            letter-spacing:.10em;
-            text-transform:uppercase;
-            margin:16px 4px 7px;
-        }
-
-        .gf-mode {
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:6px;
-        }
-
-        .gf-mode-item {
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            min-height:34px;
-            border-radius:8px;
-            color:#a9c4dc !important;
-            text-decoration:none !important;
-            font-size:11px;
-            font-weight:700;
-            background:rgba(255,255,255,.025);
-            border:1px solid rgba(255,255,255,.05);
-        }
-
-        .gf-mode-item.active {
-            background:#174d79;
-            border-color:rgba(32,198,187,.36);
-            color:#fff !important;
-            box-shadow:inset 3px 0 0 #20c6bb;
+            border-left:3px solid #20c6bb !important;
+            font-weight:760 !important;
         }
 
         .gf-trust {
-            margin-top:16px;
+            margin:16px 14px 0;
             padding:12px 11px;
             border-radius:12px;
             background:rgba(255,255,255,.052);
@@ -242,19 +204,19 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         .gf-status-ok { background:rgba(20,166,158,.14); color:#80e8dd; }
         .gf-status-test { background:rgba(234,155,57,.14); color:#ffd39e; }
 
-        .gf-topbar {
-            min-height: 54px;
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) {
             background:#fff;
-            border:1px solid var(--border);
-            border-radius:12px;
+            border:1px solid var(--border) !important;
+            border-radius:12px !important;
             box-shadow:var(--shadow);
-            display:grid;
-            grid-template-columns:minmax(260px,1fr) auto auto auto;
-            align-items:center;
-            gap:12px;
-            padding:8px 12px;
-            margin-bottom:10px;
+            margin-bottom:14px;
         }
+
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) > div {
+            padding:10px 12px !important;
+        }
+
+        .gf-topbar-marker { display:none; }
 
         .gf-search {
             height:36px;
@@ -269,38 +231,35 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             font-size:11px;
         }
 
-        .gf-top-layout {
-            display:flex;
-            align-items:center;
-            gap:6px;
-        }
-
         .gf-top-layout-label {
-            font-size:10px;
-            color:#5e7086;
-            font-weight:700;
-            margin-right:2px;
-        }
-
-        .gf-top-mode {
-            min-width:72px;
-            height:32px;
-            border-radius:8px;
+            height:36px;
             display:flex;
             align-items:center;
-            justify-content:center;
-            text-decoration:none !important;
+            justify-content:flex-end;
+            color:#5e7086;
             font-size:10px;
             font-weight:750;
-            color:#53677d !important;
-            border:1px solid #e2e9f1;
-            background:#f8fafc;
         }
 
-        .gf-top-mode.active {
+        .block-container > div > div > div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"]:first-of-type .stButton > button {
+            min-height:36px !important;
+            border-radius:8px !important;
+            padding:0 13px !important;
+            font-size:10px !important;
+            font-weight:750 !important;
+            box-shadow:none !important;
+        }
+
+        .block-container button[data-testid="stBaseButton-primary"] {
+            background:#0f4f78 !important;
+            border-color:#0f4f78 !important;
             color:#fff !important;
-            background:#0f4f78;
-            border-color:#0f4f78;
+        }
+
+        .block-container button[data-testid="stBaseButton-secondary"] {
+            background:#f8fafc !important;
+            border:1px solid #e2e9f1 !important;
+            color:#53677d !important;
         }
 
         .gf-top-icon {
@@ -314,12 +273,14 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             color:#244766;
             background:#fff;
             font-size:14px;
+            margin:auto;
         }
 
         .gf-user {
             display:flex;
             align-items:center;
             gap:8px;
+            min-height:36px;
             padding-left:10px;
             border-left:1px solid #e5ebf1;
         }
@@ -345,21 +306,21 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             grid-template-columns:minmax(0,1fr) auto;
             gap:12px;
             align-items:end;
-            padding:0 2px 8px;
+            padding:2px 2px 12px;
         }
 
         .gf-page-eyebrow {
             color:var(--teal);
-            font-size:10px;
+            font-size:9px;
             font-weight:850;
             letter-spacing:.10em;
             text-transform:uppercase;
-            margin-bottom:3px;
+            margin-bottom:4px;
         }
 
         .gf-page-title {
             color:var(--text);
-            font-size:28px !important;
+            font-size:26px !important;
             font-weight:850;
             line-height:1.05;
             margin:0 !important;
@@ -367,8 +328,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         .gf-page-subtitle {
             color:var(--muted);
-            font-size:13px;
-            margin:4px 0 0;
+            font-size:12px;
+            margin:5px 0 0;
         }
 
         .gf-month {
@@ -380,7 +341,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             border-radius:8px;
             background:#fff;
             color:#31506f;
-            font-size:11px;
+            font-size:10px;
             font-weight:750;
             white-space:nowrap;
         }
@@ -389,9 +350,9 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             background:#fff;
             border:1px solid var(--border);
             border-radius:12px;
-            padding:12px;
+            padding:11px;
             box-shadow:var(--shadow);
-            min-height:106px;
+            min-height:102px;
             height:100%;
         }
 
@@ -405,38 +366,38 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             align-items:center;
             gap:7px;
             color:#405a74;
-            font-size:11px;
+            font-size:10px;
             font-weight:750;
-            margin-bottom:8px;
+            margin-bottom:7px;
             white-space:nowrap;
         }
 
         .gf-card-icon {
-            width:28px;
-            height:28px;
+            width:26px;
+            height:26px;
             border-radius:8px;
             display:flex;
             align-items:center;
             justify-content:center;
             background:#edf4fb;
-            font-size:12px;
+            font-size:11px;
         }
 
         .gf-card-value {
             color:var(--text);
-            font-size:20px;
+            font-size:18px;
             font-weight:850;
             line-height:1.05;
-            margin-bottom:6px;
+            margin-bottom:5px;
             white-space:nowrap;
         }
 
-        .gf-card-footnote { color:#78899c; font-size:10px; line-height:1.25; }
+        .gf-card-footnote { color:#78899c; font-size:9px; line-height:1.25; }
         .gf-card-trend-up { color:var(--success); font-weight:850; }
         .gf-card-trend-down { color:var(--danger); font-weight:850; }
 
-        div[data-testid="stVerticalBlock"] { gap:.55rem !important; }
-        div[data-testid="stHorizontalBlock"] { gap:.60rem !important; }
+        div[data-testid="stVerticalBlock"] { gap:.65rem !important; }
+        div[data-testid="stHorizontalBlock"] { gap:.68rem !important; }
 
         div[data-testid="stVerticalBlockBorderWrapper"] {
             background:#fff;
@@ -446,12 +407,12 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         div[data-testid="stVerticalBlockBorderWrapper"] > div {
-            padding-top:.70rem;
-            padding-bottom:.62rem;
+            padding-top:.72rem;
+            padding-bottom:.66rem;
         }
 
-        .gf-section-title { color:var(--text); font-size:13px; font-weight:850; margin-bottom:2px; }
-        .gf-section-caption { color:var(--muted); font-size:10px; margin-bottom:.45rem; }
+        .gf-section-title { color:var(--text); font-size:12px; font-weight:850; margin-bottom:3px; }
+        .gf-section-caption { color:var(--muted); font-size:9px; margin-bottom:.48rem; }
 
         .stDataFrame, div[data-testid="stTable"] {
             border:1px solid var(--border);
@@ -464,124 +425,135 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         .gf-checklist { margin:0; padding-left:1rem; color:var(--muted); }
-        .gf-checklist li { margin:.18rem 0; font-size:10px; }
+        .gf-checklist li { margin:.18rem 0; font-size:9px; }
         .gf-footer-note { text-align:center; color:#8998aa; font-size:9px; margin-top:.65rem; }
-        .gf-gap-sm { height:6px; }
-        .gf-gap-md { height:10px; }
+        .gf-gap-sm { height:7px; }
+        .gf-gap-md { height:12px; }
 
         @media (max-width:900px) {
             section[data-testid="stSidebar"],
             [data-testid="stSidebar"] {
-                min-width:210px !important;
-                width:210px !important;
-                max-width:210px !important;
+                min-width:205px !important;
+                width:205px !important;
+                max-width:205px !important;
             }
 
             section[data-testid="stSidebar"] > div,
             [data-testid="stSidebar"] > div:first-child {
-                width:210px !important;
+                width:205px !important;
             }
 
-            .gf-topbar {
-                grid-template-columns:1fr;
-                gap:7px;
-            }
-
-            .gf-user { display:none; }
-            .gf-top-icon { display:none; }
             .gf-page-header { grid-template-columns:1fr; }
             .gf-month { justify-self:start; }
-            .block-container { padding:8px 10px 14px !important; }
+            .gf-user { display:none; }
+            .gf-top-icon { display:none; }
+            .block-container { padding:10px 10px 16px !important; }
         }
     </style>
     """
     st.markdown(css.replace("__MAX_WIDTH__", max_width), unsafe_allow_html=True)
 
 
-def _current_context() -> tuple[str, str]:
-    params = st.query_params
-
-    page_param = params.get("page", st.session_state.get("current_page", "Dashboard"))
-    if isinstance(page_param, list):
-        page_param = page_param[0] if page_param else "Dashboard"
-    page = page_param if page_param in NAV_OPTIONS else "Dashboard"
-
-    view_param = params.get("view", st.session_state.get("view_mode", "Desktop"))
-    if isinstance(view_param, list):
-        view_param = view_param[0] if view_param else "Desktop"
-    view = view_param if view_param in {"Desktop", "Mobile"} else "Desktop"
-
-    st.session_state["current_page"] = page
-    st.session_state["view_mode"] = view
-    return page, view
-
-
 def render_sidebar(is_db_configured: bool) -> str:
-    current, view = _current_context()
-
-    nav_items = []
-    for option in NAV_OPTIONS:
-        active = " active" if option == current else ""
-        href = f"?page={quote_plus(option)}&view={quote_plus(view)}"
-        nav_items.append(
-            f'<a class="gf-nav-item{active}" href="{href}" target="_self">'
-            f'<span class="gf-nav-icon">{NAV_ICONS.get(option, "")}</span>'
-            f'<span>{option}</span></a>'
-        )
-
-    desktop_active = " active" if view == "Desktop" else ""
-    mobile_active = " active" if view == "Mobile" else ""
-    state_class = "gf-status-ok" if is_db_configured else "gf-status-test"
-    state_text = "Banco conectado" if is_db_configured else "Modo de teste"
-
-    sidebar_html = (
-        '<div class="gf-sidebar-shell">'
-        '<div class="gf-brand">'
-        '<div class="gf-brand-mark"><span></span><span></span><span></span></div>'
-        '<div><div class="gf-brand-title">Gestão Financeira</div>'
-        '<div class="gf-brand-sub">Controle, clareza e confiança.</div></div>'
-        '</div>'
-        '<nav class="gf-nav">' + ''.join(nav_items) + '</nav>'
-        '<div class="gf-view-label">Visualização</div>'
-        '<div class="gf-mode">'
-        f'<a class="gf-mode-item{desktop_active}" href="?page={quote_plus(current)}&view=Desktop" target="_self">Desktop</a>'
-        f'<a class="gf-mode-item{mobile_active}" href="?page={quote_plus(current)}&view=Mobile" target="_self">Mobile</a>'
-        '</div>'
-        '<div class="gf-trust">'
-        '<div class="gf-trust-title">▱ Seus dados estão protegidos</div>'
-        '<div class="gf-trust-text">Segurança, privacidade e confiabilidade como base do controle financeiro.</div>'
-        f'<div class="gf-status {state_class}">● {state_text}</div>'
-        '</div>'
-        '</div>'
-    )
+    current = st.session_state.get("current_page", "Dashboard")
+    if current not in NAV_OPTIONS:
+        current = "Dashboard"
+        st.session_state["current_page"] = current
 
     with st.sidebar:
-        st.markdown(sidebar_html, unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="gf-sidebar-brand">
+                <div class="gf-brand-mark"><span></span><span></span><span></span></div>
+                <div>
+                    <div class="gf-brand-title">Gestão Financeira</div>
+                    <div class="gf-brand-sub">Controle, clareza e confiança.</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    return current
+        for option in NAV_OPTIONS:
+            st.button(
+                f"{NAV_ICONS.get(option, '')}   {option}",
+                key=f"nav_{option}",
+                use_container_width=True,
+                type="primary" if option == current else "secondary",
+                on_click=_set_page,
+                args=(option,),
+            )
+
+        state_class = "gf-status-ok" if is_db_configured else "gf-status-test"
+        state_text = "Banco conectado" if is_db_configured else "Modo de teste"
+        st.markdown(
+            f"""
+            <div class="gf-trust">
+                <div class="gf-trust-title">▱ Seus dados estão protegidos</div>
+                <div class="gf-trust-text">Segurança, privacidade e confiabilidade como base do controle financeiro.</div>
+                <div class="gf-status {state_class}">● {state_text}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    return st.session_state.get("current_page", "Dashboard")
 
 
 def render_topbar(page: str, view_mode: str) -> None:
-    desktop_active = " active" if view_mode == "Desktop" else ""
-    mobile_active = " active" if view_mode == "Mobile" else ""
+    with st.container(border=True):
+        st.markdown("<div class='gf-topbar-marker'></div>", unsafe_allow_html=True)
+        c_search, c_label, c_desktop, c_mobile, c_icon, c_user = st.columns(
+            [4.8, .55, .72, .72, .42, 1.2],
+            gap="small",
+            vertical_alignment="center",
+        )
 
-    html = (
-        '<div class="gf-topbar">'
-        '<div class="gf-search">⌕ <span>Buscar movimentações, contas, categorias...</span></div>'
-        '<div class="gf-top-layout">'
-        '<span class="gf-top-layout-label">Layout</span>'
-        f'<a class="gf-top-mode{desktop_active}" href="?page={quote_plus(page)}&view=Desktop" target="_self">Desktop</a>'
-        f'<a class="gf-top-mode{mobile_active}" href="?page={quote_plus(page)}&view=Mobile" target="_self">Mobile</a>'
-        '</div>'
-        '<div class="gf-top-icon">♢</div>'
-        '<div class="gf-user">'
-        '<div class="gf-avatar">GF</div>'
-        '<div><div class="gf-user-name">Gestão Financeira</div>'
-        '<div class="gf-user-sub">Conta principal</div></div>'
-        '</div>'
-        '</div>'
-    )
-    st.markdown(html, unsafe_allow_html=True)
+        with c_search:
+            st.markdown(
+                "<div class='gf-search'>⌕ <span>Buscar movimentações, contas, categorias...</span></div>",
+                unsafe_allow_html=True,
+            )
+
+        with c_label:
+            st.markdown("<div class='gf-top-layout-label'>Layout</div>", unsafe_allow_html=True)
+
+        with c_desktop:
+            st.button(
+                "Desktop",
+                key="top_desktop",
+                use_container_width=True,
+                type="primary" if view_mode == "Desktop" else "secondary",
+                on_click=_set_view,
+                args=("Desktop",),
+            )
+
+        with c_mobile:
+            st.button(
+                "Mobile",
+                key="top_mobile",
+                use_container_width=True,
+                type="primary" if view_mode == "Mobile" else "secondary",
+                on_click=_set_view,
+                args=("Mobile",),
+            )
+
+        with c_icon:
+            st.markdown("<div class='gf-top-icon'>♢</div>", unsafe_allow_html=True)
+
+        with c_user:
+            st.markdown(
+                """
+                <div class="gf-user">
+                    <div class="gf-avatar">GF</div>
+                    <div>
+                        <div class="gf-user-name">Gestão Financeira</div>
+                        <div class="gf-user-sub">Conta principal</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
 def render_page_header(page_title: str, subtitle: str) -> str:
