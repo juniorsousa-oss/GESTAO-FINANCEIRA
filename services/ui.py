@@ -82,21 +82,21 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             [data-testid="stSidebar"] {{
                 background: linear-gradient(180deg, #071d37 0%, #0b2c50 58%, #09233f 100%);
                 border-right: 1px solid rgba(255,255,255,.06);
-                min-width: 248px !important;
-                width: 248px !important;
-                max-width: 248px !important;
+                min-width: 232px !important;
+                width: 232px !important;
+                max-width: 232px !important;
                 transform: none !important;
             }}
             [data-testid="stSidebar"] > div:first-child {{ width: 248px !important; }}
             [data-testid="stSidebar"] * {{ color: #dce9f7; }}
             [data-testid="stSidebarNav"] {{ display: none !important; }}
-            [data-testid="stSidebarContent"] {{ padding: 1.15rem .85rem 1rem .85rem; }}
+            [data-testid="stSidebarContent"] {{ padding: .9rem .72rem .8rem .72rem; }}
 
             .block-container {{
-                padding-top: .65rem;
-                padding-bottom: 1.25rem;
-                padding-left: 1rem;
-                padding-right: 1rem;
+                padding-top: .35rem;
+                padding-bottom: .75rem;
+                padding-left: .75rem;
+                padding-right: .75rem;
                 max-width: {max_width};
             }}
 
@@ -104,13 +104,13 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 display: flex;
                 align-items: center;
                 gap: 11px;
-                padding: 5px 7px 16px 7px;
+                padding: 3px 5px 12px 5px;
                 margin-bottom: 5px;
                 border-bottom: 1px solid rgba(255,255,255,.08);
             }}
             .gf-brand-mark {{
-                width: 34px;
-                height: 34px;
+                width: 30px;
+                height: 30px;
                 border-radius: 10px;
                 background: linear-gradient(145deg, #13b7ad, #38d0ae);
                 display: flex;
@@ -124,19 +124,19 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             .gf-brand-mark span:nth-child(1) {{ height: 9px; opacity:.8; }}
             .gf-brand-mark span:nth-child(2) {{ height: 15px; }}
             .gf-brand-mark span:nth-child(3) {{ height: 21px; opacity:.9; }}
-            .gf-brand-title {{ color:#fff; font-size:1.04rem; font-weight:800; line-height:1.1; }}
-            .gf-brand-sub {{ color:#9fb7cf; font-size:.70rem; margin-top:2px; }}
+            .gf-brand-title {{ color:#fff; font-size:.98rem; font-weight:800; line-height:1.1; }}
+            .gf-brand-sub {{ color:#9fb7cf; font-size:.64rem; margin-top:2px; }}
 
             [data-testid="stSidebar"] .stButton > button {{
                 justify-content: flex-start !important;
                 width: 100% !important;
-                min-height: 39px !important;
+                min-height: 34px !important;
                 border-radius: 8px !important;
                 border: 0 !important;
-                padding: .35rem .70rem !important;
+                padding: .28rem .58rem !important;
                 box-shadow: none !important;
                 font-weight: 650 !important;
-                font-size: .84rem !important;
+                font-size: .79rem !important;
                 transition: all .12s ease;
             }}
             [data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"] {{
@@ -169,7 +169,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 border: 1px solid rgba(255,255,255,.07);
             }}
             .gf-trust-title {{ color:#f5fbff; font-size:.79rem; font-weight:800; margin-bottom:4px; }}
-            .gf-trust-text {{ color:#9fb7cf; font-size:.69rem; line-height:1.42; }}
+            .gf-trust-text {{ color:#9fb7cf; font-size:.65rem; line-height:1.42; }}
             .gf-status {{
                 display:inline-flex;
                 align-items:center;
@@ -188,7 +188,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 justify-content:space-between;
                 align-items:flex-end;
                 gap: 18px;
-                padding: .20rem .15rem .55rem .15rem;
+                padding: .08rem .05rem .35rem .05rem;
             }}
             .gf-page-eyebrow {{
                 color:var(--teal);
@@ -200,22 +200,22 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             }}
             .gf-page-title {{
                 color:var(--text);
-                font-size:1.62rem;
+                font-size:1.48rem;
                 font-weight:850;
                 line-height:1.05;
                 margin:0;
             }}
-            .gf-page-subtitle {{ color:var(--muted); font-size:.82rem; margin:4px 0 0; }}
+            .gf-page-subtitle {{ color:var(--muted); font-size:.71rem; margin:4px 0 0; }}
             .gf-month {{
                 display:inline-flex;
                 align-items:center;
                 gap:7px;
-                padding:7px 10px;
+                padding:6px 9px;
                 border:1px solid var(--border);
                 border-radius:9px;
                 background:#fff;
                 color:#31506f;
-                font-size:.76rem;
+                font-size:.71rem;
                 font-weight:700;
                 white-space:nowrap;
             }}
@@ -223,10 +223,10 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             .gf-card {{
                 background:#fff;
                 border:1px solid var(--border);
-                border-radius:11px;
-                padding:12px 12px 10px;
+                border-radius:12px;
+                padding:11px 11px 9px;
                 box-shadow:var(--shadow);
-                min-height:116px;
+                min-height:104px;
                 height:100%;
             }}
             .gf-card-tonal-success {{ background:linear-gradient(180deg,#f0fbf7,#ffffff); }}
@@ -256,13 +256,13 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             }}
             .gf-card-value {{
                 color:var(--text);
-                font-size:1.22rem;
+                font-size:1.16rem;
                 line-height:1.05;
                 font-weight:850;
                 margin-bottom:6px;
                 white-space:nowrap;
             }}
-            .gf-card-footnote {{ color:#78899c; font-size:.65rem; line-height:1.35; }}
+            .gf-card-footnote {{ color:#78899c; font-size:.62rem; line-height:1.35; }}
             .gf-card-trend-up {{ color:var(--success); font-weight:850; }}
             .gf-card-trend-down {{ color:var(--danger); font-weight:850; }}
 
@@ -273,11 +273,11 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 box-shadow:var(--shadow);
             }}
             div[data-testid="stVerticalBlockBorderWrapper"] > div {{
-                padding-top:.75rem;
-                padding-bottom:.65rem;
+                padding-top:.58rem;
+                padding-bottom:.50rem;
             }}
-            .gf-section-title {{ color:var(--text); font-size:.87rem; font-weight:850; margin-bottom:2px; }}
-            .gf-section-caption {{ color:var(--muted); font-size:.69rem; margin-bottom:.45rem; }}
+            .gf-section-title {{ color:var(--text); font-size:.82rem; font-weight:850; margin-bottom:2px; }}
+            .gf-section-caption {{ color:var(--muted); font-size:.65rem; margin-bottom:.45rem; }}
 
             .stDataFrame, div[data-testid="stTable"] {{
                 border:1px solid var(--border);
@@ -288,7 +288,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 background:linear-gradient(90deg,var(--teal),var(--success));
             }}
             .gf-checklist {{ margin:0; padding-left:.9rem; color:var(--muted); }}
-            .gf-checklist li {{ margin:.18rem 0; font-size:.70rem; }}
+            .gf-checklist li {{ margin:.18rem 0; font-size:.64rem; }}
             .gf-footer-note {{ text-align:center; color:#8998aa; font-size:.67rem; margin-top:.65rem; }}
             .gf-empty-note {{
                 margin: .35rem 0 .55rem;
@@ -438,15 +438,15 @@ def metric_card(
 
 
 def show_metric_grid(cards: list[str], view_mode: str = "Desktop") -> None:
-    cols_per_row = 6 if view_mode == "Desktop" else 1
-    total_rows = math.ceil(len(cards) / cols_per_row)
-    for row in range(total_rows):
-        cols = st.columns(cols_per_row, gap="small")
-        start = row * cols_per_row
-        end = start + cols_per_row
-        for col, card in zip(cols, cards[start:end]):
-            with col:
-                st.markdown(card, unsafe_allow_html=True)
+    if view_mode == "Desktop":
+        st.markdown(
+            "<div class='gf-metric-grid'>" + "".join(cards) + "</div>",
+            unsafe_allow_html=True,
+        )
+        return
+
+    for card in cards:
+        st.markdown(card, unsafe_allow_html=True)
 
 
 def section_header(title: str, caption: str = "") -> None:
