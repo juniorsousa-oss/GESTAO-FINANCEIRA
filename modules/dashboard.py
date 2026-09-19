@@ -298,7 +298,7 @@ def render(view_mode: str = "Desktop") -> None:
                     "▥  Evolução Financeira Mensal",
                     "Receitas, despesas e saldo nos últimos seis meses.",
                 )
-                st.altair_chart(_finance_chart(monthly), use_container_width=True)
+                st.altair_chart(_finance_chart(monthly).properties(height=182 if view_mode == "Desktop" else 215), use_container_width=True)
 
         with chart_right:
             with st.container(border=True):
@@ -306,7 +306,7 @@ def render(view_mode: str = "Desktop") -> None:
                     "◉  Despesas por Categoria",
                     "Distribuição das saídas registradas.",
                 )
-                st.altair_chart(_category_chart(movements), use_container_width=True)
+                st.altair_chart(_category_chart(movements).properties(height=182 if view_mode == "Desktop" else 215), use_container_width=True)
 
     # Camada independente para previsões e conciliação; mesmas margens e padding.
     with st.container(border=True):
@@ -332,7 +332,7 @@ def render(view_mode: str = "Desktop") -> None:
                     table,
                     hide_index=True,
                     use_container_width=True,
-                    height=150,
+                    height=145 if view_mode == "Desktop" else 150,
                 )
 
         with bottom_right:
