@@ -442,6 +442,24 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         /* Uma só régua de espaçamento para os seis KPIs e as faixas do Dashboard. */
         :root { --gf-dashboard-gap: 12px; }
 
+        /* Camada única para KPIs: a moldura controla o respiro externo,
+           enquanto a grade controla exclusivamente a distância entre os cards. */
+        .gf-kpi-layer {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            margin: 8px 0 18px;
+            padding: 12px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: #edf3f8;
+        }
+
+        .gf-kpi-layer .gf-kpi-grid {
+            margin: 0;
+        }
+
         .gf-kpi-grid {
             display: grid;
             grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -830,7 +848,13 @@ def show_metric_grid(cards: list[str], view_mode: str = "Desktop") -> None:
 
     layout = "gf-kpi-grid--mobile" if view_mode == "Mobile" else ""
     # Um único bloco HTML evita margens individuais do Markdown/colunas Streamlit.
-    html = f'<div class="gf-kpi-grid {layout}">' + "".join(card.strip() for card in cards) + "</div>"
+    # Todos os cards vivem na mesma camada, com padding e margem próprios.
+    # O HTML é emitido num único bloco para não criar wrappers/colunas por card.
+    html = (
+        f'<section class="gf-kpi-layer"><div class="gf-kpi-grid {layout}">'
+        + "".join(card.strip() for card in cards)
+        + "</div></section>"
+    )
     st.markdown(html, unsafe_allow_html=True)
 
 
