@@ -122,6 +122,7 @@ def render(view_mode: str = "Desktop"):
         metric_card("Dívida em Aberto", brl(divida_aberta), "passivo atual", "danger", "▧"),
     ]
     show_metric_grid(cards, view_mode=view_mode)
+    st.markdown("<div class='gf-gap-md'></div>", unsafe_allow_html=True)
 
     chart_slots = st.columns([1.58, .72], gap="small") if view_mode == "Desktop" else [st.container(), st.container()]
     chart_left, chart_right = chart_slots
@@ -160,7 +161,7 @@ def render(view_mode: str = "Desktop"):
                 y=alt.Y("Saldo:Q"),
                 tooltip=["Competência", alt.Tooltip("Saldo:Q", format=",.2f")],
             )
-            st.altair_chart((bars + line).properties(height=155), use_container_width=True)
+            st.altair_chart((bars + line).properties(height=175), use_container_width=True)
 
     with chart_right:
         with st.container(border=True):
@@ -196,8 +197,10 @@ def render(view_mode: str = "Desktop"):
                     alt.Tooltip("category", title="Categoria"),
                     alt.Tooltip("value", title="Valor", format=",.2f"),
                 ],
-            ).properties(height=155)
+            ).properties(height=175)
             st.altair_chart(pie, use_container_width=True)
+
+    st.markdown("<div class='gf-gap-md'></div>", unsafe_allow_html=True)
 
     bottom_slots = st.columns([1.58, .72], gap="small") if view_mode == "Desktop" else [st.container(), st.container()]
     bottom_left, bottom_right = bottom_slots
@@ -208,7 +211,7 @@ def render(view_mode: str = "Desktop"):
             table = _forecast_table(forecasts)
             if table.empty:
                 st.caption("Nenhuma previsão carregada ainda.")
-            st.dataframe(table, hide_index=True, use_container_width=True, height=118)
+            st.dataframe(table, hide_index=True, use_container_width=True, height=132)
 
     with bottom_right:
         with st.container(border=True):
@@ -229,7 +232,7 @@ def render(view_mode: str = "Desktop"):
             )
             st.markdown(
                 f"""
-                <div style='font-size:.75rem;font-weight:800;color:#244663;margin-bottom:6px;'>Dados conciliados</div>
+                <div style='font-size:.75rem;font-weight:800;color:#244663;margin-bottom:8px;'>Dados conciliados</div>
                 <ul class='gf-checklist'>
                     <li>Movimentações separadas das previsões</li>
                     <li>Saldos localizados comparados ao sistema</li>
