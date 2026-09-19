@@ -70,44 +70,34 @@ def render_sidebar_toggle() -> None:
         args=(not opened,),
     )
 
-    # Um único valor de largura governa a lateral e o recuo do conteúdo.
-    # A faixa superior permanece independente, com a logo sempre visível.
+    # Este painel pertence ao aplicativo, e não à sidebar nativa do
+    # Streamlit. Os botões internos continuam ativos em ambos os estados.
     selected_width = max(220, min(600, int(st.session_state.get("gf_sidebar_width", 320))))
     width = f"min({selected_width}px, 90vw)" if opened else "0px"
     opacity = "1" if opened else "0"
     pointer_events = "auto" if opened else "none"
-    border = "1px" if opened else "0px"
     st.markdown(
         f"""
         <style>
-            section[data-testid="stSidebar"] {{
-                display: flex !important;
-                visibility: visible !important;
-                transform: none !important;
+            .st-key-gf_custom_side {{
                 width: {width} !important;
                 min-width: {width} !important;
                 max-width: {width} !important;
                 opacity: {opacity} !important;
                 pointer-events: {pointer_events} !important;
-                border-right-width: {border} !important;
             }}
-            /* O corpo e os widgets internos não podem manter a largura
-               que o Streamlit atribuiu antes da preferência do usuário. */
-            section[data-testid="stSidebar"] > div,
-            section[data-testid="stSidebar"] > div > div,
-            section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
-            section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
-                width: {width} !important;
-                min-width: {width} !important;
-                max-width: {width} !important;
-                box-sizing: border-box !important;
+            .st-key-gf_custom_side button,
+            .st-key-gf_custom_side input,
+            .st-key-gf_custom_side label {{
+                pointer-events: {pointer_events} !important;
             }}
-            [data-testid="stMain"] {{
-                margin-left: {width} !important;
-                width: calc(100% - {width}) !important;
-                max-width: calc(100% - {width}) !important;
-                min-width: 0 !important;
-                flex: 1 1 auto !important;
+            @media (min-width: 901px) {{
+                [data-testid="stMain"] {{
+                    margin-left: {width} !important;
+                    width: calc(100% - {width}) !important;
+                    max-width: calc(100% - {width}) !important;
+                    min-width: 0 !important;
+                }}
             }}
             @media (max-width: 900px) {{
                 [data-testid="stMain"] {{
@@ -331,9 +321,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             font-weight: 500;
         }
 
-        /* Restabelece Share, favoritos, edição, GitHub e menu originais.
-           Só ocultamos os botões NATIVOS da sidebar, porque já existe
-           um único controle próprio com fragmento e estado sincronizado. */
+        /* A sidebar nativa não é usada; evitar botão duplicado no celular
+           preservando as ações normais da toolbar (Share/GitHub). */
         [data-testid="stSidebarCollapsedControl"],
         [data-testid="collapsedControl"],
         [data-testid="stSidebarCollapseButton"],
@@ -526,144 +515,104 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             box-sizing: border-box !important;
         }
 
-        /* O menu começa ABAIXO do cabeçalho: a marca e o nome nunca ficam
-           cobertos, independentemente da largura escolhida em Configurações. */
-        section[data-testid="stSidebar"] {
+        /* Painel independente do st.sidebar: um só estado de navegação e
+           somente um controle de abertura, inclusive no celular. */
+        .st-key-gf_custom_side {
             position: fixed !important;
             top: 70px !important;
             bottom: 0 !important;
             left: 0 !important;
             height: calc(100dvh - 70px) !important;
             max-height: calc(100dvh - 70px) !important;
+            box-sizing: border-box !important;
+            padding: 14px 12px 18px !important;
             background: linear-gradient(180deg, var(--nav) 0%, var(--nav-2) 100%) !important;
-            border-right: 1px solid rgba(255,255,255,.06) !important;
-            box-sizing: border-box !important;
-            overflow: hidden !important;
-            z-index: 2147482000 !important;
-            pointer-events: auto !important;
-            transition: width .23s ease, min-width .23s ease,
-                        max-width .23s ease, opacity .18s ease !important;
-        }
-        [data-testid="stMain"] {
-            transition: margin-left .23s ease, width .23s ease, max-width .23s ease !important;
-        }
-
-        /* O scroll pertence ao painel todo, não ao antigo contêiner de
-           largura padrão (~210 px); acompanha a borda enquanto redimensiona. */
-        section[data-testid="stSidebar"] > div,
-        section[data-testid="stSidebar"] > div > div,
-        section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
-        section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
-            width: 100% !important;
-            max-width: 100% !important;
-            min-width: 0 !important;
-            flex: 1 1 auto !important;
-            box-sizing: border-box !important;
-        }
-        section[data-testid="stSidebar"] > div,
-        section[data-testid="stSidebar"] > div > div {
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-        }
-        section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
-            height: 100% !important;
+            border-right: 1px solid rgba(255,255,255,.08) !important;
+            border-radius: 0 !important;
             overflow-x: hidden !important;
             overflow-y: auto !important;
             scrollbar-gutter: stable;
-            pointer-events: auto !important;
+            z-index: 100020 !important;
+            transition: width .23s ease, min-width .23s ease,
+                        max-width .23s ease, opacity .18s ease !important;
         }
-        section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
-        section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] button {
-            pointer-events: auto !important;
+        /* Não reservar uma segunda coluna vazia no fluxo da página. */
+        [data-testid="stElementContainer"]:has(> .st-key-gf_custom_side) {
+            height: 0 !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
         }
-        section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
-            overflow-x: hidden !important;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            section[data-testid="stSidebar"] { transition: none !important; }
-        }
-
-        [data-testid="stSidebarUserContent"],
-        [data-testid="stSidebarContent"] {
-            padding: 12px 0 14px !important;
-        }
-
-        /* Navegação compacta como a referência: ícone em coluna própria,
-           texto alinhado à esquerda e destaque discreto só no botão ativo. */
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        .st-key-gf_custom_side [data-testid="stVerticalBlock"] {
             gap: 5px !important;
+            width: 100% !important;
+            min-width: 0 !important;
         }
-        [data-testid="stSidebar"] .stButton {
+        .st-key-gf_custom_side .stButton {
             width: min(100%, 290px) !important;
             max-width: min(100%, 290px) !important;
             min-width: 0 !important;
-            padding: 0 12px !important;
+            padding: 0 !important;
             margin: 0 !important;
             box-sizing: border-box !important;
-            pointer-events: auto !important;
         }
-        [data-testid="stSidebar"] .stButton > button,
-        [data-testid="stSidebar"] .stButton > button * {
-            pointer-events: auto !important;
-        }
-        [data-testid="stSidebar"] .stButton > button {
-            display: flex !important;
+        .st-key-gf_custom_side .stButton > button {
             width: 100% !important;
             min-width: 0 !important;
             height: 39px !important;
             min-height: 39px !important;
+            display: flex !important;
             align-items: center !important;
             justify-content: flex-start !important;
-            gap: 12px !important;
+            gap: 10px !important;
             padding: 0 11px !important;
             border: 0 !important;
             border-radius: 8px !important;
             box-shadow: none !important;
+            text-align: left !important;
             font-size: 12px !important;
             font-weight: 500 !important;
-            text-align: left !important;
             white-space: nowrap !important;
-            overflow: visible !important;
+            cursor: pointer !important;
         }
-        [data-testid="stSidebar"] .stButton > button p {
-            display: block !important;
+        .st-key-gf_custom_side .stButton > button p {
             min-width: 0 !important;
-            overflow: visible !important;
-            text-overflow: clip !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
             white-space: nowrap !important;
             margin: 0 !important;
             text-align: left !important;
+            color: inherit !important;
             font-size: inherit !important;
-            font-weight: inherit !important;
         }
-        [data-testid="stSidebar"] .stButton > button span[data-testid="stIconMaterial"],
-        [data-testid="stSidebar"] .stButton > button [data-testid="stIconMaterial"],
-        [data-testid="stSidebar"] .stButton > button svg {
+        .st-key-gf_custom_side .stButton > button [data-testid="stIconMaterial"],
+        .st-key-gf_custom_side .stButton > button svg {
             flex: 0 0 18px !important;
             width: 18px !important;
             height: 18px !important;
             font-size: 18px !important;
             color: currentColor !important;
         }
-        [data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"] {
+        .st-key-gf_custom_side button[data-testid="stBaseButton-secondary"] {
             color: #e2edf8 !important;
             background: transparent !important;
         }
-        [data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"]:hover {
-            color: #fff !important;
+        .st-key-gf_custom_side button[data-testid="stBaseButton-secondary"]:hover {
+            color: #ffffff !important;
             background: rgba(255,255,255,.065) !important;
         }
-        [data-testid="stSidebar"] button[data-testid="stBaseButton-primary"] {
-            color: #fff !important;
+        .st-key-gf_custom_side button[data-testid="stBaseButton-primary"] {
+            color: #ffffff !important;
             background: #204a70 !important;
             border-left: 3px solid var(--accent) !important;
-            padding-left: 8px !important;
             font-weight: 650 !important;
         }
-        [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
-        [data-testid="stSidebar"] [role="radiogroup"] label p {
+        .st-key-gf_custom_side [data-testid="stWidgetLabel"] p,
+        .st-key-gf_custom_side [role="radiogroup"] label p {
             color: #e2edf8 !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .st-key-gf_custom_side { transition: none !important; }
         }
 
         .gf-trust {
@@ -1071,8 +1020,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             }
 
             .gf-brand { margin: 10px 11px 8px; padding-bottom: 11px; }
-            [data-testid="stSidebar"] .stButton { padding: 0 12px !important; }
-            [data-testid="stSidebar"] .stButton > button {
+            .st-key-gf_custom_side .stButton > button {
                 height: 38px !important;
                 min-height: 38px !important;
                 font-size: 12px !important;
@@ -1149,13 +1097,11 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             .gf-header-user { gap: 5px; font-size: 10px; }
             .gf-header-user-avatar { width: 25px; height: 25px; font-size: 10px; border-width: 1px; }
             .gf-header-user-caption { display: none; }
-            section[data-testid="stSidebar"] {
+            .st-key-gf_custom_side {
                 top: 110px !important;
                 height: calc(100dvh - 110px) !important;
                 max-height: calc(100dvh - 110px) !important;
             }
-            [data-testid="stSidebarUserContent"],
-            [data-testid="stSidebarContent"] { padding-top: 12px !important; }
             .st-key-gf_sidebar_toggle { top: 12px !important; left: 7px !important; }
 
             .block-container {
@@ -1204,7 +1150,9 @@ def render_sidebar(is_db_configured: bool) -> str:
         current = "Dashboard"
         st.session_state["current_page"] = current
 
-    with st.sidebar:
+    # Navegação própria: não renderizar st.sidebar, cuja expansão nativa
+    # divergia do estado do botão e deixava widgets visíveis porém inertes.
+    with st.container(key="gf_custom_side"):
         for option in NAV_OPTIONS:
             st.button(
                 option,
