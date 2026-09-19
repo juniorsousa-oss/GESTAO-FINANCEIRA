@@ -2,7 +2,7 @@ import streamlit as st
 
 from modules import configuracoes, dashboard, dividas, importacao, movimentacoes, previsoes, saldos
 from services.db import is_configured
-from services.ui import inject_global_css, render_page_header, render_sidebar
+from services.ui import inject_global_css, render_app_header, render_page_header, render_sidebar
 
 
 st.set_page_config(
@@ -28,6 +28,7 @@ PAGE_META = {
 }
 
 inject_global_css(st.session_state["view_mode"])
+render_app_header()
 page = render_sidebar(is_configured())
 view_mode = st.session_state.get("view_mode", "Desktop")
 
