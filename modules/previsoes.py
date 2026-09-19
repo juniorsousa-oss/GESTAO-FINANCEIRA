@@ -10,8 +10,6 @@ from services.finance import brl, current_competence, normalize_competence_optio
 
 
 def render():
-    st.title("Contas e Previsões")
-    st.caption("Agenda financeira de entradas e saídas futuras, separada do caixa realizado.")
 
     rows = select_rows(TABLES["forecasts"], order="due_date.asc")
     df = to_df(rows)
