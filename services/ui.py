@@ -68,10 +68,10 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         /* Mantém apenas a estrutura necessária para recolher/abrir a sidebar. */
         header[data-testid="stHeader"] {
-            height: 3.05rem !important;
-            min-height: 3.05rem !important;
+            height: 2.85rem !important;
+            min-height: 2.85rem !important;
             background: var(--bg) !important;
-            border-bottom: 1px solid rgba(221,230,239,.70) !important;
+            border-bottom: 1px solid rgba(221,230,239,.55) !important;
             backdrop-filter: none;
         }
 
@@ -172,7 +172,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         .block-container {
             width: 100% !important;
             max-width: __MAX_WIDTH__ !important;
-            padding: 18px 14px 16px !important;
+            padding: 20px 14px 16px !important;
             box-sizing: border-box !important;
             overflow: visible !important;
         }
@@ -323,16 +323,16 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         /* Topbar customizado: mais baixo e sem bloco excessivo. */
         div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) {
             background:var(--bg);
-            border:1px solid rgba(221,230,239,.78) !important;
+            border:1px solid rgba(221,230,239,.62) !important;
             border-radius:12px !important;
             box-shadow:none;
-            margin:6px 4px 10px !important;
+            margin:10px 4px 12px !important;
             overflow:visible !important;
             box-sizing:border-box !important;
         }
 
         div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) > div {
-            padding:7px 10px !important;
+            padding:8px 12px !important;
             overflow:visible !important;
             border-radius:12px !important;
         }
@@ -345,32 +345,32 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         .gf-search {
-            height:31px;
-            background:rgba(255,255,255,.48);
-            border:1px solid rgba(221,230,239,.90);
-            border-radius:7px;
+            height:28px;
+            background:rgba(255,255,255,.52);
+            border:1px solid rgba(221,230,239,.88);
+            border-radius:8px;
             display:flex;
             align-items:center;
             gap:7px;
             padding:0 10px;
             color:#8795a7;
-            font-size:10px;
+            font-size:9px;
         }
 
         .gf-top-layout-label {
-            height:31px;
+            height:28px;
             display:flex;
             align-items:center;
             justify-content:flex-end;
             color:#5e7086;
-            font-size:9px;
+            font-size:8.5px;
             font-weight:750;
         }
 
         .block-container > div > div > div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"]:first-of-type .stButton > button {
-            min-height:31px !important;
-            height:31px !important;
-            border-radius:7px !important;
+            min-height:28px !important;
+            height:28px !important;
+            border-radius:8px !important;
             padding:0 10px !important;
             font-size:9px !important;
             font-weight:750 !important;
@@ -390,8 +390,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         .gf-top-icon {
-            width:30px;
-            height:30px;
+            width:28px;
+            height:28px;
             border-radius:50%;
             border:1px solid rgba(221,230,239,.90);
             display:flex;
@@ -399,7 +399,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             justify-content:center;
             color:#244766;
             background:rgba(255,255,255,.42);
-            font-size:12px;
+            font-size:11px;
             margin:auto;
         }
 
@@ -407,26 +407,26 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             display:flex;
             align-items:center;
             gap:7px;
-            min-height:31px;
-            padding-left:9px;
+            min-height:28px;
+            padding-left:10px;
             border-left:1px solid #e5ebf1;
         }
 
         .gf-avatar {
-            width:27px;
-            height:27px;
+            width:26px;
+            height:26px;
             border-radius:50%;
             display:flex;
             align-items:center;
             justify-content:center;
             background:#0d3158;
             color:#fff;
-            font-size:9px;
+            font-size:8.5px;
             font-weight:800;
         }
 
-        .gf-user-name { color:#16314e; font-size:9px; font-weight:800; line-height:1.05; }
-        .gf-user-sub { color:#8a98a8; font-size:7.5px; margin-top:2px; }
+        .gf-user-name { color:#16314e; font-size:8.8px; font-weight:800; line-height:1.05; }
+        .gf-user-sub { color:#8a98a8; font-size:7px; margin-top:2px; }
 
         .gf-page-header {
             display:grid;
@@ -632,7 +632,7 @@ def render_topbar(page: str, view_mode: str) -> None:
     with st.container(border=True):
         st.markdown("<div class='gf-topbar-marker'></div>", unsafe_allow_html=True)
         c_search, c_label, c_desktop, c_mobile, c_icon, c_user = st.columns(
-            [4.8, .55, .72, .72, .42, 1.2],
+            [5.4, .55, .72, .72, .42, 1.35],
             gap="small",
             vertical_alignment="center",
         )
