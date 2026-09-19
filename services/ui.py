@@ -618,7 +618,25 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             gap: var(--gf-dashboard-gap) !important;
         }
 
-        /* Separadores antigos deixavam distâncias diferentes entre as faixas. */
+        /* Espaçamento físico entre faixas: não depende das margens dos cards. */
+        .gf-dashboard-band-gap {
+            display: block !important;
+            height: 12px !important;
+            min-height: 12px !important;
+            flex-shrink: 0 !important;
+        }
+
+        /* As faixas ocupam toda a largura disponível sem invadir a próxima. */
+        .st-key-gf_dashboard_kpis,
+        .st-key-gf_dashboard_charts,
+        .st-key-gf_dashboard_bottom {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        .gf-kpi-layer { margin: 0 !important; }
+
         .gf-gap { display: none !important; }
 
         /* COMPONENTES PADRÃO DAS PÁGINAS INTERNAS */
@@ -743,7 +761,6 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             /* Cada camada decide seu padding e suas margens.
                Evita somar margens externas a gaps globais do Streamlit. */
             .gf-kpi-layer {
-                margin: 0 !important;
                 padding: 10px;
                 border-radius: 12px;
             }
