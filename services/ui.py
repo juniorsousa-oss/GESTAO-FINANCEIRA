@@ -43,7 +43,7 @@ def _set_view(view: str) -> None:
 
 
 def inject_global_css(view_mode: str = "Desktop") -> None:
-    max_width = "1500px" if view_mode == "Desktop" else "760px"
+    max_width = "100%" if view_mode == "Desktop" else "760px"
     css = """
     <style>
         :root {
@@ -161,9 +161,19 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             fill: currentColor !important;
         }
 
+        [data-testid="stAppViewContainer"],
+        [data-testid="stMain"],
+        main {
+            width: 100% !important;
+            max-width: none !important;
+            flex: 1 1 auto !important;
+        }
+
         .block-container {
-            max-width: __MAX_WIDTH__;
+            width: 100% !important;
+            max-width: __MAX_WIDTH__ !important;
             padding: 12px 13px 16px !important;
+            box-sizing: border-box !important;
         }
 
         section[data-testid="stSidebar"],
@@ -173,12 +183,41 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             min-width: 214px !important;
             width: 214px !important;
             max-width: 214px !important;
+            transition: width .18s ease, min-width .18s ease, max-width .18s ease !important;
         }
 
         section[data-testid="stSidebar"] > div,
         [data-testid="stSidebar"] > div:first-child {
             width: 214px !important;
             padding: 0 !important;
+        }
+
+        /* Quando recolhida, a sidebar não pode continuar reservando 214px. */
+        section[data-testid="stSidebar"][aria-expanded="false"],
+        [data-testid="stSidebar"][aria-expanded="false"] {
+            min-width: 0 !important;
+            width: 0 !important;
+            max-width: 0 !important;
+            flex: 0 0 0 !important;
+            border-right: 0 !important;
+            overflow: hidden !important;
+        }
+
+        section[data-testid="stSidebar"][aria-expanded="false"] > div,
+        [data-testid="stSidebar"][aria-expanded="false"] > div:first-child {
+            width: 0 !important;
+            min-width: 0 !important;
+            max-width: 0 !important;
+            overflow: hidden !important;
+        }
+
+        /* Compatibilidade com versões do Streamlit que recolhem por transform/estado. */
+        section[data-testid="stSidebar"]:not([aria-expanded="true"]):has(+ * [data-testid="collapsedControl"]),
+        [data-testid="stSidebar"]:not([aria-expanded="true"]):has(+ * [data-testid="collapsedControl"]) {
+            min-width: 0 !important;
+            width: 0 !important;
+            max-width: 0 !important;
+            flex-basis: 0 !important;
         }
 
         [data-testid="stSidebarUserContent"],
