@@ -70,9 +70,9 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         header[data-testid="stHeader"] {
             height: 3.05rem !important;
             min-height: 3.05rem !important;
-            background: rgba(255,255,255,.98) !important;
-            border-bottom: 1px solid #e5ebf2 !important;
-            backdrop-filter: blur(8px);
+            background: var(--bg) !important;
+            border-bottom: 1px solid rgba(221,230,239,.70) !important;
+            backdrop-filter: none;
         }
 
         footer {
@@ -145,9 +145,9 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             min-width: 34px !important;
             min-height: 34px !important;
             padding: 0 !important;
-            background: #ffffff !important;
+            background: var(--bg) !important;
             color: #173955 !important;
-            border: 1px solid #dfe7ef !important;
+            border: 1px solid rgba(221,230,239,.90) !important;
             border-radius: 8px !important;
             box-shadow: 0 4px 12px rgba(17,48,82,.12) !important;
         }
@@ -321,10 +321,10 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         /* Topbar customizado: mais baixo e sem bloco excessivo. */
         div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) {
-            background:#fff;
-            border:1px solid var(--border) !important;
+            background:var(--bg);
+            border:1px solid rgba(221,230,239,.75) !important;
             border-radius:11px !important;
-            box-shadow:var(--shadow);
+            box-shadow:none;
             margin:0 0 8px !important;
         }
 
@@ -336,8 +336,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         .gf-search {
             height:31px;
-            background:#f6f8fb;
-            border:1px solid #e2e9f1;
+            background:rgba(255,255,255,.48);
+            border:1px solid rgba(221,230,239,.90);
             border-radius:7px;
             display:flex;
             align-items:center;
@@ -374,8 +374,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         .block-container button[data-testid="stBaseButton-secondary"] {
-            background:#f8fafc !important;
-            border:1px solid #e2e9f1 !important;
+            background:rgba(255,255,255,.42) !important;
+            border:1px solid rgba(221,230,239,.90) !important;
             color:#53677d !important;
         }
 
@@ -383,12 +383,12 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             width:30px;
             height:30px;
             border-radius:50%;
-            border:1px solid #e2e9f1;
+            border:1px solid rgba(221,230,239,.90);
             display:flex;
             align-items:center;
             justify-content:center;
             color:#244766;
-            background:#fff;
+            background:rgba(255,255,255,.42);
             font-size:12px;
             margin:auto;
         }
