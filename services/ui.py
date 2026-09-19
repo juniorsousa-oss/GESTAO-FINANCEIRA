@@ -566,7 +566,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             min-width: 0 !important;
             height: 39px !important;
             min-height: 39px !important;
-            padding: 0 8px !important;
+            padding: 0 8px 0 48px !important; /* ícone e texto avançam 40px, sem mover o botão */
             border: 0 !important;
             border-radius: 8px !important;
             box-shadow: none !important;
