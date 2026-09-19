@@ -28,7 +28,7 @@ NAV_ICONS = {
 
 
 def inject_global_css(view_mode: str = "Desktop") -> None:
-    max_width = "1480px" if view_mode == "Desktop" else "760px"
+    max_width = "1760px" if view_mode == "Desktop" else "860px"
     st.markdown(
         f"""
         <style>
@@ -47,46 +47,86 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 --warning: #f29f3d;
                 --shadow: 0 10px 24px rgba(13, 46, 85, 0.08);
             }}
+
             .stApp {{
-                background: linear-gradient(180deg, #edf3f9 0%, #f6f9fc 60%, #f4f8fb 100%);
+                background: linear-gradient(180deg, #eef3f8 0%, #f5f8fc 100%);
             }}
-            .block-container {{
-                padding-top: 1.2rem;
-                padding-bottom: 2.5rem;
-                max-width: {max_width};
+
+            /* Remove toda a barra superior nativa do Streamlit */
+            header[data-testid="stHeader"],
+            [data-testid="stToolbar"],
+            [data-testid="stAppToolbar"],
+            [data-testid="stDecoration"],
+            .stAppDeployButton,
+            #MainMenu,
+            footer {{
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
             }}
+
+            /* Mantém o menu lateral fixo, aberto e sem controles de recolhimento */
+            [data-testid="collapsedControl"],
+            [data-testid="stSidebarCollapseButton"],
+            button[aria-label="Close sidebar"],
+            button[aria-label="Open sidebar"] {{
+                display: none !important;
+                visibility: hidden !important;
+            }}
+
             [data-testid="stSidebar"] {{
-                background: linear-gradient(180deg, #0a1e39 0%, #0e2b52 55%, #10243f 100%);
+                background: linear-gradient(180deg, #071c36 0%, #0c2f59 52%, #0c2647 100%);
                 border-right: 1px solid rgba(255,255,255,.06);
+                min-width: 300px !important;
+                width: 300px !important;
+                max-width: 300px !important;
+                transform: none !important;
             }}
+
+            [data-testid="stSidebar"] > div:first-child {{
+                width: 300px !important;
+            }}
+
             [data-testid="stSidebar"] * {{ color: #e7eef7; }}
             [data-testid="stSidebarNav"] {{ display:none; }}
-            .gf-brand {{
-                background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
-                border: 1px solid rgba(255,255,255,0.08);
-                border-radius: 20px;
-                padding: 18px 16px;
-                box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
-                margin-bottom: 10px;
+
+            .block-container {{
+                padding-top: .7rem;
+                padding-bottom: 1.8rem;
+                max-width: {max_width};
             }}
+
+            .gf-brand {{
+                background: linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.03));
+                border: 1px solid rgba(255,255,255,0.10);
+                border-radius: 20px;
+                padding: 19px 16px;
+                box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+                margin-bottom: 12px;
+            }}
+
             .gf-brand h2 {{
                 color: #ffffff !important;
-                font-size: 1.45rem;
+                font-size: 1.42rem;
                 line-height: 1.1;
-                margin: 0 0 4px 0;
+                margin: 0 0 7px 0;
             }}
+
             .gf-brand p {{
-                color: #bbcee5;
+                color: #cad8ea;
                 font-size: .86rem;
                 margin: 0;
+                line-height: 1.45;
             }}
+
             .gf-sidebar-box {{
                 background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
                 border: 1px solid rgba(255,255,255,0.08);
-                border-radius: 18px;
-                padding: 14px 14px;
-                margin-top: 14px;
+                border-radius: 16px;
+                padding: 13px 13px;
+                margin-top: 12px;
             }}
+
             .gf-status-pill {{
                 display: inline-block;
                 padding: 6px 10px;
@@ -95,39 +135,66 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 font-size: .80rem;
                 margin-top: 4px;
             }}
-            .gf-status-ok {{ background: rgba(22,166,161,.18); color: #8ff1ea; border: 1px solid rgba(143,241,234,.18); }}
-            .gf-status-test {{ background: rgba(242,159,61,.18); color: #ffd5a2; border: 1px solid rgba(255,213,162,.16); }}
-            [data-testid="stRadio"] label p {{ font-size: .95rem !important; font-weight: 600; }}
-            [data-testid="stRadio"] > div {{ gap: 0.55rem; }}
-            .gf-topbar {{
-                background: rgba(255,255,255,.88);
-                border: 1px solid var(--border);
-                border-radius: 22px;
-                padding: 18px 20px;
-                box-shadow: var(--shadow);
-                margin-bottom: 16px;
-                backdrop-filter: blur(6px);
+
+            .gf-status-ok {{
+                background: rgba(22,166,161,.18);
+                color: #8ff1ea;
+                border: 1px solid rgba(143,241,234,.18);
             }}
+
+            .gf-status-test {{
+                background: rgba(242,159,61,.18);
+                color: #ffd5a2;
+                border: 1px solid rgba(255,213,162,.16);
+            }}
+
+            [data-testid="stSidebar"] [data-testid="stRadio"] label p {{
+                font-size: .92rem !important;
+                font-weight: 700;
+            }}
+
+            [data-testid="stSidebar"] [data-testid="stRadio"] > div {{
+                gap: 0.45rem;
+            }}
+
+            .gf-page-intro {{
+                background: transparent;
+                padding: 0 0 6px 0;
+                margin-bottom: 10px;
+            }}
+
             .gf-page-eyebrow {{
-                font-size: .80rem;
+                font-size: .76rem;
                 letter-spacing: .11em;
                 text-transform: uppercase;
                 color: var(--teal);
                 font-weight: 800;
-                margin-bottom: 6px;
+                margin-bottom: 4px;
             }}
+
             .gf-page-title {{
                 color: var(--text);
-                font-weight: 800;
-                font-size: 2rem;
+                font-weight: 900;
+                font-size: 2.02rem;
                 line-height: 1.05;
                 margin: 0;
             }}
+
             .gf-page-subtitle {{
                 color: var(--muted);
-                margin: 4px 0 0 0;
-                font-size: .98rem;
+                margin: 5px 0 0 0;
+                font-size: .95rem;
             }}
+
+            .gf-layout-label {{
+                color: #b9cae0;
+                font-size: .79rem;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: .05em;
+                margin: 12px 0 2px;
+            }}
+
             div[data-testid="stMetric"] {{
                 background: linear-gradient(180deg, #ffffff, #fbfdff);
                 border: 1px solid var(--border);
@@ -135,77 +202,125 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 padding: 10px 14px;
                 box-shadow: var(--shadow);
             }}
-            div[data-testid="stMetric"] label {{ color: var(--muted) !important; font-weight: 700 !important; }}
-            div[data-testid="stMetricValue"] > div {{ color: var(--text); font-weight: 800; }}
+
+            div[data-testid="stMetric"] label {{
+                color: var(--muted) !important;
+                font-weight: 700 !important;
+            }}
+
+            div[data-testid="stMetricValue"] > div {{
+                color: var(--text);
+                font-weight: 800;
+            }}
+
             div[data-testid="stMetricDelta"] > div {{ font-weight: 700; }}
+
             .gf-card {{
                 background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
                 border: 1px solid var(--border);
-                border-radius: 18px;
-                padding: 18px;
+                border-radius: 16px;
+                padding: 15px;
                 box-shadow: var(--shadow);
+                min-height: 138px;
                 height: 100%;
             }}
-            .gf-card-tonal-success {{ background: linear-gradient(180deg, #f4fffb, #ffffff); }}
-            .gf-card-tonal-info {{ background: linear-gradient(180deg, #f4f9ff, #ffffff); }}
-            .gf-card-tonal-danger {{ background: linear-gradient(180deg, #fff7f7, #ffffff); }}
+
+            .gf-card-tonal-success {{ background: linear-gradient(180deg, #f2fcf8, #ffffff); }}
+            .gf-card-tonal-info {{ background: linear-gradient(180deg, #f3f8ff, #ffffff); }}
+            .gf-card-tonal-danger {{ background: linear-gradient(180deg, #fff5f6, #ffffff); }}
             .gf-card-tonal-neutral {{ background: linear-gradient(180deg, #ffffff, #fbfdff); }}
+
             .gf-card-label {{
                 display:flex;
                 align-items:center;
-                gap:10px;
-                font-size:.92rem;
+                gap:8px;
+                font-size:.82rem;
                 color:var(--muted);
                 font-weight:700;
-                margin-bottom:10px;
+                margin-bottom:8px;
+                white-space: nowrap;
             }}
+
             .gf-card-icon {{
-                width:34px;
-                height:34px;
-                border-radius:12px;
+                width:30px;
+                height:30px;
+                border-radius:10px;
                 display:flex;
                 align-items:center;
                 justify-content:center;
                 background:#eef5fc;
-                font-size:1rem;
+                font-size:.9rem;
+                flex: 0 0 auto;
             }}
+
             .gf-card-value {{
                 color:var(--text);
                 font-weight:800;
-                font-size:1.75rem;
+                font-size:1.42rem;
                 line-height:1.1;
                 margin: 2px 0 6px 0;
+                white-space: nowrap;
             }}
+
             .gf-card-footnote {{
                 color:var(--muted);
-                font-size:.84rem;
-                line-height:1.35;
+                font-size:.76rem;
+                line-height:1.3;
             }}
+
             .gf-card-trend-up {{ color: var(--success); font-weight: 800; }}
             .gf-card-trend-down {{ color: var(--danger); font-weight: 800; }}
+
             .gf-section-title {{
                 color: var(--text);
                 font-weight: 800;
                 margin-bottom: 0.25rem;
             }}
+
             .gf-section-caption {{
                 color: var(--muted);
                 margin-bottom: .9rem;
-                font-size: .92rem;
+                font-size: .90rem;
             }}
+
             .stDataFrame, div[data-testid="stTable"] {{
                 border: 1px solid var(--border);
                 border-radius: 16px;
                 overflow: hidden;
             }}
-            .stProgress > div > div > div > div {{ background: linear-gradient(90deg, var(--teal), var(--success)); }}
-            .gf-checklist {{ margin: 0; padding-left: 1rem; color: var(--muted); }}
+
+            .stProgress > div > div > div > div {{
+                background: linear-gradient(90deg, var(--teal), var(--success));
+            }}
+
+            .gf-checklist {{
+                margin: 0;
+                padding-left: 1rem;
+                color: var(--muted);
+            }}
+
             .gf-checklist li {{ margin: .25rem 0; }}
+
             .gf-footer-note {{
                 text-align:center;
                 color: var(--muted);
                 font-size: .84rem;
                 margin-top: 1rem;
+            }}
+
+            @media (max-width: 900px) {{
+                [data-testid="stSidebar"] {{
+                    min-width: 270px !important;
+                    width: 270px !important;
+                    max-width: 270px !important;
+                }}
+                [data-testid="stSidebar"] > div:first-child {{
+                    width: 270px !important;
+                }}
+                .block-container {{
+                    padding-left: .8rem;
+                    padding-right: .8rem;
+                }}
             }}
         </style>
         """,
@@ -224,6 +339,7 @@ def render_sidebar(is_db_configured: bool) -> str:
             """,
             unsafe_allow_html=True,
         )
+
         page = st.radio(
             "Navegação",
             NAV_OPTIONS,
@@ -232,82 +348,73 @@ def render_sidebar(is_db_configured: bool) -> str:
             label_visibility="collapsed",
         )
         st.session_state["current_page"] = page
+
+        st.markdown("<div class='gf-layout-label'>Visualização</div>", unsafe_allow_html=True)
+        layout = st.radio(
+            "Layout",
+            ["Desktop", "Mobile"],
+            index=0 if st.session_state.get("view_mode", "Desktop") == "Desktop" else 1,
+            horizontal=True,
+            key="view_mode_selector",
+            label_visibility="collapsed",
+        )
+        st.session_state["view_mode"] = layout
+
         state_cls = "gf-status-ok" if is_db_configured else "gf-status-test"
         state_text = "Banco conectado" if is_db_configured else "Modo de teste"
+
         st.markdown(
             f"""
             <div class="gf-sidebar-box">
-                <div style="font-size:.86rem; color:#b9cae0; font-weight:700; margin-bottom:6px;">Infraestrutura</div>
+                <div style="font-size:.82rem; color:#b9cae0; font-weight:700; margin-bottom:6px;">Infraestrutura</div>
                 <div class="gf-status-pill {state_cls}">● {state_text}</div>
-                <div style="height:10px"></div>
-                <div style="font-size:.90rem; font-weight:700;">Seus dados estão protegidos</div>
-                <div style="font-size:.82rem; color:#b9cae0; line-height:1.45; margin-top:4px;">
-                    Segurança, privacidade e confiabilidade visual como base do sistema.
+                <div style="height:9px"></div>
+                <div style="font-size:.88rem; font-weight:700;">Seus dados estão protegidos</div>
+                <div style="font-size:.78rem; color:#b9cae0; line-height:1.4; margin-top:4px;">
+                    Segurança, privacidade e confiabilidade como base do sistema.
                 </div>
-            </div>
-            <div class="gf-sidebar-box">
-                <div style="font-size:.86rem; color:#b9cae0; font-weight:700; margin-bottom:8px;">Base inicial</div>
-                <div style="font-size:.92rem; font-weight:700;">ACOMPANHAMENTOS.xlsx</div>
-                <div style="font-size:.80rem; color:#b9cae0; margin-top:5px;">Importação e conferência já prontas para a V1.</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
+
     return page
 
 
-def render_topbar(page_title: str, subtitle: str) -> str:
-    effective_mode = st.session_state.get("view_mode_selector", st.session_state.get("view_mode", "Desktop"))
-    top_slots = (
-        st.columns([1.9, 1.1], vertical_alignment="center")
-        if effective_mode == "Desktop"
-        else [st.container(), st.container()]
+def render_page_header(page_title: str, subtitle: str) -> str:
+    st.markdown(
+        f"""
+        <div class="gf-page-intro">
+            <div class="gf-page-eyebrow">Sua gestão em primeiro lugar</div>
+            <h1 class="gf-page-title">{page_title}</h1>
+            <p class="gf-page-subtitle">{subtitle}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    c1, c2 = top_slots
-    with c1:
-        st.markdown(
-            f"""
-            <div class="gf-topbar">
-                <div class="gf-page-eyebrow">Sua gestão em primeiro lugar</div>
-                <h1 class="gf-page-title">{page_title}</h1>
-                <p class="gf-page-subtitle">{subtitle}</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with c2:
-        with st.container(border=False):
-            st.markdown("<div class='gf-topbar'>", unsafe_allow_html=True)
-            st.text_input(
-                "Buscar",
-                placeholder="Buscar movimentações, contas, categorias...",
-                label_visibility="collapsed",
-                key="global_search",
-            )
-            layout = st.radio(
-                "Layout",
-                ["Desktop", "Mobile"],
-                index=0 if effective_mode == "Desktop" else 1,
-                horizontal=True,
-                key="view_mode_selector",
-            )
-            st.session_state["view_mode"] = layout
-            st.caption("Alterne livremente entre a visão ampla e a visão mobile para validar o layout responsivo.")
-            st.markdown("</div>", unsafe_allow_html=True)
     return st.session_state.get("view_mode", "Desktop")
 
 
-def metric_card(title: str, value: str, note: str = "", tone: str = "neutral", icon: str = "●", trend: str | None = None) -> str:
+def metric_card(
+    title: str,
+    value: str,
+    note: str = "",
+    tone: str = "neutral",
+    icon: str = "●",
+    trend: str | None = None,
+) -> str:
     tone_class = {
         "success": "gf-card-tonal-success",
         "info": "gf-card-tonal-info",
         "danger": "gf-card-tonal-danger",
         "neutral": "gf-card-tonal-neutral",
     }.get(tone, "gf-card-tonal-neutral")
+
     trend_html = ""
     if trend:
         css = "gf-card-trend-up" if not trend.strip().startswith("-") and "↓" not in trend else "gf-card-trend-down"
         trend_html = f"<span class='{css}'>{trend}</span>"
+
     return dedent(
         f"""
         <div class="gf-card {tone_class}">
@@ -323,12 +430,14 @@ def metric_card(title: str, value: str, note: str = "", tone: str = "neutral", i
 
 
 def show_metric_grid(cards: list[str], view_mode: str = "Desktop") -> None:
-    cols_per_row = 3 if view_mode == "Desktop" else 1
+    cols_per_row = 6 if view_mode == "Desktop" else 1
     total_rows = math.ceil(len(cards) / cols_per_row)
+
     for row in range(total_rows):
-        cols = st.columns(cols_per_row, gap="medium")
+        cols = st.columns(cols_per_row, gap="small")
         slice_start = row * cols_per_row
         slice_end = slice_start + cols_per_row
+
         for col, card in zip(cols, cards[slice_start:slice_end]):
             with col:
                 st.markdown(card, unsafe_allow_html=True)
