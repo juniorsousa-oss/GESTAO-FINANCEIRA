@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import unicodedata
 from datetime import datetime
 from textwrap import dedent
 
@@ -95,6 +96,54 @@ def render_sidebar_toggle() -> None:
     )
 
 
+SEARCH_TERMS = {
+    "Dashboard": "visão financeira resumo indicadores receitas despesas evolução",
+    "Movimentações": "lançamentos pagamentos recebimentos entrada saída transações",
+    "Contas e Previsões": "vencimentos contas a pagar a receber previsões compromissos",
+    "Contas e Saldos": "bancos carteira conciliação saldo localizado contas",
+    "Dívidas": "empréstimos financiamento parcelas renegociação dívida",
+    "Importar Excel": "planilha xlsx importação arquivo acompanhamento",
+    "Configurações": "preferências parâmetros metas sistema",
+}
+
+
+def _search_normalize(value: str) -> str:
+    text = unicodedata.normalize("NFKD", value.casefold())
+    return "".join(char for char in text if not unicodedata.combining(char))
+
+
+@st.fragment
+def render_header_search() -> None:
+    """Busca funcional de navegação, isolada das consultas financeiras do Dashboard."""
+    if st.session_state.pop("gf_search_clear_on_next", False):
+        st.session_state["gf_header_search"] = ""
+
+    query = st.text_input(
+        "Buscar no aplicativo",
+        key="gf_header_search",
+        placeholder="Buscar movimentações, contas, categorias...",
+        label_visibility="collapsed",
+    )
+
+    normalized = _search_normalize(query.strip())
+    if not normalized:
+        return
+
+    matches = [
+        page for page in NAV_OPTIONS
+        if normalized in _search_normalize(page + " " + SEARCH_TERMS.get(page, ""))
+    ]
+    with st.container(key="gf_search_results"):
+        st.caption("Acesso rápido")
+        if not matches:
+            st.caption("Nenhuma página encontrada.")
+        for page in matches:
+            if st.button(page, key=f"gf_search_result_{NAV_OPTIONS.index(page)}", use_container_width=True):
+                st.session_state["current_page"] = page
+                st.session_state["gf_search_clear_on_next"] = True
+                st.rerun(scope="app")
+
+
 def inject_global_css(view_mode: str = "Desktop") -> None:
     content_max = "1460px" if view_mode == "Desktop" else "760px"
 
@@ -148,8 +197,14 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             background: transparent !important;
             border: 0 !important;
             box-shadow: none !important;
-            z-index: 1 !important;
+            z-index: 100010 !important;
             pointer-events: none !important;
+        }
+        /* Só os controles nativos restaurados recebem cliques, não o header todo. */
+        header[data-testid="stHeader"] [data-testid="stToolbar"],
+        header[data-testid="stHeader"] [data-testid="stAppToolbar"],
+        header[data-testid="stHeader"] [data-testid="stHeaderActionElements"] {
+            pointer-events: auto !important;
         }
 
         /* A estrutura visível é fixa; este wrapper não cria espaço no fluxo. */
@@ -171,7 +226,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             align-items: center;
             justify-content: space-between;
             gap: 16px;
-            padding: 0 24px 0 70px;
+            padding: 0 248px 0 70px;
             color: #fff;
             background: var(--nav);
             border-bottom: 1px solid rgba(255,255,255,.08);
@@ -219,6 +274,10 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             white-space: nowrap;
         }
         .gf-header-user {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 252px;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -247,18 +306,105 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             font-weight: 500;
         }
 
-        /* Os controles nativos são ocultados por completo para não criar
-           dois estados independentes de abertura/fechamento. */
-        [data-testid="stToolbar"],
-        [data-testid="stAppToolbar"],
-        [data-testid="stHeaderActionElements"],
+        /* Restabelece Share, favoritos, edição, GitHub e menu originais.
+           Só ocultamos os botões NATIVOS da sidebar, porque já existe
+           um único controle próprio com fragmento e estado sincronizado. */
         [data-testid="stSidebarCollapsedControl"],
         [data-testid="collapsedControl"],
         [data-testid="stSidebarCollapseButton"],
         [data-testid="stDecoration"],
-        [data-testid="stAppDeployButton"],
-        #MainMenu {
+        [data-testid="stAppDeployButton"] {
             display: none !important;
+        }
+
+        [data-testid="stToolbar"],
+        [data-testid="stAppToolbar"],
+        [data-testid="stHeaderActionElements"] {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            color: #ffffff !important;
+            align-items: center !important;
+        }
+        header[data-testid="stHeader"] [data-testid="stToolbar"] *,
+        header[data-testid="stHeader"] [data-testid="stAppToolbar"] *,
+        header[data-testid="stHeader"] [data-testid="stHeaderActionElements"] *,
+        header[data-testid="stHeader"] button,
+        header[data-testid="stHeader"] a {
+            color: #ffffff !important;
+        }
+        header[data-testid="stHeader"] svg {
+            color: #ffffff !important;
+            stroke: #ffffff !important;
+        }
+        header[data-testid="stHeader"] svg path {
+            stroke: #ffffff !important;
+        }
+        header[data-testid="stHeader"] button:hover,
+        header[data-testid="stHeader"] a:hover {
+            background: rgba(255,255,255,.12) !important;
+        }
+
+        /* Busca Streamlit funcional, posicionada entre a marca e o usuário. */
+        .st-key-gf_header_search {
+            position: fixed !important;
+            top: 17px !important;
+            left: 455px !important;
+            width: min(30vw, 490px) !important;
+            max-width: calc(100vw - 930px) !important;
+            z-index: 100015 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            pointer-events: auto !important;
+        }
+        .st-key-gf_header_search [data-baseweb="input"] {
+            border: 1px solid rgba(255,255,255,.24) !important;
+            background: rgba(255,255,255,.11) !important;
+            border-radius: 9px !important;
+            min-height: 36px !important;
+        }
+        .st-key-gf_header_search input {
+            height: 36px !important;
+            color: #ffffff !important;
+            background: transparent !important;
+            font-size: 11px !important;
+            -webkit-text-fill-color: #ffffff !important;
+        }
+        .st-key-gf_header_search input::placeholder {
+            color: rgba(255,255,255,.7) !important;
+            -webkit-text-fill-color: rgba(255,255,255,.7) !important;
+        }
+        [data-testid="stElementContainer"]:has(.st-key-gf_header_search),
+        [data-testid="stElementContainer"]:has(.st-key-gf_search_results) {
+            height: 0 !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+        }
+        .st-key-gf_search_results {
+            position: fixed !important;
+            top: 60px !important;
+            left: 455px !important;
+            width: min(30vw, 490px) !important;
+            max-width: calc(100vw - 930px) !important;
+            z-index: 100015 !important;
+            padding: 12px !important;
+            border: 1px solid var(--line) !important;
+            border-radius: 10px !important;
+            background: #ffffff !important;
+            box-shadow: 0 12px 28px rgba(5,30,55,.2) !important;
+            max-height: min(55vh,400px) !important;
+            overflow-y: auto !important;
+            color: var(--ink) !important;
+            pointer-events: auto !important;
+        }
+        .st-key-gf_search_results button {
+            text-align: left !important;
+            justify-content: flex-start !important;
+            min-height: 32px !important;
+        }
+        .st-key-gf_search_results [data-testid="stCaptionContainer"] {
+            color: var(--muted) !important;
         }
 
         /* Único botão próprio: mesma posição e o mesmo widget ao abrir/fechar. */
@@ -755,6 +901,14 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 --gf-sidebar-width: 212px;
             }
 
+            .gf-header-user { right: 228px; }
+            .st-key-gf_header_search,
+            .st-key-gf_search_results {
+                left: 365px !important;
+                width: clamp(170px, 27vw, 380px) !important;
+                max-width: calc(100vw - 790px) !important;
+            }
+
             .block-container {
                 max-width: min(100%, 1380px) !important;
                 padding: 82px 12px 16px !important;
@@ -805,14 +959,29 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         @media (max-width: 900px) {
+            /* Em telas estreitas, a busca ocupa uma segunda faixa para
+               não sobrepor marca, ações nativas ou o botão da lateral. */
             .gf-app-header {
-                height: 64px;
-                padding: 0 12px 0 60px;
+                height: 110px;
+                padding: 0 12px 45px 60px;
                 gap: 8px;
             }
             header[data-testid="stHeader"] {
                 height: 64px !important;
                 min-height: 64px !important;
+            }
+            .gf-header-user { right: 180px; font-size: 10px; }
+            .st-key-gf_header_search,
+            .st-key-gf_search_results {
+                left: 60px !important;
+                width: calc(100vw - 74px) !important;
+                max-width: calc(100vw - 74px) !important;
+            }
+            .st-key-gf_header_search { top: 68px !important; }
+            .st-key-gf_search_results { top: 108px !important; }
+            @media (max-width: 600px) {
+                .gf-header-user { display: none !important; }
+                .gf-header-name { font-size: 12px !important; }
             }
             .gf-header-logo { width: 32px; height: 32px; flex-basis: 32px; padding: 6px 0; gap: 2px; }
             .gf-header-logo i { width: 4px; }
@@ -826,13 +995,13 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             .gf-header-user-avatar { width: 25px; height: 25px; font-size: 10px; border-width: 1px; }
             .gf-header-user-caption { display: none; }
             [data-testid="stSidebarUserContent"],
-            [data-testid="stSidebarContent"] { padding-top: 70px !important; }
+            [data-testid="stSidebarContent"] { padding-top: 112px !important; }
             .st-key-gf_sidebar_toggle { top: 12px !important; left: 7px !important; }
 
             :root { --gf-sidebar-width: 210px; }
 
             .block-container {
-                padding: 80px 10px 18px !important;
+                padding: 124px 10px 18px !important;
             }
 
             .gf-page-header {
