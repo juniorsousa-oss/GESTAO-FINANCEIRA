@@ -71,7 +71,8 @@ def render_sidebar_toggle() -> None:
 
     # Estilo emitido pelo fragmento: o próprio navegador anima a largura,
     # sem reconstruir os indicadores ou os gráficos financeiros.
-    width = "var(--gf-sidebar-width)" if opened else "0px"
+    selected_width = max(220, min(600, int(st.session_state.get("gf_sidebar_width", 320))))
+    width = f"min({selected_width}px, 90vw)" if opened else "0px"
     opacity = "1" if opened else "0"
     pointer_events = "auto" if opened else "none"
     border = "1px" if opened else "0px"
@@ -171,7 +172,6 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             --success: #159769;
             --danger: #d95b65;
             --shadow: 0 6px 18px rgba(20, 48, 78, .055);
-            --gf-sidebar-width: 450px;
         }
 
         html, body, [class*="css"] {
@@ -516,8 +516,9 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         section[data-testid="stSidebar"] > div {
-            width: var(--gf-sidebar-width) !important;
-            min-width: var(--gf-sidebar-width) !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
             padding: 0 !important;
         }
 
@@ -957,7 +958,6 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         @media (min-width: 901px) and (max-width: 1600px) {
             :root {
                 --gf-dashboard-gap: 10px;
-                --gf-sidebar-width: 450px;
             }
 
             .gf-header-user { right: 228px; }
@@ -1056,8 +1056,6 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             [data-testid="stSidebarContent"] { padding-top: 112px !important; }
             .st-key-gf_sidebar_toggle { top: 12px !important; left: 7px !important; }
 
-            :root { --gf-sidebar-width: min(450px, 90vw); }
-
             .block-container {
                 padding: 96px 10px 18px !important;
             }
@@ -1105,6 +1103,17 @@ def render_sidebar(is_db_configured: bool) -> str:
         st.session_state["current_page"] = current
 
     with st.sidebar:
+        # Ajuste manual em vez de fixar a largura em CSS.
+        # O estado permanece na sessão ao abrir, fechar e navegar.
+        with st.expander("Ajustar largura do menu", expanded=False):
+            st.slider(
+                "Largura (px)",
+                min_value=220,
+                max_value=600,
+                step=10,
+                key="gf_sidebar_width",
+            )
+
         for option in NAV_OPTIONS:
             st.button(
                 f"{NAV_ICONS.get(option, '')}   {option}",
