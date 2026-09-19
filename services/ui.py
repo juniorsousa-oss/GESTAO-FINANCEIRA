@@ -342,12 +342,30 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             color: #ffffff !important;
             stroke: #ffffff !important;
         }
+        /* Não impor preenchimento em TODOS os caminhos de ícones.
+           Alguns SVGs usam paths sem preenchimento; forçar fill cria
+           formas sólidas, como o quadrado branco do menu. */
         [data-testid="stToolbar"] svg path,
         [data-testid="stAppToolbar"] svg path,
         [data-testid="stHeaderActionElements"] svg path,
         header[data-testid="stHeader"] svg path {
-            stroke: #ffffff !important;
-            fill: #ffffff !important;
+            stroke: currentColor !important;
+        }
+        [data-testid="stToolbar"] svg [fill]:not([fill="none"]),
+        [data-testid="stAppToolbar"] svg [fill]:not([fill="none"]),
+        [data-testid="stHeaderActionElements"] svg [fill]:not([fill="none"]) {
+            fill: currentColor !important;
+        }
+        [data-testid="stToolbar"] button,
+        [data-testid="stAppToolbar"] button,
+        [data-testid="stHeaderActionElements"] button {
+            background: transparent !important;
+        }
+        [data-testid="stToolbar"] button svg,
+        [data-testid="stAppToolbar"] button svg,
+        [data-testid="stHeaderActionElements"] button svg {
+            color: #ffffff !important;
+            fill: currentColor;
         }
         [data-testid="stToolbar"] button,
         [data-testid="stToolbar"] a,
@@ -479,7 +497,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             width: 100% !important;
             max-width: __CONTENT_MAX__ !important;
             margin-inline: auto !important;
-            padding: 28px 14px 18px !important;
+            padding: 46px 14px 18px !important;
             box-sizing: border-box !important;
         }
 
@@ -952,7 +970,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
             .block-container {
                 max-width: min(100%, 1380px) !important;
-                padding: 26px 12px 16px !important;
+                padding: 44px 12px 16px !important;
             }
 
             .gf-brand { margin: 10px 11px 8px; padding-bottom: 11px; }
@@ -1041,7 +1059,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             :root { --gf-sidebar-width: 210px; }
 
             .block-container {
-                padding: 78px 10px 18px !important;
+                padding: 96px 10px 18px !important;
             }
 
             .gf-page-header {
