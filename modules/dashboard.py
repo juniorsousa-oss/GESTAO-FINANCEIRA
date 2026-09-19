@@ -138,30 +138,30 @@ def render(view_mode: str = "Desktop"):
                 value_name="Valor",
             )
             bars = alt.Chart(bars_df).mark_bar(
-                size=22,
+                size=15,
                 cornerRadiusTopLeft=3,
                 cornerRadiusTopRight=3,
             ).encode(
-                x=alt.X("Competência:N", sort=list(chart_data["Competência"]), axis=alt.Axis(labelAngle=0, title=None)),
-                y=alt.Y("Valor:Q", title=None, axis=alt.Axis(gridColor="#eef2f6", labelColor="#7c8b9c")),
+                x=alt.X("Competência:N", sort=list(chart_data["Competência"]), axis=alt.Axis(labelAngle=0, title=None, labelFontSize=8)),
+                y=alt.Y("Valor:Q", title=None, axis=alt.Axis(gridColor="#eef2f6", labelColor="#7c8b9c", labelFontSize=8)),
                 color=alt.Color(
                     "Série:N",
                     scale=alt.Scale(domain=["Receitas", "Despesas"], range=["#55bf90", "#234a72"]),
-                    legend=alt.Legend(orient="top", title=None),
+                    legend=alt.Legend(orient="top", title=None, labelFontSize=8, symbolSize=50),
                 ),
                 xOffset="Série:N",
                 tooltip=["Competência", "Série", alt.Tooltip("Valor:Q", format=",.2f")],
             )
             line = alt.Chart(chart_data).mark_line(
                 point=True,
-                strokeWidth=2.4,
+                strokeWidth=1.7,
                 color="#16a69d",
             ).encode(
                 x=alt.X("Competência:N", sort=list(chart_data["Competência"])),
                 y=alt.Y("Saldo:Q"),
                 tooltip=["Competência", alt.Tooltip("Saldo:Q", format=",.2f")],
             )
-            st.altair_chart((bars + line).properties(height=135), use_container_width=True)
+            st.altair_chart((bars + line).properties(height=105), use_container_width=True)
 
     with chart_right:
         with st.container(border=True):
@@ -185,19 +185,19 @@ def render(view_mode: str = "Desktop"):
                 else:
                     colors = ["#2b77c7", "#2d9ec9", "#18a79e", "#6a8dd6", "#8aa7cc", "#8ccfc0", "#c7d2df"]
 
-            pie = alt.Chart(by_cat).mark_arc(innerRadius=42, outerRadius=68).encode(
+            pie = alt.Chart(by_cat).mark_arc(innerRadius=32, outerRadius=52).encode(
                 theta=alt.Theta(field="value", type="quantitative"),
                 color=alt.Color(
                     field="category",
                     type="nominal",
                     scale=alt.Scale(range=colors),
-                    legend=alt.Legend(title=None, orient="bottom", columns=2),
+                    legend=alt.Legend(title=None, orient="bottom", columns=2, labelFontSize=8, symbolSize=45),
                 ),
                 tooltip=[
                     alt.Tooltip("category", title="Categoria"),
                     alt.Tooltip("value", title="Valor", format=",.2f"),
                 ],
-            ).properties(height=135)
+            ).properties(height=105)
             st.altair_chart(pie, use_container_width=True)
 
     st.markdown("<div class='gf-gap-sm'></div>", unsafe_allow_html=True)
@@ -211,7 +211,7 @@ def render(view_mode: str = "Desktop"):
             table = _forecast_table(forecasts)
             if table.empty:
                 st.caption("Nenhuma previsão carregada ainda.")
-            st.dataframe(table, hide_index=True, use_container_width=True, height=102)
+            st.dataframe(table, hide_index=True, use_container_width=True, height=82)
 
     with bottom_right:
         with st.container(border=True):
@@ -227,12 +227,12 @@ def render(view_mode: str = "Desktop"):
             )
             st.progress(conciliacao / 100)
             st.markdown(
-                f"<div style='font-size:1.20rem;font-weight:850;color:#10243f;margin:.12rem 0 .05rem'>{conciliacao:.0f}%</div>",
+                f"<div style='font-size:.88rem;font-weight:850;color:#10243f;margin:.08rem 0 .03rem'>{conciliacao:.0f}%</div>",
                 unsafe_allow_html=True,
             )
             st.markdown(
                 f"""
-                <div style='font-size:.64rem;font-weight:800;color:#244663;margin-bottom:4px;'>Dados conciliados</div>
+                <div style='font-size:.52rem;font-weight:800;color:#244663;margin-bottom:3px;'>Dados conciliados</div>
                 <ul class='gf-checklist'>
                     <li>Movimentações separadas das previsões</li>
                     <li>Saldos localizados comparados ao sistema</li>
