@@ -281,11 +281,28 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             min-height: 34px !important;
         }
 
-        [data-testid="stSidebarCollapsedControl"] svg,
-        [data-testid="collapsedControl"] svg,
-        [data-testid="stSidebarCollapseButton"] svg {
+        /* O SVG das setas herda branco explicitamente, sem mudar o botão. */
+        [data-testid="stSidebarCollapsedControl"] button svg,
+        [data-testid="collapsedControl"] button svg,
+        [data-testid="stSidebarCollapseButton"] button svg,
+        button[aria-label="Open sidebar"] svg,
+        button[aria-label="Expand sidebar"] svg,
+        button[aria-label="Close sidebar"] svg,
+        button[aria-label="Collapse sidebar"] svg {
             visibility: visible !important;
             opacity: 1 !important;
+            color: #ffffff !important;
+            stroke: #ffffff !important;
+        }
+
+        [data-testid="stSidebarCollapsedControl"] button svg path,
+        [data-testid="collapsedControl"] button svg path,
+        [data-testid="stSidebarCollapseButton"] button svg path,
+        button[aria-label="Open sidebar"] svg path,
+        button[aria-label="Expand sidebar"] svg path,
+        button[aria-label="Close sidebar"] svg path,
+        button[aria-label="Collapse sidebar"] svg path {
+            stroke: #ffffff !important;
         }
 
         /* Conteúdo sempre ocupa a largura liberada pela sidebar. */
