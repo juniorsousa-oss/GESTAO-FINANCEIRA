@@ -66,28 +66,41 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         .stApp { background: var(--bg); }
 
-        header[data-testid="stHeader"],
-        [data-testid="stToolbar"],
-        [data-testid="stAppToolbar"],
-        [data-testid="stDecoration"],
-        .stAppDeployButton,
-        #MainMenu,
         footer {
             display: none !important;
             visibility: hidden !important;
             height: 0 !important;
         }
 
+        header[data-testid="stHeader"] {
+            display: flex !important;
+            visibility: visible !important;
+            height: 3.25rem !important;
+            background: rgba(255,255,255,.96) !important;
+            border-bottom: 1px solid #e5ebf2 !important;
+            backdrop-filter: blur(8px);
+        }
+
+        [data-testid="stToolbar"],
+        [data-testid="stAppToolbar"],
+        [data-testid="stDecoration"],
+        .stAppDeployButton,
+        #MainMenu {
+            display: initial !important;
+            visibility: visible !important;
+        }
+
         [data-testid="collapsedControl"],
         [data-testid="stSidebarCollapseButton"],
         button[aria-label="Close sidebar"],
         button[aria-label="Open sidebar"] {
-            display: none !important;
+            display: flex !important;
+            visibility: visible !important;
         }
 
         .block-container {
             max-width: __MAX_WIDTH__;
-            padding: 12px 16px 20px !important;
+            padding: 18px 16px 20px !important;
         }
 
         section[data-testid="stSidebar"],
@@ -97,7 +110,6 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             min-width: 220px !important;
             width: 220px !important;
             max-width: 220px !important;
-            transform: none !important;
         }
 
         section[data-testid="stSidebar"] > div,
@@ -113,6 +125,21 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
             gap: .28rem !important;
+        }
+
+        [data-testid="stSidebarCollapseButton"] button,
+        button[aria-label="Close sidebar"],
+        button[aria-label="Open sidebar"] {
+            color: #dce9f7 !important;
+            background: rgba(255,255,255,.06) !important;
+            border-radius: 8px !important;
+        }
+
+        [data-testid="collapsedControl"] button {
+            background: #ffffff !important;
+            color: #173955 !important;
+            border: 1px solid #dfe7ef !important;
+            box-shadow: 0 4px 12px rgba(17,48,82,.10) !important;
         }
 
         .gf-sidebar-brand {
