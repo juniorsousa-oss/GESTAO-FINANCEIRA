@@ -310,6 +310,82 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 .gf-page-header {{ align-items:flex-start; flex-direction:column; gap:7px; }}
                 .block-container {{ padding-left:.65rem; padding-right:.65rem; }}
             }}
+
+            /* Ajustes finos: elimina vazio superior da sidebar e alinha competência */
+            [data-testid="stSidebar"] > div:first-child {{
+                width: 232px !important;
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }}
+
+            [data-testid="stSidebarContent"],
+            [data-testid="stSidebarUserContent"],
+            [data-testid="stSidebar"] > div > div {{
+                padding-top: .28rem !important;
+                margin-top: 0 !important;
+            }}
+
+            [data-testid="stSidebarContent"],
+            [data-testid="stSidebarUserContent"] {{
+                padding-left: .72rem !important;
+                padding-right: .72rem !important;
+                padding-bottom: .72rem !important;
+            }}
+
+            .gf-brand {{
+                gap: 10px !important;
+                padding: 1px 5px 9px 5px !important;
+                margin-top: 0 !important;
+                margin-bottom: 3px !important;
+            }}
+
+            .gf-page-header {{
+                display: grid !important;
+                grid-template-columns: minmax(0,1fr) auto !important;
+                align-items: center !important;
+                column-gap: 12px !important;
+                padding: .02rem .05rem .13rem .05rem !important;
+                min-height: 58px !important;
+            }}
+
+            .gf-page-eyebrow {{
+                margin-bottom: 2px !important;
+                font-size: .63rem !important;
+            }}
+
+            .gf-page-title {{
+                font-size: 1.30rem !important;
+                line-height: 1.01 !important;
+            }}
+
+            .gf-page-subtitle {{
+                font-size: .69rem !important;
+                margin-top: 2px !important;
+            }}
+
+            .gf-month {{
+                align-self: center !important;
+                justify-self: end !important;
+                gap: 5px !important;
+                padding: 5px 8px !important;
+                border-radius: 8px !important;
+                font-size: .67rem !important;
+                font-weight: 750 !important;
+                margin: 0 !important;
+            }}
+
+            @media (max-width: 900px) {{
+                .gf-page-header {{
+                    grid-template-columns: 1fr !important;
+                    row-gap: 5px !important;
+                    align-items: start !important;
+                }}
+                .gf-month {{
+                    justify-self: start !important;
+                    margin-top: 0 !important;
+                }}
+            }}
+
         </style>
         """,
         unsafe_allow_html=True,
