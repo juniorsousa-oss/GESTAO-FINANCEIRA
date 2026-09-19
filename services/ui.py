@@ -333,12 +333,27 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         header[data-testid="stHeader"] a {
             color: #ffffff !important;
         }
+        /* Ícones da toolbar: o Streamlit pode renderizar botões fora do
+           elemento header ou definir cor diretamente nos SVGs. */
+        [data-testid="stToolbar"] svg,
+        [data-testid="stAppToolbar"] svg,
+        [data-testid="stHeaderActionElements"] svg,
         header[data-testid="stHeader"] svg {
             color: #ffffff !important;
             stroke: #ffffff !important;
         }
+        [data-testid="stToolbar"] svg path,
+        [data-testid="stAppToolbar"] svg path,
+        [data-testid="stHeaderActionElements"] svg path,
         header[data-testid="stHeader"] svg path {
             stroke: #ffffff !important;
+            fill: #ffffff !important;
+        }
+        [data-testid="stToolbar"] button,
+        [data-testid="stToolbar"] a,
+        [data-testid="stAppToolbar"] button,
+        [data-testid="stAppToolbar"] a {
+            color: #ffffff !important;
         }
         header[data-testid="stHeader"] button:hover,
         header[data-testid="stHeader"] a:hover {
@@ -357,22 +372,28 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             padding: 0 !important;
             pointer-events: auto !important;
         }
-        .st-key-gf_header_search [data-baseweb="input"] {
-            border: 1px solid rgba(255,255,255,.24) !important;
-            background: rgba(255,255,255,.11) !important;
+        /* Campo claro: contraste escuro também nos wrappers internos do
+           BaseWeb, que recebem regras globais de formulário mais abaixo. */
+        .st-key-gf_header_search [data-baseweb="input"],
+        .st-key-gf_header_search div[data-baseweb="input"] > div,
+        .st-key-gf_header_search [data-baseweb="base-input"] {
+            border-color: #dce5ee !important;
+            background: #f7faff !important;
             border-radius: 9px !important;
             min-height: 36px !important;
+            color: #10233f !important;
         }
         .st-key-gf_header_search input {
             height: 36px !important;
-            color: #ffffff !important;
+            color: #10233f !important;
             background: transparent !important;
-            font-size: 11px !important;
-            -webkit-text-fill-color: #ffffff !important;
+            font-size: 12px !important;
+            -webkit-text-fill-color: #10233f !important;
         }
         .st-key-gf_header_search input::placeholder {
-            color: rgba(255,255,255,.7) !important;
-            -webkit-text-fill-color: rgba(255,255,255,.7) !important;
+            opacity: 1 !important;
+            color: #61748a !important;
+            -webkit-text-fill-color: #61748a !important;
         }
         [data-testid="stElementContainer"]:has(.st-key-gf_header_search),
         [data-testid="stElementContainer"]:has(.st-key-gf_search_results) {
@@ -458,7 +479,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             width: 100% !important;
             max-width: __CONTENT_MAX__ !important;
             margin-inline: auto !important;
-            padding: 83px 14px 18px !important;
+            padding: 28px 14px 18px !important;
             box-sizing: border-box !important;
         }
 
@@ -580,7 +601,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             width: 100%;
             min-width: 0;
             box-sizing: border-box;
-            padding: 2px 2px 4px;
+            padding: 0 2px 5px;
             margin: 0 !important;
         }
         .gf-page-copy {
@@ -590,7 +611,13 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             justify-content: center;
             flex: 1 1 auto;
             min-width: 0;
-            gap: 3px;
+            gap: 2px !important;
+        }
+        .gf-page-copy > h1,
+        .gf-page-copy > p {
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
         .gf-page-title {
             margin: 0 !important;
@@ -598,7 +625,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             color: var(--ink);
             font-size: 23px !important;
             font-weight: 800;
-            line-height: 1.15 !important;
+            line-height: 1.1 !important;
             letter-spacing: -.015em;
         }
         .gf-page-subtitle {
@@ -925,7 +952,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
             .block-container {
                 max-width: min(100%, 1380px) !important;
-                padding: 82px 12px 16px !important;
+                padding: 26px 12px 16px !important;
             }
 
             .gf-brand { margin: 10px 11px 8px; padding-bottom: 11px; }
@@ -1014,7 +1041,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             :root { --gf-sidebar-width: 210px; }
 
             .block-container {
-                padding: 124px 10px 18px !important;
+                padding: 78px 10px 18px !important;
             }
 
             .gf-page-header {
@@ -1104,7 +1131,7 @@ def render_page_header(page_title: str, subtitle: str) -> str:
     now = datetime.now()
     period = f"{MONTHS_PT[now.month]} de {now.year}"
 
-    st.markdown(
+    st.html(
         f"""
         <div class="gf-page-header">
             <div class="gf-page-copy">
@@ -1114,7 +1141,6 @@ def render_page_header(page_title: str, subtitle: str) -> str:
             <div class="gf-period">▣ {period}</div>
         </div>
         """,
-        unsafe_allow_html=True,
     )
 
     return st.session_state.get("view_mode", "Desktop")
