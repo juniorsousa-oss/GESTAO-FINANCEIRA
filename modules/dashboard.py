@@ -125,11 +125,11 @@ def render(view_mode: str = "Desktop"):
 
     if not has_data:
         st.markdown(
-            "<div class='gf-empty-note'>A base ainda não foi importada. O painel permanece visível para você validar o layout; os valores serão preenchidos após importar o ACOMPANHAMENTOS.xlsx.</div>",
+            "<div class='gf-empty-note'>Base ainda não importada — o painel permanece visível para validação do layout.</div>",
             unsafe_allow_html=True,
         )
 
-    chart_slots = st.columns([1.62, .78], gap="small") if view_mode == "Desktop" else [st.container(), st.container()]
+    chart_slots = st.columns([1.58, .72], gap="small") if view_mode == "Desktop" else [st.container(), st.container()]
     chart_left, chart_right = chart_slots
 
     with chart_left:
@@ -166,7 +166,7 @@ def render(view_mode: str = "Desktop"):
                 y=alt.Y("Saldo:Q"),
                 tooltip=["Competência", alt.Tooltip("Saldo:Q", format=",.2f")],
             )
-            st.altair_chart((bars + line).properties(height=250), use_container_width=True)
+            st.altair_chart((bars + line).properties(height=205), use_container_width=True)
 
     with chart_right:
         with st.container(border=True):
@@ -202,10 +202,10 @@ def render(view_mode: str = "Desktop"):
                     alt.Tooltip("category", title="Categoria"),
                     alt.Tooltip("value", title="Valor", format=",.2f"),
                 ],
-            ).properties(height=250)
+            ).properties(height=205)
             st.altair_chart(pie, use_container_width=True)
 
-    bottom_slots = st.columns([1.62, .78], gap="small") if view_mode == "Desktop" else [st.container(), st.container()]
+    bottom_slots = st.columns([1.58, .72], gap="small") if view_mode == "Desktop" else [st.container(), st.container()]
     bottom_left, bottom_right = bottom_slots
 
     with bottom_left:
@@ -214,7 +214,7 @@ def render(view_mode: str = "Desktop"):
             table = _forecast_table(forecasts)
             if table.empty:
                 st.caption("Nenhuma previsão carregada ainda.")
-            st.dataframe(table, hide_index=True, use_container_width=True, height=190)
+            st.dataframe(table, hide_index=True, use_container_width=True, height=155)
 
     with bottom_right:
         with st.container(border=True):
