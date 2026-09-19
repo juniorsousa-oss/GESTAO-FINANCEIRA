@@ -160,8 +160,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             [data-testid="stSidebar"] [data-baseweb="radio"] {{
                 width: 100% !important;
                 min-height: 37px !important;
-                padding: 0 10px !important;
-                border-radius: 8px !important;
+                padding: 0 9px !important;
+                border-radius: 7px !important;
                 background: transparent !important;
                 border-left: 3px solid transparent !important;
                 display: flex !important;
@@ -185,7 +185,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             [data-testid="stSidebar"] [data-baseweb="radio"] [data-testid="stMarkdownContainer"] p {{
                 margin: 0 !important;
                 color: #d7e5f3 !important;
-                font-size: .79rem !important;
+                font-size: .77rem !important;
                 line-height: 1.2 !important;
                 font-weight: 620 !important;
                 white-space: nowrap !important;
@@ -250,11 +250,11 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
             .gf-page-eyebrow {{
                 color: var(--teal);
-                font-size: .61rem;
+                font-size: .58rem !important;
                 font-weight: 850;
                 letter-spacing: .11em;
                 text-transform: uppercase;
-                margin: 0 0 2px;
+                margin: 0 0 1px !important;
             }}
 
             .gf-title-row {{
@@ -266,28 +266,28 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
             .gf-page-title {{
                 color: var(--text);
-                font-size: 1.34rem;
+                font-size: 1.23rem !important;
                 font-weight: 850;
-                line-height: 1.02;
+                line-height: 1 !important;
                 margin: 0;
             }}
 
             .gf-page-subtitle {{
                 color: var(--muted);
-                font-size: .68rem;
-                margin: 3px 0 0;
+                font-size: .64rem !important;
+                margin: 2px 0 0 !important;
             }}
 
             .gf-month {{
                 display:inline-flex;
                 align-items:center;
                 gap:5px;
-                padding:5px 8px;
+                padding:4px 7px;
                 border:1px solid var(--border);
                 border-radius:8px;
                 background:#fff;
                 color:#31506f;
-                font-size:.65rem;
+                font-size:.62rem;
                 font-weight:750;
                 white-space:nowrap;
                 margin:0;
@@ -298,9 +298,9 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 background:#fff;
                 border:1px solid var(--border);
                 border-radius:12px;
-                padding:10px 10px 8px;
+                padding:9px 10px 7px;
                 box-shadow:var(--shadow);
-                min-height:98px;
+                min-height:92px;
                 height:100%;
             }}
             .gf-card-tonal-success {{ background:linear-gradient(180deg,#f0fbf7,#ffffff); }}
