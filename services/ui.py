@@ -188,7 +188,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 justify-content:space-between;
                 align-items:flex-end;
                 gap: 18px;
-                padding: .08rem .05rem .35rem .05rem;
+                padding: .04rem .05rem .24rem .05rem;
             }}
             .gf-page-eyebrow {{
                 color:var(--teal);
@@ -200,7 +200,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             }}
             .gf-page-title {{
                 color:var(--text);
-                font-size:1.48rem;
+                font-size:1.36rem;
                 font-weight:850;
                 line-height:1.05;
                 margin:0;
@@ -224,9 +224,9 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 background:#fff;
                 border:1px solid var(--border);
                 border-radius:12px;
-                padding:11px 11px 9px;
+                padding:10px 10px 8px;
                 box-shadow:var(--shadow);
-                min-height:104px;
+                min-height:98px;
                 height:100%;
             }}
             .gf-card-tonal-success {{ background:linear-gradient(180deg,#f0fbf7,#ffffff); }}
@@ -256,7 +256,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             }}
             .gf-card-value {{
                 color:var(--text);
-                font-size:1.16rem;
+                font-size:1.08rem;
                 line-height:1.05;
                 font-weight:850;
                 margin-bottom:6px;
@@ -439,10 +439,15 @@ def metric_card(
 
 def show_metric_grid(cards: list[str], view_mode: str = "Desktop") -> None:
     if view_mode == "Desktop":
-        st.markdown(
-            "<div class='gf-metric-grid'>" + "".join(cards) + "</div>",
-            unsafe_allow_html=True,
-        )
+        cols_per_row = 6
+        total_rows = math.ceil(len(cards) / cols_per_row)
+        for row in range(total_rows):
+            cols = st.columns(cols_per_row, gap="small")
+            start = row * cols_per_row
+            end = start + cols_per_row
+            for col, card in zip(cols, cards[start:end]):
+                with col:
+                    st.markdown(card, unsafe_allow_html=True)
         return
 
     for card in cards:
