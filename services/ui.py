@@ -91,6 +91,29 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         button[aria-label="Open sidebar"] {
             display: flex !important;
             visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Botão >> para reabrir a sidebar quando recolhida */
+        [data-testid="collapsedControl"] {
+            position: fixed !important;
+            top: 4px !important;
+            left: 8px !important;
+            z-index: 999999 !important;
+            width: 36px !important;
+            height: 36px !important;
+            align-items: center !important;
+            justify-content: center !important;
+            pointer-events: auto !important;
+        }
+
+        [data-testid="collapsedControl"] > div,
+        [data-testid="collapsedControl"] button,
+        button[aria-label="Open sidebar"] {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
         }
 
         [data-testid="stSidebarCollapseButton"] button,
@@ -109,13 +132,23 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         button[aria-label="Open sidebar"] {
             width: 34px !important;
             height: 34px !important;
+            min-width: 34px !important;
             min-height: 34px !important;
             padding: 0 !important;
-            background: #fff !important;
+            background: #ffffff !important;
             color: #173955 !important;
             border: 1px solid #dfe7ef !important;
             border-radius: 8px !important;
-            box-shadow: 0 4px 12px rgba(17,48,82,.10) !important;
+            box-shadow: 0 4px 12px rgba(17,48,82,.12) !important;
+        }
+
+        [data-testid="collapsedControl"] svg,
+        button[aria-label="Open sidebar"] svg {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            color: #173955 !important;
+            fill: currentColor !important;
         }
 
         .block-container {
