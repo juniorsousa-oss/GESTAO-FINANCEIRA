@@ -172,8 +172,9 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         .block-container {
             width: 100% !important;
             max-width: __MAX_WIDTH__ !important;
-            padding: 12px 13px 16px !important;
+            padding: 18px 14px 16px !important;
             box-sizing: border-box !important;
+            overflow: visible !important;
         }
 
         section[data-testid="stSidebar"],
@@ -322,17 +323,26 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         /* Topbar customizado: mais baixo e sem bloco excessivo. */
         div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) {
             background:var(--bg);
-            border:1px solid rgba(221,230,239,.75) !important;
-            border-radius:11px !important;
+            border:1px solid rgba(221,230,239,.78) !important;
+            border-radius:12px !important;
             box-shadow:none;
-            margin:0 0 8px !important;
+            margin:6px 4px 10px !important;
+            overflow:visible !important;
+            box-sizing:border-box !important;
         }
 
         div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) > div {
-            padding:6px 9px !important;
+            padding:7px 10px !important;
+            overflow:visible !important;
+            border-radius:12px !important;
         }
 
         .gf-topbar-marker { display:none; }
+
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) div[data-testid="stHorizontalBlock"] {
+            overflow: visible !important;
+            align-items: center !important;
+        }
 
         .gf-search {
             height:31px;
