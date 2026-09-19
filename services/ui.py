@@ -98,12 +98,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             box-shadow: none !important;
         }
 
-        /* Esconde somente os controles sociais/edição do cabeçalho.
-           Não se oculta o header nem a toolbar inteira: o controle nativo
-           da sidebar pode estar aninhado neles. */
-        [data-testid="stHeaderActionElements"],
-        [data-testid="stToolbarActions"],
-        [data-testid="stHeaderActions"],
+        /* Oculta somente ações nomeadas, nunca containers de toolbar:
+           o botão de reabrir a sidebar pode morar no mesmo grupo. */
         [data-testid="stDecoration"],
         [data-testid="stAppDeployButton"],
         #MainMenu,
@@ -115,17 +111,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             display: none !important;
         }
 
-        /* Nas versões em que a toolbar agrupa o cabeçalho em um só bloco,
-           torna invisíveis apenas seus itens comuns, mantendo os
-           antepassados do botão de reabrir a lateral. */
-        header[data-testid="stHeader"] [data-testid="stToolbar"] > *:not(:has(
-            [data-testid="stSidebarCollapsedControl"],
-            [data-testid="collapsedControl"]
-        )) {
-            visibility: hidden !important;
-            pointer-events: none !important;
-        }
-
+        /* Não aplicar display:none, visibility:hidden ou pointer-events:none
+           à toolbar ou seus filhos diretos: o controle nativo faz parte dela. */
         header[data-testid="stHeader"],
         [data-testid="stToolbar"],
         [data-testid="stAppToolbar"] {
