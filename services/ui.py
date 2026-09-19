@@ -543,56 +543,63 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             width: 100% !important;
             min-width: 0 !important;
         }
-        /* Cada botão utiliza a mesma grade: ícone de 18 px, texto na
-           segunda coluna e largura total do menu (sem centralização). */
+        /* Botão nativo do Streamlit usa flex, sem grid: seu texto pode
+           vir aninhado em spans e a grade o comprimía até "D..". */
         .st-key-gf_custom_side .stButton {
             width: 100% !important;
-            max-width: 100% !important;
             min-width: 0 !important;
+            max-width: 100% !important;
             padding: 0 !important;
             margin: 0 !important;
             box-sizing: border-box !important;
         }
         .st-key-gf_custom_side .stButton > button {
-            display: grid !important;
-            grid-template-columns: 18px minmax(0, 1fr) !important;
-            column-gap: 10px !important;
+            display: flex !important;
+            flex-direction: row !important;
             align-items: center !important;
-            justify-items: start !important;
-            justify-content: start !important;
+            justify-content: flex-start !important;
+            gap: 10px !important;
             width: 100% !important;
             min-width: 0 !important;
             height: 39px !important;
             min-height: 39px !important;
-            padding: 0 11px !important;
+            padding: 0 8px !important;
             border: 0 !important;
             border-radius: 8px !important;
             box-shadow: none !important;
             text-align: left !important;
-            font-size: 12px !important;
+            font-size: 11px !important;
             font-weight: 500 !important;
             white-space: nowrap !important;
             cursor: pointer !important;
+            overflow: hidden !important;
+        }
+        .st-key-gf_custom_side .stButton > button > :not([data-testid="stIconMaterial"]):not(svg) {
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            max-width: none !important;
+            text-align: left !important;
         }
         .st-key-gf_custom_side .stButton > button p {
-            grid-column: 2 !important;
-            justify-self: start !important;
-            width: 100% !important;
+            display: block !important;
+            width: auto !important;
             min-width: 0 !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            white-space: nowrap !important;
+            max-width: none !important;
             margin: 0 !important;
             padding: 0 !important;
             text-align: left !important;
             color: inherit !important;
             font-size: inherit !important;
+            white-space: nowrap !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
         }
         .st-key-gf_custom_side .stButton > button [data-testid="stIconMaterial"],
         .st-key-gf_custom_side .stButton > button svg {
-            grid-column: 1 !important;
-            justify-self: center !important;
+            display: inline-flex !important;
+            flex: 0 0 18px !important;
             width: 18px !important;
+            min-width: 18px !important;
             height: 18px !important;
             font-size: 18px !important;
             color: currentColor !important;
