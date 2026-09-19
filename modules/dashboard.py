@@ -283,90 +283,95 @@ def render(view_mode: str = "Desktop") -> None:
 
     show_metric_grid(cards, view_mode=view_mode)
 
-    if view_mode == "Desktop":
-        chart_left, chart_right = st.columns([1.55, .75], gap="small")
-    else:
-        chart_left = st.container()
-        chart_right = st.container()
+    # Camada independente para os dois gráficos, mantendo Altair dentro do Streamlit.
+    with st.container(border=True):
+        st.markdown("<div class='gf-panel-layer-marker'></div>", unsafe_allow_html=True)
+        if view_mode == "Desktop":
+            chart_left, chart_right = st.columns([1.55, .75], gap="small")
+        else:
+            chart_left = st.container()
+            chart_right = st.container()
 
-    with chart_left:
-        with st.container(border=True):
-            section_header(
-                "▥  Evolução Financeira Mensal",
-                "Receitas, despesas e saldo nos últimos seis meses.",
-            )
-            st.altair_chart(_finance_chart(monthly), use_container_width=True)
+        with chart_left:
+            with st.container(border=True):
+                section_header(
+                    "▥  Evolução Financeira Mensal",
+                    "Receitas, despesas e saldo nos últimos seis meses.",
+                )
+                st.altair_chart(_finance_chart(monthly), use_container_width=True)
 
-    with chart_right:
-        with st.container(border=True):
-            section_header(
-                "◉  Despesas por Categoria",
-                "Distribuição das saídas registradas.",
-            )
-            st.altair_chart(_category_chart(movements), use_container_width=True)
+        with chart_right:
+            with st.container(border=True):
+                section_header(
+                    "◉  Despesas por Categoria",
+                    "Distribuição das saídas registradas.",
+                )
+                st.altair_chart(_category_chart(movements), use_container_width=True)
 
+    # Camada independente para previsões e conciliação; mesmas margens e padding.
+    with st.container(border=True):
+        st.markdown("<div class='gf-panel-layer-marker'></div>", unsafe_allow_html=True)
+        if view_mode == "Desktop":
+            bottom_left, bottom_right = st.columns([1.55, .75], gap="small")
+        else:
+            bottom_left = st.container()
+            bottom_right = st.container()
 
-    if view_mode == "Desktop":
-        bottom_left, bottom_right = st.columns([1.55, .75], gap="small")
-    else:
-        bottom_left = st.container()
-        bottom_right = st.container()
-
-    with bottom_left:
-        with st.container(border=True):
-            section_header(
-                "▣  Próximas Contas e Previsões",
-                "Agenda financeira para acompanhamento imediato.",
-            )
-
-            table = _forecast_table(forecasts)
-            if table.empty:
-                st.caption("Nenhuma previsão carregada ainda.")
-
-            st.dataframe(
-                table,
-                hide_index=True,
-                use_container_width=True,
-                height=150,
-            )
-
-    with bottom_right:
-        with st.container(border=True):
-            section_header(
-                "▰  Conciliação de Saldo",
-                "Conferência entre saldo calculado e saldo localizado.",
-            )
-
-            if not has_data:
-                conciliacao = 0.0
-            elif abs(divergencia) < 0.01:
-                conciliacao = 100.0
-            else:
-                conciliacao = max(
-                    0.0,
-                    100.0
-                    - (abs(divergencia) / max(abs(saldo_realizado), 1)) * 100,
+        with bottom_left:
+            with st.container(border=True):
+                section_header(
+                    "▣  Próximas Contas e Previsões",
+                    "Agenda financeira para acompanhamento imediato.",
                 )
 
-            st.progress(conciliacao / 100)
+                table = _forecast_table(forecasts)
+                if table.empty:
+                    st.caption("Nenhuma previsão carregada ainda.")
 
-            st.markdown(
-                f"""
-                <div style="font-size:1.35rem;font-weight:850;color:#10233f;margin:.30rem 0 .05rem;">
-                    {conciliacao:.0f}%
-                </div>
-                <div style="font-size:.72rem;font-weight:800;color:#36506b;margin-bottom:6px;">
-                    Dados conciliados
-                </div>
-                <ul class="gf-checklist">
-                    <li>Movimentações separadas das previsões</li>
-                    <li>Saldos localizados comparados ao sistema</li>
-                    <li>Divergência atual: {brl(divergencia)}</li>
-                    <li>{"Base pronta para conferência" if has_data else "Aguardando importação da base"}</li>
-                </ul>
-                """,
-                unsafe_allow_html=True,
-            )
+                st.dataframe(
+                    table,
+                    hide_index=True,
+                    use_container_width=True,
+                    height=150,
+                )
+
+        with bottom_right:
+            with st.container(border=True):
+                section_header(
+                    "▰  Conciliação de Saldo",
+                    "Conferência entre saldo calculado e saldo localizado.",
+                )
+
+                if not has_data:
+                    conciliacao = 0.0
+                elif abs(divergencia) < 0.01:
+                    conciliacao = 100.0
+                else:
+                    conciliacao = max(
+                        0.0,
+                        100.0
+                        - (abs(divergencia) / max(abs(saldo_realizado), 1)) * 100,
+                    )
+
+                st.progress(conciliacao / 100)
+
+                st.markdown(
+                    f"""
+                    <div style="font-size:1.35rem;font-weight:850;color:#10233f;margin:.30rem 0 .05rem;">
+                        {conciliacao:.0f}%
+                    </div>
+                    <div style="font-size:.72rem;font-weight:800;color:#36506b;margin-bottom:6px;">
+                        Dados conciliados
+                    </div>
+                    <ul class="gf-checklist">
+                        <li>Movimentações separadas das previsões</li>
+                        <li>Saldos localizados comparados ao sistema</li>
+                        <li>Divergência atual: {brl(divergencia)}</li>
+                        <li>{"Base pronta para conferência" if has_data else "Aguardando importação da base"}</li>
+                    </ul>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
     settings = get_settings()
 
