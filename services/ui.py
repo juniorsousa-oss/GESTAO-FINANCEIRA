@@ -570,50 +570,64 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             background: rgba(235,157,60,.14);
         }
 
-        /* CABEÇALHO DE PÁGINA */
+        /* Cabeçalho compacto: título e subtítulo em uma única coluna,
+           competência alinhada à direita, como no layout de referência. */
         .gf-page-header {
-            display: grid;
-            grid-template-columns: minmax(0,1fr) auto;
-            align-items: end;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             gap: 12px;
-            padding: 0 2px 12px;
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            padding: 2px 2px 4px;
+            margin: 0 !important;
         }
-
-        .gf-eyebrow {
-            color: var(--accent);
-            font-size: 9px;
-            font-weight: 850;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            margin-bottom: 4px;
+        .gf-page-copy {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            flex: 1 1 auto;
+            min-width: 0;
+            gap: 3px;
         }
-
         .gf-page-title {
             margin: 0 !important;
+            padding: 0 !important;
             color: var(--ink);
-            font-size: 28px !important;
-            font-weight: 850;
-            line-height: 1.02;
+            font-size: 23px !important;
+            font-weight: 800;
+            line-height: 1.15 !important;
+            letter-spacing: -.015em;
         }
-
         .gf-page-subtitle {
-            margin: 5px 0 0;
+            margin: 0 !important;
+            padding: 0 !important;
             color: var(--muted);
-            font-size: 11px;
+            font-size: 12px;
+            line-height: 1.35 !important;
         }
-
         .gf-period {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 5px;
+            flex: 0 0 auto;
+            align-self: center;
             padding: 6px 9px;
             border: 1px solid var(--line);
             border-radius: 8px;
             background: var(--panel);
             color: var(--ink-2);
-            font-size: 9px;
+            font-size: 10px;
             font-weight: 750;
             white-space: nowrap;
+        }
+        /* O markdown do cabeçalho não acrescenta margens às faixas de KPI. */
+        [data-testid="stElementContainer"]:has(.gf-page-header) {
+            margin: 0 !important;
+            padding: 0 !important;
         }
 
         /* Uma só régua de espaçamento para os seis KPIs e as faixas do Dashboard. */
@@ -924,10 +938,9 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             .gf-trust { margin: 12px 11px 0; padding: 10px; }
 
 
-            .gf-page-header { padding: 0 2px 8px; }
+            .gf-page-header { padding: 2px 2px 4px; }
             .gf-page-title { font-size: 23px !important; }
-            .gf-page-subtitle { font-size: 10px; margin-top: 4px; }
-            .gf-eyebrow { margin-bottom: 3px; }
+            .gf-page-subtitle { font-size: 11px; }
             .gf-period { padding: 5px 8px; }
 
             /* Cada camada decide seu padding e suas margens.
@@ -1005,12 +1018,14 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             }
 
             .gf-page-header {
-                grid-template-columns: 1fr;
+                flex-wrap: wrap;
+                align-items: flex-start;
+                gap: 8px;
             }
-
-            .gf-period {
-                justify-self: start;
-            }
+            .gf-page-copy { flex-basis: 100%; }
+            .gf-page-title { font-size: 22px !important; }
+            .gf-page-subtitle { font-size: 11px; }
+            .gf-period { align-self: flex-start; }
 
         }
     </style>
@@ -1092,8 +1107,7 @@ def render_page_header(page_title: str, subtitle: str) -> str:
     st.markdown(
         f"""
         <div class="gf-page-header">
-            <div>
-                <div class="gf-eyebrow">Sua gestão em primeiro lugar</div>
+            <div class="gf-page-copy">
                 <h1 class="gf-page-title">{page_title}</h1>
                 <p class="gf-page-subtitle">{subtitle}</p>
             </div>
