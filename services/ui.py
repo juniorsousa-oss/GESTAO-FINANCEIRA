@@ -514,6 +514,9 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
            somente um controle de abertura, inclusive no celular. */
         .st-key-gf_custom_side {
             position: fixed !important;
+            width: min(220px, 90vw) !important;
+            min-width: min(220px, 90vw) !important;
+            max-width: min(220px, 90vw) !important;
             top: 70px !important;
             bottom: 0 !important;
             left: 0 !important;
@@ -574,17 +577,27 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             cursor: pointer !important;
             overflow: hidden !important;
         }
-        .st-key-gf_custom_side .stButton > button > :not([data-testid="stIconMaterial"]):not(svg) {
+        /* O Streamlit envolve o ícone em um span; a regra anterior expandia
+           esse span como texto, deixando o rótulo com espaço de 1–2 letras. */
+        .st-key-gf_custom_side .stButton > button > :has([data-testid="stIconMaterial"]),
+        .st-key-gf_custom_side .stButton > button > :has(svg) {
+            flex: 0 0 18px !important;
+            width: 18px !important;
+            min-width: 18px !important;
+        }
+        .st-key-gf_custom_side .stButton > button > :not(:has([data-testid="stIconMaterial"])):not(:has(svg)):not([data-testid="stIconMaterial"]):not(svg) {
             flex: 1 1 auto !important;
             min-width: 0 !important;
-            max-width: none !important;
+            width: auto !important;
+            max-width: 100% !important;
             text-align: left !important;
         }
         .st-key-gf_custom_side .stButton > button p {
             display: block !important;
+            flex: 1 1 auto !important;
             width: auto !important;
             min-width: 0 !important;
-            max-width: none !important;
+            max-width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
             text-align: left !important;
