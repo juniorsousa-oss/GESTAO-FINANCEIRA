@@ -8,8 +8,6 @@ from services.finance import brl, numeric, to_df
 
 
 def render():
-    st.title("Dívidas")
-    st.caption("Controle de valores renegociados, não renegociados e saldo em aberto.")
 
     rows = select_rows(TABLES["debts"], order="id.asc")
     df = to_df(rows)
