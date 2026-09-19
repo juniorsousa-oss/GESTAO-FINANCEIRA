@@ -47,9 +47,9 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
     css = """
     <style>
         :root {
-            --bg: #f4f7fb;
+            --bg: #f3f6fa;
             --surface: #ffffff;
-            --border: #dfe7ef;
+            --border: #dde6ef;
             --text: #10243f;
             --muted: #6c7d91;
             --navy: #082541;
@@ -57,7 +57,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             --teal: #19b5aa;
             --success: #13a66d;
             --danger: #d95560;
-            --shadow: 0 5px 16px rgba(21, 48, 78, .06);
+            --shadow: 0 5px 16px rgba(21,48,78,.055);
         }
 
         html, body, [class*="css"] {
@@ -66,17 +66,11 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         .stApp { background: var(--bg); }
 
-        footer {
-            display: none !important;
-            visibility: hidden !important;
-            height: 0 !important;
-        }
-
+        /* Mantém apenas a estrutura necessária para recolher/abrir a sidebar. */
         header[data-testid="stHeader"] {
-            display: flex !important;
-            visibility: visible !important;
-            height: 3.25rem !important;
-            background: rgba(255,255,255,.96) !important;
+            height: 2.35rem !important;
+            min-height: 2.35rem !important;
+            background: rgba(255,255,255,.98) !important;
             border-bottom: 1px solid #e5ebf2 !important;
             backdrop-filter: blur(8px);
         }
@@ -85,9 +79,10 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         [data-testid="stAppToolbar"],
         [data-testid="stDecoration"],
         .stAppDeployButton,
-        #MainMenu {
-            display: initial !important;
-            visibility: visible !important;
+        #MainMenu,
+        footer {
+            display: none !important;
+            visibility: hidden !important;
         }
 
         [data-testid="collapsedControl"],
@@ -98,23 +93,48 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             visibility: visible !important;
         }
 
+        [data-testid="stSidebarCollapseButton"] button,
+        button[aria-label="Close sidebar"] {
+            width: 32px !important;
+            height: 32px !important;
+            min-height: 32px !important;
+            padding: 0 !important;
+            color: #dce9f7 !important;
+            background: rgba(255,255,255,.07) !important;
+            border: 1px solid rgba(255,255,255,.05) !important;
+            border-radius: 8px !important;
+        }
+
+        [data-testid="collapsedControl"] button,
+        button[aria-label="Open sidebar"] {
+            width: 34px !important;
+            height: 34px !important;
+            min-height: 34px !important;
+            padding: 0 !important;
+            background: #fff !important;
+            color: #173955 !important;
+            border: 1px solid #dfe7ef !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 12px rgba(17,48,82,.10) !important;
+        }
+
         .block-container {
             max-width: __MAX_WIDTH__;
-            padding: 18px 16px 20px !important;
+            padding: 8px 13px 16px !important;
         }
 
         section[data-testid="stSidebar"],
         [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #071e38 0%, #0b3158 58%, #092644 100%) !important;
+            background: linear-gradient(180deg,#071e38 0%,#0b3158 58%,#092644 100%) !important;
             border-right: 1px solid rgba(255,255,255,.06) !important;
-            min-width: 220px !important;
-            width: 220px !important;
-            max-width: 220px !important;
+            min-width: 214px !important;
+            width: 214px !important;
+            max-width: 214px !important;
         }
 
         section[data-testid="stSidebar"] > div,
         [data-testid="stSidebar"] > div:first-child {
-            width: 220px !important;
+            width: 214px !important;
             padding: 0 !important;
         }
 
@@ -124,65 +144,52 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-            gap: .28rem !important;
-        }
-
-        [data-testid="stSidebarCollapseButton"] button,
-        button[aria-label="Close sidebar"],
-        button[aria-label="Open sidebar"] {
-            color: #dce9f7 !important;
-            background: rgba(255,255,255,.06) !important;
-            border-radius: 8px !important;
-        }
-
-        [data-testid="collapsedControl"] button {
-            background: #ffffff !important;
-            color: #173955 !important;
-            border: 1px solid #dfe7ef !important;
-            box-shadow: 0 4px 12px rgba(17,48,82,.10) !important;
+            gap: .18rem !important;
         }
 
         .gf-sidebar-brand {
             display:flex;
             align-items:center;
-            gap:10px;
-            margin:16px 14px 12px;
-            padding:4px 4px 15px;
+            gap:9px;
+            margin:-28px 12px 8px;
+            padding:3px 4px 12px;
             border-bottom:1px solid rgba(255,255,255,.08);
         }
 
         .gf-brand-mark {
-            width:34px;
-            height:34px;
-            border-radius:10px;
+            width:31px;
+            height:31px;
+            border-radius:9px;
             background:linear-gradient(145deg,#12b9ae,#45d4b6);
             display:flex;
             align-items:flex-end;
             justify-content:center;
             gap:2px;
-            padding:7px;
-            box-shadow:0 5px 14px rgba(20,166,158,.20);
+            padding:6px;
+            box-shadow:0 5px 14px rgba(20,166,158,.18);
             flex:0 0 auto;
         }
 
         .gf-brand-mark span { display:block; width:4px; border-radius:3px; background:#fff; }
-        .gf-brand-mark span:nth-child(1) { height:9px; opacity:.8; }
-        .gf-brand-mark span:nth-child(2) { height:15px; }
-        .gf-brand-mark span:nth-child(3) { height:21px; opacity:.92; }
-        .gf-brand-title { color:#fff; font-size:15px; font-weight:800; line-height:1.1; }
-        .gf-brand-sub { color:#9fb7cf; font-size:9px; margin-top:3px; }
+        .gf-brand-mark span:nth-child(1) { height:8px; opacity:.8; }
+        .gf-brand-mark span:nth-child(2) { height:14px; }
+        .gf-brand-mark span:nth-child(3) { height:19px; opacity:.92; }
+
+        .gf-brand-title { color:#fff; font-size:14px; font-weight:800; line-height:1.05; }
+        .gf-brand-sub { color:#9fb7cf; font-size:8.5px; margin-top:3px; }
 
         [data-testid="stSidebar"] .stButton {
-            padding:0 14px;
+            padding:0 12px !important;
+            margin:0 !important;
         }
 
         [data-testid="stSidebar"] .stButton > button {
             width:100% !important;
-            min-height:38px !important;
+            min-height:34px !important;
             justify-content:flex-start !important;
-            border-radius:9px !important;
-            padding:0 11px !important;
-            font-size:12px !important;
+            border-radius:8px !important;
+            padding:0 9px !important;
+            font-size:11px !important;
             font-weight:650 !important;
             border:0 !important;
             box-shadow:none !important;
@@ -207,72 +214,73 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         .gf-trust {
-            margin:16px 14px 0;
-            padding:12px 11px;
-            border-radius:12px;
-            background:rgba(255,255,255,.052);
+            margin:12px 12px 0;
+            padding:10px;
+            border-radius:10px;
+            background:rgba(255,255,255,.05);
             border:1px solid rgba(255,255,255,.065);
         }
 
-        .gf-trust-title { color:#f4fbff; font-size:11px; font-weight:800; margin-bottom:4px; }
-        .gf-trust-text { color:#9fb7cf; font-size:9px; line-height:1.45; }
-
+        .gf-trust-title { color:#f4fbff; font-size:10px; font-weight:800; margin-bottom:3px; }
+        .gf-trust-text { color:#9fb7cf; font-size:8.5px; line-height:1.38; }
         .gf-status {
             display:inline-flex;
             align-items:center;
             gap:4px;
-            margin-top:8px;
-            padding:4px 7px;
+            margin-top:7px;
+            padding:3px 6px;
             border-radius:999px;
-            font-size:9px;
+            font-size:8px;
             font-weight:800;
         }
 
         .gf-status-ok { background:rgba(20,166,158,.14); color:#80e8dd; }
         .gf-status-test { background:rgba(234,155,57,.14); color:#ffd39e; }
 
+        /* Topbar customizado: mais baixo e sem bloco excessivo. */
         div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) {
             background:#fff;
             border:1px solid var(--border) !important;
-            border-radius:12px !important;
+            border-radius:11px !important;
             box-shadow:var(--shadow);
-            margin-bottom:14px;
+            margin:0 0 8px !important;
         }
 
         div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) > div {
-            padding:10px 12px !important;
+            padding:6px 9px !important;
         }
 
         .gf-topbar-marker { display:none; }
 
         .gf-search {
-            height:36px;
-            background:#f5f8fb;
-            border:1px solid #e3ebf3;
-            border-radius:8px;
+            height:31px;
+            background:#f6f8fb;
+            border:1px solid #e2e9f1;
+            border-radius:7px;
             display:flex;
             align-items:center;
-            gap:8px;
-            padding:0 11px;
+            gap:7px;
+            padding:0 10px;
             color:#8795a7;
-            font-size:11px;
+            font-size:10px;
         }
 
         .gf-top-layout-label {
-            height:36px;
+            height:31px;
             display:flex;
             align-items:center;
             justify-content:flex-end;
             color:#5e7086;
-            font-size:10px;
+            font-size:9px;
             font-weight:750;
         }
 
         .block-container > div > div > div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"]:first-of-type .stButton > button {
-            min-height:36px !important;
-            border-radius:8px !important;
-            padding:0 13px !important;
-            font-size:10px !important;
+            min-height:31px !important;
+            height:31px !important;
+            border-radius:7px !important;
+            padding:0 10px !important;
+            font-size:9px !important;
             font-weight:750 !important;
             box-shadow:none !important;
         }
@@ -290,8 +298,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         .gf-top-icon {
-            width:34px;
-            height:34px;
+            width:30px;
+            height:30px;
             border-radius:50%;
             border:1px solid #e2e9f1;
             display:flex;
@@ -299,76 +307,76 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             justify-content:center;
             color:#244766;
             background:#fff;
-            font-size:14px;
+            font-size:12px;
             margin:auto;
         }
 
         .gf-user {
             display:flex;
             align-items:center;
-            gap:8px;
-            min-height:36px;
-            padding-left:10px;
+            gap:7px;
+            min-height:31px;
+            padding-left:9px;
             border-left:1px solid #e5ebf1;
         }
 
         .gf-avatar {
-            width:30px;
-            height:30px;
+            width:27px;
+            height:27px;
             border-radius:50%;
             display:flex;
             align-items:center;
             justify-content:center;
             background:#0d3158;
-            color:white;
-            font-size:10px;
+            color:#fff;
+            font-size:9px;
             font-weight:800;
         }
 
-        .gf-user-name { color:#16314e; font-size:10px; font-weight:800; line-height:1.1; }
-        .gf-user-sub { color:#8a98a8; font-size:8px; margin-top:2px; }
+        .gf-user-name { color:#16314e; font-size:9px; font-weight:800; line-height:1.05; }
+        .gf-user-sub { color:#8a98a8; font-size:7.5px; margin-top:2px; }
 
         .gf-page-header {
             display:grid;
             grid-template-columns:minmax(0,1fr) auto;
-            gap:12px;
+            gap:10px;
             align-items:end;
-            padding:2px 2px 12px;
+            padding:0 2px 8px;
         }
 
         .gf-page-eyebrow {
             color:var(--teal);
-            font-size:9px;
+            font-size:8px;
             font-weight:850;
             letter-spacing:.10em;
             text-transform:uppercase;
-            margin-bottom:4px;
+            margin-bottom:2px;
         }
 
         .gf-page-title {
             color:var(--text);
-            font-size:26px !important;
+            font-size:23px !important;
             font-weight:850;
-            line-height:1.05;
+            line-height:1.02;
             margin:0 !important;
         }
 
         .gf-page-subtitle {
             color:var(--muted);
-            font-size:12px;
-            margin:5px 0 0;
+            font-size:10.5px;
+            margin:4px 0 0;
         }
 
         .gf-month {
             display:inline-flex;
             align-items:center;
-            gap:6px;
-            padding:7px 10px;
+            gap:5px;
+            padding:6px 8px;
             border:1px solid var(--border);
-            border-radius:8px;
+            border-radius:7px;
             background:#fff;
             color:#31506f;
-            font-size:10px;
+            font-size:9px;
             font-weight:750;
             white-space:nowrap;
         }
@@ -376,10 +384,10 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         .gf-card {
             background:#fff;
             border:1px solid var(--border);
-            border-radius:12px;
-            padding:11px;
+            border-radius:11px;
+            padding:9px 10px 8px;
             box-shadow:var(--shadow);
-            min-height:102px;
+            min-height:88px;
             height:100%;
         }
 
@@ -391,59 +399,59 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         .gf-card-label {
             display:flex;
             align-items:center;
-            gap:7px;
+            gap:6px;
             color:#405a74;
-            font-size:10px;
+            font-size:9.5px;
             font-weight:750;
-            margin-bottom:7px;
-            white-space:nowrap;
-        }
-
-        .gf-card-icon {
-            width:26px;
-            height:26px;
-            border-radius:8px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            background:#edf4fb;
-            font-size:11px;
-        }
-
-        .gf-card-value {
-            color:var(--text);
-            font-size:18px;
-            font-weight:850;
-            line-height:1.05;
             margin-bottom:5px;
             white-space:nowrap;
         }
 
-        .gf-card-footnote { color:#78899c; font-size:9px; line-height:1.25; }
+        .gf-card-icon {
+            width:23px;
+            height:23px;
+            border-radius:7px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:#edf4fb;
+            font-size:10px;
+        }
+
+        .gf-card-value {
+            color:var(--text);
+            font-size:16px;
+            font-weight:850;
+            line-height:1.05;
+            margin-bottom:4px;
+            white-space:nowrap;
+        }
+
+        .gf-card-footnote { color:#78899c; font-size:8.5px; line-height:1.22; }
         .gf-card-trend-up { color:var(--success); font-weight:850; }
         .gf-card-trend-down { color:var(--danger); font-weight:850; }
 
-        div[data-testid="stVerticalBlock"] { gap:.65rem !important; }
-        div[data-testid="stHorizontalBlock"] { gap:.68rem !important; }
+        div[data-testid="stVerticalBlock"] { gap:.44rem !important; }
+        div[data-testid="stHorizontalBlock"] { gap:.48rem !important; }
 
         div[data-testid="stVerticalBlockBorderWrapper"] {
             background:#fff;
             border-color:var(--border) !important;
-            border-radius:12px !important;
+            border-radius:11px !important;
             box-shadow:var(--shadow);
         }
 
         div[data-testid="stVerticalBlockBorderWrapper"] > div {
-            padding-top:.72rem;
-            padding-bottom:.66rem;
+            padding-top:.55rem;
+            padding-bottom:.50rem;
         }
 
-        .gf-section-title { color:var(--text); font-size:12px; font-weight:850; margin-bottom:3px; }
-        .gf-section-caption { color:var(--muted); font-size:9px; margin-bottom:.48rem; }
+        .gf-section-title { color:var(--text); font-size:11px; font-weight:850; margin-bottom:2px; }
+        .gf-section-caption { color:var(--muted); font-size:8.5px; margin-bottom:.30rem; }
 
         .stDataFrame, div[data-testid="stTable"] {
             border:1px solid var(--border);
-            border-radius:9px;
+            border-radius:8px;
             overflow:hidden;
         }
 
@@ -452,29 +460,30 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         .gf-checklist { margin:0; padding-left:1rem; color:var(--muted); }
-        .gf-checklist li { margin:.18rem 0; font-size:9px; }
-        .gf-footer-note { text-align:center; color:#8998aa; font-size:9px; margin-top:.65rem; }
-        .gf-gap-sm { height:7px; }
-        .gf-gap-md { height:12px; }
+        .gf-checklist li { margin:.14rem 0; font-size:8.5px; }
+        .gf-footer-note { text-align:center; color:#8998aa; font-size:8px; margin-top:.5rem; }
+        .gf-gap-sm { height:4px; }
+        .gf-gap-md { height:7px; }
 
         @media (max-width:900px) {
             section[data-testid="stSidebar"],
             [data-testid="stSidebar"] {
-                min-width:205px !important;
-                width:205px !important;
-                max-width:205px !important;
+                min-width:200px !important;
+                width:200px !important;
+                max-width:200px !important;
             }
 
             section[data-testid="stSidebar"] > div,
             [data-testid="stSidebar"] > div:first-child {
-                width:205px !important;
+                width:200px !important;
             }
 
+            .gf-sidebar-brand { margin-top:-22px; }
             .gf-page-header { grid-template-columns:1fr; }
             .gf-month { justify-self:start; }
             .gf-user { display:none; }
             .gf-top-icon { display:none; }
-            .block-container { padding:10px 10px 16px !important; }
+            .block-container { padding:8px 9px 14px !important; }
         }
     </style>
     """
