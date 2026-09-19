@@ -13,8 +13,6 @@ DEFAULT_CATEGORIES = ["ENTRADAS", "CONTAS FIXAS", "LAZER", "INVESTIMENTOS", "ALI
 
 
 def render():
-    st.title("Movimentações")
-    st.caption("Caixa realizado: tudo o que efetivamente entrou ou saiu.")
 
     rows = select_rows(TABLES["movements"], order="id.desc")
     df = to_df(rows)
