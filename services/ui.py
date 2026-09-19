@@ -98,13 +98,32 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             box-shadow: none !important;
         }
 
-        /* Oculta apenas ações do cabeçalho, NÃO o contêiner que pode conter
-           o botão de expansão em diferentes versões do Streamlit. */
+        /* Esconde somente os controles sociais/edição do cabeçalho.
+           Não se oculta o header nem a toolbar inteira: o controle nativo
+           da sidebar pode estar aninhado neles. */
         [data-testid="stHeaderActionElements"],
+        [data-testid="stToolbarActions"],
+        [data-testid="stHeaderActions"],
         [data-testid="stDecoration"],
         [data-testid="stAppDeployButton"],
-        #MainMenu {
+        #MainMenu,
+        header[data-testid="stHeader"] button[aria-label="Share"],
+        header[data-testid="stHeader"] button[aria-label="Edit"],
+        header[data-testid="stHeader"] button[aria-label="Star"],
+        header[data-testid="stHeader"] button[aria-label="More options"],
+        header[data-testid="stHeader"] a[href*="github.com"] {
             display: none !important;
+        }
+
+        /* Nas versões em que a toolbar agrupa o cabeçalho em um só bloco,
+           torna invisíveis apenas seus itens comuns, mantendo os
+           antepassados do botão de reabrir a lateral. */
+        header[data-testid="stHeader"] [data-testid="stToolbar"] > *:not(:has(
+            [data-testid="stSidebarCollapsedControl"],
+            [data-testid="collapsedControl"]
+        )) {
+            visibility: hidden !important;
+            pointer-events: none !important;
         }
 
         header[data-testid="stHeader"],
@@ -339,134 +358,6 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         .gf-status-test {
             color: #ffd39c;
             background: rgba(235,157,60,.14);
-        }
-
-        /* TOPBAR DO APP (legado, não renderizado). */
-        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) {
-            margin: 0 0 14px !important;
-            background: rgba(255,255,255,.50) !important;
-            border: 1px solid var(--line) !important;
-            border-radius: 12px !important;
-            box-shadow: none !important;
-            overflow: visible !important;
-        }
-
-        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) > div {
-            padding: 8px 10px !important;
-        }
-
-        .gf-topbar-marker {
-            display: none;
-        }
-
-        .gf-search {
-            height: 34px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 0 11px;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            background: rgba(255,255,255,.66);
-            color: #8493a5;
-            font-size: 10px;
-        }
-
-        .gf-layout-caption {
-            color: var(--muted);
-            font-size: 9px;
-            font-weight: 750;
-            margin-bottom: 4px;
-            text-align: center;
-        }
-
-        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) [data-testid="stRadio"] > div {
-            display: flex !important;
-            flex-direction: row !important;
-            justify-content: center !important;
-            gap: 6px !important;
-        }
-
-        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) [data-baseweb="radio"] {
-            min-width: 78px !important;
-            min-height: 32px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 0 12px !important;
-            border: 1px solid var(--line) !important;
-            border-radius: 8px !important;
-            background: rgba(255,255,255,.62) !important;
-            cursor: pointer !important;
-        }
-
-        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) [data-baseweb="radio"] > div:first-child {
-            display: none !important;
-        }
-
-        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) [data-baseweb="radio"] p {
-            margin: 0 !important;
-            color: #5d7086 !important;
-            font-size: 10px !important;
-            font-weight: 750 !important;
-        }
-
-        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) [data-baseweb="radio"]:has(input:checked) {
-            border-color: var(--primary) !important;
-            background: var(--primary) !important;
-        }
-
-        div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) [data-baseweb="radio"]:has(input:checked) p {
-            color: #fff !important;
-        }
-
-        .gf-top-icon {
-            width: 32px;
-            height: 32px;
-            margin: auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--line);
-            border-radius: 50%;
-            color: var(--ink-2);
-            background: rgba(255,255,255,.68);
-            font-size: 12px;
-        }
-
-        .gf-user {
-            min-height: 34px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding-left: 10px;
-            border-left: 1px solid var(--line);
-        }
-
-        .gf-avatar {
-            width: 29px;
-            height: 29px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--nav);
-            color: #fff;
-            font-size: 9px;
-            font-weight: 800;
-        }
-
-        .gf-user-name {
-            color: var(--ink);
-            font-size: 9px;
-            font-weight: 800;
-            line-height: 1.05;
-        }
-
-        .gf-user-sub {
-            color: var(--muted);
-            font-size: 7px;
-            margin-top: 2px;
         }
 
         /* CABEÇALHO DE PÁGINA */
@@ -815,16 +706,6 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 height: 40px !important;
                 min-height: 40px !important;
             }
-            div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) {
-                margin-bottom: 10px !important;
-            }
-            div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) > div {
-                padding: 7px 9px !important;
-            }
-            .gf-search { height: 31px; }
-            .gf-top-icon { width: 30px; height: 30px; }
-            .gf-user { min-height: 31px; }
-
             .gf-page-header { padding: 0 2px 8px; }
             .gf-page-title { font-size: 23px !important; }
             .gf-page-subtitle { font-size: 10px; margin-top: 4px; }
@@ -882,13 +763,6 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 justify-self: start;
             }
 
-            .gf-user {
-                display: none;
-            }
-
-            .gf-top-icon {
-                display: none;
-            }
         }
     </style>
     """
@@ -954,54 +828,6 @@ def render_sidebar(is_db_configured: bool) -> str:
 
     return st.session_state.get("current_page", "Dashboard")
 
-
-def render_topbar(page: str, view_mode: str) -> None:
-    if "_view_selector" not in st.session_state:
-        st.session_state["_view_selector"] = view_mode
-    elif st.session_state["_view_selector"] != view_mode:
-        st.session_state["_view_selector"] = view_mode
-
-    with st.container(border=True):
-        st.markdown("<div class='gf-topbar-marker'></div>", unsafe_allow_html=True)
-        c_search, c_view, c_icon, c_user = st.columns(
-            [5.7, 1.8, .42, 1.45],
-            gap="small",
-            vertical_alignment="center",
-        )
-
-        with c_search:
-            st.markdown(
-                "<div class='gf-search'>⌕ <span>Buscar movimentações, contas, categorias...</span></div>",
-                unsafe_allow_html=True,
-            )
-
-        with c_view:
-            st.markdown("<div class='gf-layout-caption'>Layout</div>", unsafe_allow_html=True)
-            st.radio(
-                "Layout",
-                ["Desktop", "Mobile"],
-                horizontal=True,
-                key="_view_selector",
-                label_visibility="collapsed",
-                on_change=_sync_view,
-            )
-
-        with c_icon:
-            st.markdown("<div class='gf-top-icon'>◇</div>", unsafe_allow_html=True)
-
-        with c_user:
-            st.markdown(
-                """
-                <div class="gf-user">
-                    <div class="gf-avatar">GF</div>
-                    <div>
-                        <div class="gf-user-name">Gestão Financeira</div>
-                        <div class="gf-user-sub">Conta principal</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
 
 
 def render_page_header(page_title: str, subtitle: str) -> str:
