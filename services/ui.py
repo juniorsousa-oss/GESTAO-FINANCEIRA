@@ -18,7 +18,7 @@ NAV_OPTIONS = [
 ]
 
 NAV_ICONS = {
-    "Dashboard": "▣",
+    "Dashboard": "⌂",
     "Movimentações": "⇄",
     "Contas e Previsões": "▤",
     "Contas e Saldos": "▦",
@@ -45,19 +45,19 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 --border: #dfe7f0;
                 --text: #10243f;
                 --muted: #6f8096;
-                --navy: #08233f;
-                --navy-2: #0d3157;
-                --teal: #14a69e;
+                --navy: #071d37;
+                --navy-2: #0c3158;
+                --teal: #18b8ad;
                 --success: #12a66d;
                 --danger: #d95662;
-                --warning: #ea9b39;
-                --shadow: 0 5px 16px rgba(17, 48, 82, .055);
+                --shadow: 0 5px 16px rgba(17,48,82,.055);
             }}
 
             html, body, [class*="css"] {{
                 font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             }}
-            .stApp {{ background: #f4f7fb; }}
+
+            .stApp {{ background: var(--bg); }}
 
             header[data-testid="stHeader"],
             [data-testid="stToolbar"],
@@ -79,145 +79,219 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
                 visibility: hidden !important;
             }}
 
+            .block-container {{
+                padding-top: .22rem !important;
+                padding-bottom: .65rem !important;
+                padding-left: .72rem !important;
+                padding-right: .72rem !important;
+                max-width: {max_width};
+            }}
+
+            /* SIDEBAR FIXA E SEM O ESPAÇO SUPERIOR PADRÃO DO STREAMLIT */
+            section[data-testid="stSidebar"],
             [data-testid="stSidebar"] {{
-                background: linear-gradient(180deg, #071d37 0%, #0b2c50 58%, #09233f 100%);
-                border-right: 1px solid rgba(255,255,255,.06);
+                background: linear-gradient(180deg, #071d37 0%, #0c3158 58%, #092541 100%) !important;
+                border-right: 1px solid rgba(255,255,255,.06) !important;
                 min-width: 232px !important;
                 width: 232px !important;
                 max-width: 232px !important;
                 transform: none !important;
             }}
-            [data-testid="stSidebar"] > div:first-child {{ width: 248px !important; }}
+
+            section[data-testid="stSidebar"] > div,
+            [data-testid="stSidebar"] > div:first-child {{
+                width: 232px !important;
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }}
+
+            [data-testid="stSidebarUserContent"],
+            [data-testid="stSidebarContent"],
+            section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
+                padding-top: .35rem !important;
+                margin-top: 0 !important;
+            }}
+
+            [data-testid="stSidebarUserContent"],
+            [data-testid="stSidebarContent"] {{
+                padding-left: .70rem !important;
+                padding-right: .70rem !important;
+                padding-bottom: .65rem !important;
+            }}
+
             [data-testid="stSidebar"] * {{ color: #dce9f7; }}
             [data-testid="stSidebarNav"] {{ display: none !important; }}
-            [data-testid="stSidebarContent"] {{ padding: .9rem .72rem .8rem .72rem; }}
-
-            .block-container {{
-                padding-top: .35rem;
-                padding-bottom: .75rem;
-                padding-left: .75rem;
-                padding-right: .75rem;
-                max-width: {max_width};
-            }}
 
             .gf-brand {{
                 display: flex;
                 align-items: center;
-                gap: 11px;
-                padding: 3px 5px 12px 5px;
-                margin-bottom: 5px;
+                gap: 9px;
+                padding: 3px 5px 10px;
+                margin: 0 0 6px 0;
                 border-bottom: 1px solid rgba(255,255,255,.08);
             }}
+
             .gf-brand-mark {{
-                width: 30px;
-                height: 30px;
-                border-radius: 10px;
-                background: linear-gradient(145deg, #13b7ad, #38d0ae);
+                width: 29px;
+                height: 29px;
+                border-radius: 9px;
+                background: linear-gradient(145deg, #14bfb4, #42d4b4);
                 display: flex;
                 align-items: flex-end;
                 justify-content: center;
                 gap: 2px;
-                padding: 7px;
-                box-shadow: 0 4px 14px rgba(20,166,158,.20);
+                padding: 6px;
+                box-shadow: 0 4px 14px rgba(20,166,158,.18);
+                flex: 0 0 auto;
             }}
-            .gf-brand-mark span {{ display:block; width:4px; border-radius:3px; background:white; }}
-            .gf-brand-mark span:nth-child(1) {{ height: 9px; opacity:.8; }}
-            .gf-brand-mark span:nth-child(2) {{ height: 15px; }}
-            .gf-brand-mark span:nth-child(3) {{ height: 21px; opacity:.9; }}
-            .gf-brand-title {{ color:#fff; font-size:.98rem; font-weight:800; line-height:1.1; }}
-            .gf-brand-sub {{ color:#9fb7cf; font-size:.64rem; margin-top:2px; }}
 
-            [data-testid="stSidebar"] .stButton > button {{
-                justify-content: flex-start !important;
+            .gf-brand-mark span {{ display:block; width:3px; border-radius:3px; background:#fff; }}
+            .gf-brand-mark span:nth-child(1) {{ height:8px; opacity:.8; }}
+            .gf-brand-mark span:nth-child(2) {{ height:13px; }}
+            .gf-brand-mark span:nth-child(3) {{ height:18px; opacity:.92; }}
+            .gf-brand-title {{ color:#fff; font-size:.94rem; font-weight:800; line-height:1.1; }}
+            .gf-brand-sub {{ color:#9fb7cf; font-size:.60rem; margin-top:2px; }}
+
+            /* MENU LATERAL: RADIO TRANSFORMADO EM NAVEGAÇÃO DE APP */
+            [data-testid="stSidebar"] [data-testid="stRadio"] > div[role="radiogroup"] {{
+                gap: 4px !important;
+            }}
+
+            [data-testid="stSidebar"] [data-baseweb="radio"] {{
                 width: 100% !important;
-                min-height: 34px !important;
+                min-height: 37px !important;
+                padding: 0 10px !important;
                 border-radius: 8px !important;
-                border: 0 !important;
-                padding: .28rem .58rem !important;
-                box-shadow: none !important;
-                font-weight: 650 !important;
-                font-size: .79rem !important;
-                transition: all .12s ease;
-            }}
-            [data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"] {{
                 background: transparent !important;
-                color: #dce9f7 !important;
+                border-left: 3px solid transparent !important;
+                display: flex !important;
+                align-items: center !important;
+                transition: background .14s ease, border-color .14s ease !important;
+                cursor: pointer !important;
             }}
-            [data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"]:hover {{
-                background: rgba(255,255,255,.06) !important;
-                color: #ffffff !important;
+
+            [data-testid="stSidebar"] [data-baseweb="radio"]:hover {{
+                background: rgba(255,255,255,.055) !important;
             }}
-            [data-testid="stSidebar"] button[data-testid="stBaseButton-primary"] {{
-                background: linear-gradient(90deg, #123c68, #164875) !important;
+
+            [data-testid="stSidebar"] [data-baseweb="radio"] > div:first-child {{
+                display: none !important;
+            }}
+
+            [data-testid="stSidebar"] [data-baseweb="radio"] [data-testid="stMarkdownContainer"] {{
+                width: 100% !important;
+            }}
+
+            [data-testid="stSidebar"] [data-baseweb="radio"] [data-testid="stMarkdownContainer"] p {{
+                margin: 0 !important;
+                color: #d7e5f3 !important;
+                font-size: .79rem !important;
+                line-height: 1.2 !important;
+                font-weight: 620 !important;
+                white-space: nowrap !important;
+            }}
+
+            [data-testid="stSidebar"] [data-baseweb="radio"]:has(input:checked),
+            [data-testid="stSidebar"] [data-baseweb="radio"][aria-checked="true"] {{
+                background: linear-gradient(90deg, #154b78, #174a75) !important;
+                border-left-color: #20c6bb !important;
+                box-shadow: inset 0 0 0 1px rgba(255,255,255,.025) !important;
+            }}
+
+            [data-testid="stSidebar"] [data-baseweb="radio"]:has(input:checked) [data-testid="stMarkdownContainer"] p,
+            [data-testid="stSidebar"] [data-baseweb="radio"][aria-checked="true"] [data-testid="stMarkdownContainer"] p {{
                 color: #ffffff !important;
-                border-left: 3px solid #1bc1b5 !important;
+                font-weight: 760 !important;
             }}
 
             .gf-view-label {{
                 color:#7896b5;
-                font-size:.67rem;
+                font-size:.62rem;
                 font-weight:800;
                 letter-spacing:.10em;
                 text-transform:uppercase;
-                margin: 13px 4px 6px;
+                margin: 12px 4px 5px;
             }}
+
+            /* SEGMENTO DESKTOP / MOBILE */
+            [data-testid="stSidebar"] .gf-mode-wrap + div [data-testid="stRadio"] > div[role="radiogroup"] {{
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 5px !important;
+            }}
+
             .gf-trust {{
-                margin-top: 16px;
-                padding: 13px 12px;
-                border-radius: 12px;
-                background: rgba(255,255,255,.055);
-                border: 1px solid rgba(255,255,255,.07);
+                margin-top: 14px;
+                padding: 11px 10px;
+                border-radius: 11px;
+                background: rgba(255,255,255,.052);
+                border: 1px solid rgba(255,255,255,.065);
             }}
-            .gf-trust-title {{ color:#f5fbff; font-size:.79rem; font-weight:800; margin-bottom:4px; }}
-            .gf-trust-text {{ color:#9fb7cf; font-size:.65rem; line-height:1.42; }}
+            .gf-trust-title {{ color:#f4fbff; font-size:.72rem; font-weight:800; margin-bottom:4px; }}
+            .gf-trust-text {{ color:#9fb7cf; font-size:.61rem; line-height:1.38; }}
             .gf-status {{
                 display:inline-flex;
                 align-items:center;
-                gap:5px;
-                margin-top:9px;
-                padding:4px 7px;
+                gap:4px;
+                margin-top:8px;
+                padding:3px 6px;
                 border-radius:999px;
-                font-size:.67rem;
+                font-size:.60rem;
                 font-weight:800;
             }}
             .gf-status-ok {{ background:rgba(20,166,158,.14); color:#80e8dd; }}
             .gf-status-test {{ background:rgba(234,155,57,.14); color:#ffd39e; }}
 
+            /* CABEÇALHO PRINCIPAL COM ALTURA MÍNIMA */
             .gf-page-header {{
-                display:flex;
-                justify-content:space-between;
-                align-items:flex-end;
-                gap: 18px;
-                padding: .04rem .05rem .24rem .05rem;
+                padding: 0 .02rem .28rem !important;
+                margin: 0 !important;
             }}
+
             .gf-page-eyebrow {{
-                color:var(--teal);
-                font-size:.66rem;
-                font-weight:850;
-                letter-spacing:.12em;
-                text-transform:uppercase;
-                margin-bottom:4px;
+                color: var(--teal);
+                font-size: .61rem;
+                font-weight: 850;
+                letter-spacing: .11em;
+                text-transform: uppercase;
+                margin: 0 0 2px;
             }}
+
+            .gf-title-row {{
+                display: grid;
+                grid-template-columns: minmax(0,1fr) auto;
+                align-items: center;
+                gap: 12px;
+            }}
+
             .gf-page-title {{
-                color:var(--text);
-                font-size:1.36rem;
-                font-weight:850;
-                line-height:1.05;
-                margin:0;
+                color: var(--text);
+                font-size: 1.34rem;
+                font-weight: 850;
+                line-height: 1.02;
+                margin: 0;
             }}
-            .gf-page-subtitle {{ color:var(--muted); font-size:.71rem; margin:4px 0 0; }}
+
+            .gf-page-subtitle {{
+                color: var(--muted);
+                font-size: .68rem;
+                margin: 3px 0 0;
+            }}
+
             .gf-month {{
                 display:inline-flex;
                 align-items:center;
-                gap:7px;
-                padding:6px 9px;
+                gap:5px;
+                padding:5px 8px;
                 border:1px solid var(--border);
-                border-radius:9px;
+                border-radius:8px;
                 background:#fff;
                 color:#31506f;
-                font-size:.71rem;
-                font-weight:700;
+                font-size:.65rem;
+                font-weight:750;
                 white-space:nowrap;
+                margin:0;
+                justify-self:end;
             }}
 
             .gf-card {{
@@ -233,159 +307,101 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             .gf-card-tonal-info {{ background:linear-gradient(180deg,#f2f7fd,#ffffff); }}
             .gf-card-tonal-danger {{ background:linear-gradient(180deg,#fff4f5,#ffffff); }}
             .gf-card-tonal-neutral {{ background:linear-gradient(180deg,#ffffff,#fbfdff); }}
+
             .gf-card-label {{
                 display:flex;
                 align-items:center;
                 gap:7px;
                 color:#405a74;
-                font-size:.72rem;
+                font-size:.70rem;
                 font-weight:750;
-                margin-bottom:7px;
+                margin-bottom:6px;
                 white-space:nowrap;
             }}
             .gf-card-icon {{
-                width:27px;
-                height:27px;
+                width:26px;
+                height:26px;
                 border-radius:8px;
                 display:flex;
                 align-items:center;
                 justify-content:center;
                 background:#edf4fb;
-                font-size:.80rem;
+                font-size:.76rem;
                 flex:0 0 auto;
             }}
             .gf-card-value {{
                 color:var(--text);
-                font-size:1.08rem;
+                font-size:1.06rem;
                 line-height:1.05;
                 font-weight:850;
-                margin-bottom:6px;
+                margin-bottom:5px;
                 white-space:nowrap;
             }}
-            .gf-card-footnote {{ color:#78899c; font-size:.62rem; line-height:1.35; }}
+            .gf-card-footnote {{ color:#78899c; font-size:.60rem; line-height:1.32; }}
             .gf-card-trend-up {{ color:var(--success); font-weight:850; }}
             .gf-card-trend-down {{ color:var(--danger); font-weight:850; }}
 
+            div[data-testid="stVerticalBlock"] {{ gap: .42rem !important; }}
+            div[data-testid="stHorizontalBlock"] {{ gap: .42rem !important; }}
+
             div[data-testid="stVerticalBlockBorderWrapper"] {{
-                background:#ffffff;
+                background:#fff;
                 border-color:var(--border) !important;
-                border-radius:12px !important;
+                border-radius:11px !important;
                 box-shadow:var(--shadow);
             }}
             div[data-testid="stVerticalBlockBorderWrapper"] > div {{
-                padding-top:.58rem;
-                padding-bottom:.50rem;
+                padding-top:.54rem;
+                padding-bottom:.46rem;
             }}
-            .gf-section-title {{ color:var(--text); font-size:.82rem; font-weight:850; margin-bottom:2px; }}
-            .gf-section-caption {{ color:var(--muted); font-size:.65rem; margin-bottom:.45rem; }}
+
+            .gf-section-title {{ color:var(--text); font-size:.80rem; font-weight:850; margin-bottom:2px; }}
+            .gf-section-caption {{ color:var(--muted); font-size:.63rem; margin-bottom:.38rem; }}
 
             .stDataFrame, div[data-testid="stTable"] {{
                 border:1px solid var(--border);
                 border-radius:9px;
                 overflow:hidden;
             }}
+
             .stProgress > div > div > div > div {{
                 background:linear-gradient(90deg,var(--teal),var(--success));
             }}
+
             .gf-checklist {{ margin:0; padding-left:.9rem; color:var(--muted); }}
-            .gf-checklist li {{ margin:.18rem 0; font-size:.64rem; }}
-            .gf-footer-note {{ text-align:center; color:#8998aa; font-size:.67rem; margin-top:.65rem; }}
+            .gf-checklist li {{ margin:.16rem 0; font-size:.62rem; }}
+            .gf-footer-note {{ text-align:center; color:#8998aa; font-size:.63rem; margin-top:.55rem; }}
             .gf-empty-note {{
-                margin: .35rem 0 .55rem;
+                margin:.20rem 0 .32rem;
                 border:1px dashed #c9d7e6;
-                border-radius:10px;
+                border-radius:9px;
                 background:#f8fbff;
                 color:#66809a;
-                font-size:.72rem;
-                padding:8px 10px;
+                font-size:.64rem;
+                padding:6px 9px;
             }}
 
             @media (max-width: 900px) {{
+                section[data-testid="stSidebar"],
                 [data-testid="stSidebar"] {{
-                    min-width:224px !important;
-                    width:224px !important;
-                    max-width:224px !important;
+                    min-width: 220px !important;
+                    width: 220px !important;
+                    max-width: 220px !important;
                 }}
-                [data-testid="stSidebar"] > div:first-child {{ width:224px !important; }}
-                .gf-page-header {{ align-items:flex-start; flex-direction:column; gap:7px; }}
-                .block-container {{ padding-left:.65rem; padding-right:.65rem; }}
-            }}
-
-            /* Ajustes finos: elimina vazio superior da sidebar e alinha competência */
-            [data-testid="stSidebar"] > div:first-child {{
-                width: 232px !important;
-                padding-top: 0 !important;
-                margin-top: 0 !important;
-            }}
-
-            [data-testid="stSidebarContent"],
-            [data-testid="stSidebarUserContent"],
-            [data-testid="stSidebar"] > div > div {{
-                padding-top: .28rem !important;
-                margin-top: 0 !important;
-            }}
-
-            [data-testid="stSidebarContent"],
-            [data-testid="stSidebarUserContent"] {{
-                padding-left: .72rem !important;
-                padding-right: .72rem !important;
-                padding-bottom: .72rem !important;
-            }}
-
-            .gf-brand {{
-                gap: 10px !important;
-                padding: 1px 5px 9px 5px !important;
-                margin-top: 0 !important;
-                margin-bottom: 3px !important;
-            }}
-
-            .gf-page-header {{
-                display: grid !important;
-                grid-template-columns: minmax(0,1fr) auto !important;
-                align-items: center !important;
-                column-gap: 12px !important;
-                padding: .02rem .05rem .13rem .05rem !important;
-                min-height: 58px !important;
-            }}
-
-            .gf-page-eyebrow {{
-                margin-bottom: 2px !important;
-                font-size: .63rem !important;
-            }}
-
-            .gf-page-title {{
-                font-size: 1.30rem !important;
-                line-height: 1.01 !important;
-            }}
-
-            .gf-page-subtitle {{
-                font-size: .69rem !important;
-                margin-top: 2px !important;
-            }}
-
-            .gf-month {{
-                align-self: center !important;
-                justify-self: end !important;
-                gap: 5px !important;
-                padding: 5px 8px !important;
-                border-radius: 8px !important;
-                font-size: .67rem !important;
-                font-weight: 750 !important;
-                margin: 0 !important;
-            }}
-
-            @media (max-width: 900px) {{
-                .gf-page-header {{
-                    grid-template-columns: 1fr !important;
-                    row-gap: 5px !important;
-                    align-items: start !important;
+                section[data-testid="stSidebar"] > div,
+                [data-testid="stSidebar"] > div:first-child {{
+                    width: 220px !important;
                 }}
-                .gf-month {{
-                    justify-self: start !important;
-                    margin-top: 0 !important;
+                .gf-title-row {{
+                    grid-template-columns: 1fr;
+                    gap:5px;
+                }}
+                .gf-month {{ justify-self:start; }}
+                .block-container {{
+                    padding-left:.55rem !important;
+                    padding-right:.55rem !important;
                 }}
             }}
-
         </style>
         """,
         unsafe_allow_html=True,
@@ -408,41 +424,31 @@ def render_sidebar(is_db_configured: bool) -> str:
         )
 
         current = st.session_state.get("current_page", "Dashboard")
-        for idx, option in enumerate(NAV_OPTIONS):
-            active = option == current
-            if st.button(
-                f"{NAV_ICONS.get(option, '')}   {option}",
-                key=f"nav_{idx}",
-                use_container_width=True,
-                type="primary" if active else "secondary",
-            ):
-                if option != current:
-                    st.session_state["current_page"] = option
-                    st.rerun()
+        selected = st.radio(
+            "Navegação",
+            NAV_OPTIONS,
+            index=NAV_OPTIONS.index(current),
+            format_func=lambda option: f"{NAV_ICONS.get(option, '')}  {option}",
+            key="nav_menu",
+            label_visibility="collapsed",
+        )
+        if selected != current:
+            st.session_state["current_page"] = selected
+            st.rerun()
 
-        st.markdown("<div class='gf-view-label'>Visualização</div>", unsafe_allow_html=True)
+        st.markdown("<div class='gf-view-label'>Visualização</div><div class='gf-mode-wrap'></div>", unsafe_allow_html=True)
         view = st.session_state.get("view_mode", "Desktop")
-        c1, c2 = st.columns(2, gap="small")
-        with c1:
-            if st.button(
-                "Desktop",
-                key="mode_desktop",
-                use_container_width=True,
-                type="primary" if view == "Desktop" else "secondary",
-            ):
-                if view != "Desktop":
-                    st.session_state["view_mode"] = "Desktop"
-                    st.rerun()
-        with c2:
-            if st.button(
-                "Mobile",
-                key="mode_mobile",
-                use_container_width=True,
-                type="primary" if view == "Mobile" else "secondary",
-            ):
-                if view != "Mobile":
-                    st.session_state["view_mode"] = "Mobile"
-                    st.rerun()
+        selected_view = st.radio(
+            "Modo de visualização",
+            ["Desktop", "Mobile"],
+            index=0 if view == "Desktop" else 1,
+            horizontal=True,
+            key="view_mode_radio",
+            label_visibility="collapsed",
+        )
+        if selected_view != view:
+            st.session_state["view_mode"] = selected_view
+            st.rerun()
 
         state_class = "gf-status-ok" if is_db_configured else "gf-status-test"
         state_text = "Banco conectado" if is_db_configured else "Modo de teste"
@@ -466,12 +472,12 @@ def render_page_header(page_title: str, subtitle: str) -> str:
     st.markdown(
         f"""
         <div class="gf-page-header">
-            <div>
-                <div class="gf-page-eyebrow">Sua gestão em primeiro lugar</div>
+            <div class="gf-page-eyebrow">Sua gestão em primeiro lugar</div>
+            <div class="gf-title-row">
                 <h1 class="gf-page-title">{page_title}</h1>
-                <p class="gf-page-subtitle">{subtitle}</p>
+                <div class="gf-month">▣ {month_label}</div>
             </div>
-            <div class="gf-month">▣ {month_label}</div>
+            <p class="gf-page-subtitle">{subtitle}</p>
         </div>
         """,
         unsafe_allow_html=True,
