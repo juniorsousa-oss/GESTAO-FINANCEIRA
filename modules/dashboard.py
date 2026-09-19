@@ -123,18 +123,12 @@ def render(view_mode: str = "Desktop"):
     ]
     show_metric_grid(cards, view_mode=view_mode)
 
-    if not has_data:
-        st.markdown(
-            "<div class='gf-empty-note'>Base ainda não importada — o painel permanece visível para validação do layout.</div>",
-            unsafe_allow_html=True,
-        )
-
     chart_slots = st.columns([1.58, .72], gap="small") if view_mode == "Desktop" else [st.container(), st.container()]
     chart_left, chart_right = chart_slots
 
     with chart_left:
         with st.container(border=True):
-            section_header("▥  Evolução Financeira Mensal", "Receitas, despesas e saldo nos últimos 6 meses.")
+            section_header("▥  Evolução Financeira Mensal", "Receitas, despesas e saldo.")
             chart_data = monthly.rename(columns={"competence": "Competência"})
             bars_df = chart_data.melt(
                 id_vars=["Competência"],
@@ -166,11 +160,11 @@ def render(view_mode: str = "Desktop"):
                 y=alt.Y("Saldo:Q"),
                 tooltip=["Competência", alt.Tooltip("Saldo:Q", format=",.2f")],
             )
-            st.altair_chart((bars + line).properties(height=190), use_container_width=True)
+            st.altair_chart((bars + line).properties(height=155), use_container_width=True)
 
     with chart_right:
         with st.container(border=True):
-            section_header("◉  Despesas por Categoria", "Distribuição das saídas registradas.")
+            section_header("◉  Despesas por Categoria", "Distribuição das saídas.")
             if movements.empty:
                 by_cat = pd.DataFrame({"category": ["Sem dados"], "value": [1.0]})
                 colors = ["#dbe5ef"]
@@ -202,7 +196,7 @@ def render(view_mode: str = "Desktop"):
                     alt.Tooltip("category", title="Categoria"),
                     alt.Tooltip("value", title="Valor", format=",.2f"),
                 ],
-            ).properties(height=190)
+            ).properties(height=155)
             st.altair_chart(pie, use_container_width=True)
 
     bottom_slots = st.columns([1.58, .72], gap="small") if view_mode == "Desktop" else [st.container(), st.container()]
@@ -210,15 +204,15 @@ def render(view_mode: str = "Desktop"):
 
     with bottom_left:
         with st.container(border=True):
-            section_header("▣  Próximas Contas e Previsões", "Agenda financeira para acompanhamento imediato.")
+            section_header("▣  Próximas Contas e Previsões", "Agenda financeira.")
             table = _forecast_table(forecasts)
             if table.empty:
                 st.caption("Nenhuma previsão carregada ainda.")
-            st.dataframe(table, hide_index=True, use_container_width=True, height=145)
+            st.dataframe(table, hide_index=True, use_container_width=True, height=118)
 
     with bottom_right:
         with st.container(border=True):
-            section_header("▰  Conciliação de Saldo", "Conferência entre o saldo do sistema e o dinheiro localizado.")
+            section_header("▰  Conciliação de Saldo", "Conferência do saldo.")
             conciliacao = (
                 0.0
                 if not has_data
