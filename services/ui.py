@@ -257,7 +257,13 @@ def render_sidebar(is_db_configured: bool) -> str:
 
 
 def render_topbar(page_title: str, subtitle: str) -> str:
-    c1, c2 = st.columns([1.9, 1.1], vertical_alignment="center")
+    effective_mode = st.session_state.get("view_mode_selector", st.session_state.get("view_mode", "Desktop"))
+    top_slots = (
+        st.columns([1.9, 1.1], vertical_alignment="center")
+        if effective_mode == "Desktop"
+        else [st.container(), st.container()]
+    )
+    c1, c2 = top_slots
     with c1:
         st.markdown(
             f"""
@@ -281,7 +287,7 @@ def render_topbar(page_title: str, subtitle: str) -> str:
             layout = st.radio(
                 "Layout",
                 ["Desktop", "Mobile"],
-                index=0 if st.session_state.get("view_mode", "Desktop") == "Desktop" else 1,
+                index=0 if effective_mode == "Desktop" else 1,
                 horizontal=True,
                 key="view_mode_selector",
             )
