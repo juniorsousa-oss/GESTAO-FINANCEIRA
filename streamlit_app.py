@@ -12,14 +12,12 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-if "view_mode" not in st.session_state:
-    st.session_state["view_mode"] = "Desktop"
+# O layout acompanha o tamanho da tela via CSS; não há modo manual.
+st.session_state["view_mode"] = "Desktop"
 if "current_page" not in st.session_state:
     st.session_state["current_page"] = "Dashboard"
 if "gf_sidebar_open" not in st.session_state:
     st.session_state["gf_sidebar_open"] = True
-if "gf_sidebar_width" not in st.session_state:
-    st.session_state["gf_sidebar_width"] = 320
 
 PAGE_META = {
     "Dashboard": ("Visão Financeira", "Tudo o que você precisa para manter suas finanças sob controle."),
