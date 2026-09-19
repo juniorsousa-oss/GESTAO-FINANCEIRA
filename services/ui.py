@@ -51,8 +51,26 @@ def _sync_view() -> None:
     st.session_state["view_mode"] = st.session_state.get("_view_selector", "Desktop")
 
 
+def _set_sidebar_open(opened: bool) -> None:
+    """O controle próprio é a única fonte de estado da navegação lateral."""
+    st.session_state["gf_sidebar_open"] = opened
+
+
+def render_sidebar_open_button() -> None:
+    """Abertura no conteúdo principal; nunca depende do controle nativo oculto."""
+    if not st.session_state.get("gf_sidebar_open", True):
+        st.button(
+            "»",
+            key="gf_sidebar_open_button",
+            help="Abrir menu lateral",
+            on_click=_set_sidebar_open,
+            args=(True,),
+        )
+
+
 def inject_global_css(view_mode: str = "Desktop") -> None:
     content_max = "1460px" if view_mode == "Desktop" else "760px"
+    sidebar_open = st.session_state.get("gf_sidebar_open", True)
 
     css = """
     <style>
@@ -95,24 +113,16 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             display: none !important;
         }
 
-        /* O cabeçalho nativo fica transparente ACIMA da marca personalizada:
-           seu botão real de abrir a sidebar não pode ficar atrás da faixa azul. */
+        /* O header nativo não participa da navegação. O controle próprio
+           não depende dos identificadores internos das versões Streamlit. */
         header[data-testid="stHeader"] {
-            display: flex !important;
             height: 70px !important;
             min-height: 70px !important;
             background: transparent !important;
             border: 0 !important;
             box-shadow: none !important;
-            z-index: 100010 !important;
+            z-index: 1 !important;
             pointer-events: none !important;
-        }
-
-        header[data-testid="stHeader"] [data-testid="stToolbar"],
-        header[data-testid="stHeader"] [data-testid="stAppToolbar"],
-        header[data-testid="stHeader"] [data-testid="stSidebarCollapsedControl"],
-        header[data-testid="stHeader"] [data-testid="collapsedControl"] {
-            pointer-events: auto !important;
         }
 
         /* A estrutura visível é fixa; este wrapper não cria espaço no fluxo. */
@@ -210,123 +220,73 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             font-weight: 500;
         }
 
-        /* Oculta somente ações nomeadas, nunca containers de toolbar:
-           o botão de reabrir a sidebar pode morar no mesmo grupo. */
+        /* Os controles nativos são ocultados por completo para não criar
+           dois estados independentes de abertura/fechamento. */
+        [data-testid="stToolbar"],
+        [data-testid="stAppToolbar"],
+        [data-testid="stHeaderActionElements"],
+        [data-testid="stSidebarCollapsedControl"],
+        [data-testid="collapsedControl"],
+        [data-testid="stSidebarCollapseButton"],
         [data-testid="stDecoration"],
         [data-testid="stAppDeployButton"],
-        #MainMenu,
-        header[data-testid="stHeader"] button[aria-label="Share"],
-        header[data-testid="stHeader"] button[aria-label="Edit"],
-        header[data-testid="stHeader"] button[aria-label="Star"],
-        header[data-testid="stHeader"] button[aria-label="More options"],
-        header[data-testid="stHeader"] a[href*="github.com"] {
+        #MainMenu {
             display: none !important;
         }
 
-        /* Não aplicar display:none, visibility:hidden ou pointer-events:none
-           à toolbar ou seus filhos diretos: o controle nativo faz parte dela. */
-        header[data-testid="stHeader"],
-        [data-testid="stToolbar"],
-        [data-testid="stAppToolbar"] {
-            visibility: visible !important;
-        }
-        /* O topo transparente não intercepta cliques no corpo do aplicativo. */
-        header[data-testid="stHeader"] {
-            pointer-events: none !important;
-        }
-        header[data-testid="stHeader"] button,
-        header[data-testid="stHeader"] [data-testid="stToolbar"],
-        header[data-testid="stHeader"] [data-testid="stAppToolbar"] {
-            pointer-events: auto !important;
-        }
-
-        /* O controle de abrir tem nome diferente entre versões do Streamlit.
-           Ambas as variantes são posicionadas fora da largura da sidebar. */
-        [data-testid="stSidebarCollapsedControl"],
-        [data-testid="collapsedControl"] {
-            display: flex !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            pointer-events: auto !important;
+        /* Botões próprios. A abertura é fixa no cabeçalho, e a saída da
+           lateral fica sobre seu conteúdo, sem depender do botão nativo. */
+        .st-key-gf_sidebar_open_button,
+        .st-key-gf_sidebar_close_button {
             position: fixed !important;
             top: 15px !important;
             left: 12px !important;
-            z-index: 2147483000 !important;
             width: 40px !important;
             height: 40px !important;
-            align-items: center !important;
-            justify-content: center !important;
+            z-index: 2147483000 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            pointer-events: auto !important;
         }
 
-        [data-testid="stSidebarCollapsedControl"] button,
-        [data-testid="collapsedControl"] button,
-        button[aria-label="Open sidebar"],
-        button[aria-label="Expand sidebar"] {
+        .st-key-gf_sidebar_open_button button,
+        .st-key-gf_sidebar_close_button button {
             display: flex !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            pointer-events: auto !important;
             align-items: center !important;
             justify-content: center !important;
-            width: 36px !important;
-            min-width: 36px !important;
-            height: 36px !important;
-            min-height: 36px !important;
+            width: 40px !important;
+            min-width: 40px !important;
+            height: 40px !important;
+            min-height: 40px !important;
+            padding: 0 !important;
+            border: 1px solid rgba(255,255,255,.16) !important;
             border-radius: 9px !important;
-            background: rgba(255,255,255,.12) !important;
+            background: rgba(255,255,255,.09) !important;
             color: #ffffff !important;
-            border: 1px solid rgba(255,255,255,.2) !important;
+            font-size: 25px !important;
+            font-weight: 700 !important;
+            line-height: 1 !important;
             box-shadow: none !important;
+            cursor: pointer !important;
+        }
+        .st-key-gf_sidebar_open_button button:hover,
+        .st-key-gf_sidebar_close_button button:hover {
+            background: rgba(255,255,255,.19) !important;
+        }
+        .st-key-gf_sidebar_open_button button p,
+        .st-key-gf_sidebar_close_button button p {
+            color: #fff !important;
+            font-size: 25px !important;
+            line-height: 1 !important;
+            margin: 0 !important;
         }
 
-        /* O fechamento continua dentro da lateral; não deixar invisível no mobile. */
-        [data-testid="stSidebarCollapseButton"] {
-            display: flex !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            pointer-events: auto !important;
-            position: fixed !important;
-            top: 15px !important;
-            left: 12px !important;
-            width: 40px !important;
-            height: 40px !important;
-            z-index: 2147483000 !important;
-        }
-        [data-testid="stSidebarCollapseButton"] button,
-        button[aria-label="Close sidebar"],
-        button[aria-label="Collapse sidebar"] {
-            visibility: visible !important;
-            opacity: 1 !important;
-            pointer-events: auto !important;
-            color: #ffffff !important;
-            background: rgba(255,255,255,.13) !important;
-            border-radius: 8px !important;
-            min-width: 34px !important;
-            min-height: 34px !important;
-        }
-
-        /* O SVG das setas herda branco explicitamente, sem mudar o botão. */
-        [data-testid="stSidebarCollapsedControl"] button svg,
-        [data-testid="collapsedControl"] button svg,
-        [data-testid="stSidebarCollapseButton"] button svg,
-        button[aria-label="Open sidebar"] svg,
-        button[aria-label="Expand sidebar"] svg,
-        button[aria-label="Close sidebar"] svg,
-        button[aria-label="Collapse sidebar"] svg {
-            visibility: visible !important;
-            opacity: 1 !important;
-            color: #ffffff !important;
-            stroke: #ffffff !important;
-        }
-
-        [data-testid="stSidebarCollapsedControl"] button svg path,
-        [data-testid="collapsedControl"] button svg path,
-        [data-testid="stSidebarCollapseButton"] button svg path,
-        button[aria-label="Open sidebar"] svg path,
-        button[aria-label="Expand sidebar"] svg path,
-        button[aria-label="Close sidebar"] svg path,
-        button[aria-label="Collapse sidebar"] svg path {
-            stroke: #ffffff !important;
+        /* Oculta o espaço que o widget de abertura reservaria no dashboard. */
+        [data-testid="stElementContainer"]:has(.st-key-gf_sidebar_open_button) {
+            height: 0 !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
         }
 
         /* Conteúdo sempre ocupa a largura liberada pela sidebar. */
@@ -857,9 +817,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             .gf-header-user-caption { display: none; }
             [data-testid="stSidebarUserContent"],
             [data-testid="stSidebarContent"] { padding-top: 70px !important; }
-            [data-testid="stSidebarCollapsedControl"],
-            [data-testid="collapsedControl"],
-            [data-testid="stSidebarCollapseButton"] { top: 12px !important; left: 7px !important; }
+            .st-key-gf_sidebar_open_button,
+            .st-key-gf_sidebar_close_button { top: 12px !important; left: 7px !important; }
 
             section[data-testid="stSidebar"][aria-expanded="true"],
             [data-testid="stSidebar"][aria-expanded="true"] {
@@ -888,6 +847,50 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
     """
 
     st.markdown(css.replace("__CONTENT_MAX__", content_max), unsafe_allow_html=True)
+    # Estado único: não depender de aria-expanded, alterado apenas pelo frontend.
+    if sidebar_open:
+        sidebar_style = """
+        <style>
+            section[data-testid="stSidebar"] {
+                display: flex !important;
+                visibility: visible !important;
+                transform: none !important;
+                pointer-events: auto !important;
+                min-width: 238px !important;
+                width: 238px !important;
+                max-width: 238px !important;
+            }
+            @media (min-width: 901px) and (max-width: 1600px) {
+                section[data-testid="stSidebar"] {
+                    min-width: 212px !important;
+                    width: 212px !important;
+                    max-width: 212px !important;
+                }
+            }
+            @media (max-width: 900px) {
+                section[data-testid="stSidebar"] {
+                    min-width: 210px !important;
+                    width: 210px !important;
+                    max-width: 210px !important;
+                }
+            }
+        </style>
+        """
+    else:
+        sidebar_style = """
+        <style>
+            section[data-testid="stSidebar"] {
+                display: none !important;
+                visibility: hidden !important;
+                min-width: 0 !important;
+                width: 0 !important;
+                max-width: 0 !important;
+                pointer-events: none !important;
+            }
+        </style>
+        """
+    st.markdown(sidebar_style, unsafe_allow_html=True)
+
 
 
 
@@ -919,6 +922,15 @@ def render_sidebar(is_db_configured: bool) -> str:
         st.session_state["current_page"] = current
 
     with st.sidebar:
+        if st.session_state.get("gf_sidebar_open", True):
+            st.button(
+                "«",
+                key="gf_sidebar_close_button",
+                help="Fechar menu lateral",
+                on_click=_set_sidebar_open,
+                args=(False,),
+            )
+
         for option in NAV_OPTIONS:
             st.button(
                 f"{NAV_ICONS.get(option, '')}   {option}",
