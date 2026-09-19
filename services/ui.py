@@ -268,11 +268,11 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         [data-testid="stSidebar"] .stButton > button {
             width:100% !important;
-            min-height:34px !important;
+            min-height:32px !important;
             justify-content:flex-start !important;
             border-radius:8px !important;
             padding:0 9px !important;
-            font-size:11px !important;
+            font-size:10.5px !important;
             font-weight:650 !important;
             border:0 !important;
             box-shadow:none !important;
@@ -298,14 +298,14 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         .gf-trust {
             margin:12px 12px 0;
-            padding:10px;
+            padding:9px;
             border-radius:10px;
             background:rgba(255,255,255,.05);
             border:1px solid rgba(255,255,255,.065);
         }
 
-        .gf-trust-title { color:#f4fbff; font-size:10px; font-weight:800; margin-bottom:3px; }
-        .gf-trust-text { color:#9fb7cf; font-size:8.5px; line-height:1.38; }
+        .gf-trust-title { color:#f4fbff; font-size:9.5px; font-weight:800; margin-bottom:3px; }
+        .gf-trust-text { color:#9fb7cf; font-size:8px; line-height:1.34; }
         .gf-status {
             display:inline-flex;
             align-items:center;
@@ -323,7 +323,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         /* Topbar customizado: mais baixo e sem bloco excessivo. */
         div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) {
             background:var(--bg);
-            border:1px solid rgba(221,230,239,.62) !important;
+            border:1px solid rgba(221,230,239,.58) !important;
             border-radius:12px !important;
             box-shadow:none;
             margin:10px 4px 12px !important;
@@ -332,7 +332,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         div[data-testid="stVerticalBlockBorderWrapper"]:has(.gf-topbar-marker) > div {
-            padding:8px 12px !important;
+            padding:8px 10px !important;
             overflow:visible !important;
             border-radius:12px !important;
         }
@@ -345,8 +345,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         .gf-search {
-            height:28px;
-            background:rgba(255,255,255,.52);
+            height:30px;
+            background:rgba(255,255,255,.56);
             border:1px solid rgba(221,230,239,.88);
             border-radius:8px;
             display:flex;
@@ -358,23 +358,25 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         .gf-top-layout-label {
-            height:28px;
+            height:30px;
             display:flex;
             align-items:center;
             justify-content:flex-end;
             color:#5e7086;
-            font-size:8.5px;
+            font-size:8px;
             font-weight:750;
         }
 
         .block-container > div > div > div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"]:first-of-type .stButton > button {
-            min-height:28px !important;
-            height:28px !important;
+            min-height:30px !important;
+            height:30px !important;
+            min-width:92px !important;
             border-radius:8px !important;
-            padding:0 10px !important;
+            padding:0 12px !important;
             font-size:9px !important;
-            font-weight:750 !important;
+            font-weight:760 !important;
             box-shadow:none !important;
+            white-space:nowrap !important;
         }
 
         .block-container button[data-testid="stBaseButton-primary"] {
@@ -390,8 +392,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         }
 
         .gf-top-icon {
-            width:28px;
-            height:28px;
+            width:30px;
+            height:30px;
             border-radius:50%;
             border:1px solid rgba(221,230,239,.90);
             display:flex;
@@ -399,7 +401,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             justify-content:center;
             color:#244766;
             background:rgba(255,255,255,.42);
-            font-size:11px;
+            font-size:10px;
             margin:auto;
         }
 
@@ -407,26 +409,26 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             display:flex;
             align-items:center;
             gap:7px;
-            min-height:28px;
+            min-height:30px;
             padding-left:10px;
             border-left:1px solid #e5ebf1;
         }
 
         .gf-avatar {
-            width:26px;
-            height:26px;
+            width:25px;
+            height:25px;
             border-radius:50%;
             display:flex;
             align-items:center;
             justify-content:center;
             background:#0d3158;
             color:#fff;
-            font-size:8.5px;
+            font-size:8px;
             font-weight:800;
         }
 
-        .gf-user-name { color:#16314e; font-size:8.8px; font-weight:800; line-height:1.05; }
-        .gf-user-sub { color:#8a98a8; font-size:7px; margin-top:2px; }
+        .gf-user-name { color:#16314e; font-size:8.5px; font-weight:800; line-height:1.05; }
+        .gf-user-sub { color:#8a98a8; font-size:6.8px; margin-top:1px; }
 
         .gf-page-header {
             display:grid;
@@ -447,7 +449,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         .gf-page-title {
             color:var(--text);
-            font-size:23px !important;
+            font-size:22px !important;
             font-weight:850;
             line-height:1.02;
             margin:0 !important;
@@ -455,20 +457,20 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         .gf-page-subtitle {
             color:var(--muted);
-            font-size:10.5px;
-            margin:4px 0 0;
+            font-size:10px;
+            margin:3px 0 0;
         }
 
         .gf-month {
             display:inline-flex;
             align-items:center;
             gap:5px;
-            padding:6px 8px;
+            padding:5px 8px;
             border:1px solid var(--border);
-            border-radius:7px;
+            border-radius:8px;
             background:#fff;
             color:#31506f;
-            font-size:9px;
+            font-size:8.5px;
             font-weight:750;
             white-space:nowrap;
         }
@@ -476,10 +478,10 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         .gf-card {
             background:#fff;
             border:1px solid var(--border);
-            border-radius:11px;
-            padding:9px 10px 8px;
+            border-radius:10px;
+            padding:8px 9px 8px;
             box-shadow:var(--shadow);
-            min-height:88px;
+            min-height:78px;
             height:100%;
         }
 
@@ -493,49 +495,49 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             align-items:center;
             gap:6px;
             color:#405a74;
-            font-size:9.5px;
+            font-size:9px;
             font-weight:750;
-            margin-bottom:5px;
+            margin-bottom:4px;
             white-space:nowrap;
         }
 
         .gf-card-icon {
-            width:23px;
-            height:23px;
+            width:21px;
+            height:21px;
             border-radius:7px;
             display:flex;
             align-items:center;
             justify-content:center;
             background:#edf4fb;
-            font-size:10px;
+            font-size:9px;
         }
 
         .gf-card-value {
             color:var(--text);
-            font-size:16px;
+            font-size:15px;
             font-weight:850;
-            line-height:1.05;
-            margin-bottom:4px;
+            line-height:1.02;
+            margin-bottom:3px;
             white-space:nowrap;
         }
 
-        .gf-card-footnote { color:#78899c; font-size:8.5px; line-height:1.22; }
+        .gf-card-footnote { color:#78899c; font-size:8px; line-height:1.18; }
         .gf-card-trend-up { color:var(--success); font-weight:850; }
         .gf-card-trend-down { color:var(--danger); font-weight:850; }
 
-        div[data-testid="stVerticalBlock"] { gap:.44rem !important; }
-        div[data-testid="stHorizontalBlock"] { gap:.48rem !important; }
+        div[data-testid="stVerticalBlock"] { gap:.38rem !important; }
+        div[data-testid="stHorizontalBlock"] { gap:.42rem !important; }
 
         div[data-testid="stVerticalBlockBorderWrapper"] {
             background:#fff;
             border-color:var(--border) !important;
-            border-radius:11px !important;
+            border-radius:10px !important;
             box-shadow:var(--shadow);
         }
 
         div[data-testid="stVerticalBlockBorderWrapper"] > div {
-            padding-top:.55rem;
-            padding-bottom:.50rem;
+            padding-top:.50rem;
+            padding-bottom:.46rem;
         }
 
         .gf-section-title { color:var(--text); font-size:11px; font-weight:850; margin-bottom:2px; }
@@ -632,7 +634,7 @@ def render_topbar(page: str, view_mode: str) -> None:
     with st.container(border=True):
         st.markdown("<div class='gf-topbar-marker'></div>", unsafe_allow_html=True)
         c_search, c_label, c_desktop, c_mobile, c_icon, c_user = st.columns(
-            [5.4, .55, .72, .72, .42, 1.35],
+            [5.6, .50, .86, .86, .40, 1.50],
             gap="small",
             vertical_alignment="center",
         )
