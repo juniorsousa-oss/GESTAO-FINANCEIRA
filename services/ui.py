@@ -56,21 +56,47 @@ def _set_sidebar_open(opened: bool) -> None:
     st.session_state["gf_sidebar_open"] = opened
 
 
-def render_sidebar_open_button() -> None:
-    """Abertura no conteúdo principal; nunca depende do controle nativo oculto."""
-    if not st.session_state.get("gf_sidebar_open", True):
-        st.button(
-            "»",
-            key="gf_sidebar_open_button",
-            help="Abrir menu lateral",
-            on_click=_set_sidebar_open,
-            args=(True,),
-        )
+@st.fragment
+def render_sidebar_toggle() -> None:
+    """Atualiza só o menu; não reexecuta o Dashboard nem consulta novamente o banco."""
+    opened = st.session_state.get("gf_sidebar_open", True)
+    st.button(
+        "«" if opened else "»",
+        key="gf_sidebar_toggle",
+        help="Fechar menu lateral" if opened else "Abrir menu lateral",
+        on_click=_set_sidebar_open,
+        args=(not opened,),
+    )
+
+    # Estilo emitido pelo fragmento: o próprio navegador anima a largura,
+    # sem reconstruir os indicadores ou os gráficos financeiros.
+    width = "var(--gf-sidebar-width)" if opened else "0px"
+    opacity = "1" if opened else "0"
+    pointer_events = "auto" if opened else "none"
+    border = "1px" if opened else "0px"
+    st.markdown(
+        f"""
+        <style>
+            section[data-testid="stSidebar"] {{
+                display: flex !important;
+                visibility: visible !important;
+                transform: none !important;
+                width: {width} !important;
+                min-width: {width} !important;
+                max-width: {width} !important;
+                flex: 0 0 {width} !important;
+                opacity: {opacity} !important;
+                pointer-events: {pointer_events} !important;
+                border-right-width: {border} !important;
+            }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def inject_global_css(view_mode: str = "Desktop") -> None:
     content_max = "1460px" if view_mode == "Desktop" else "760px"
-    sidebar_open = st.session_state.get("gf_sidebar_open", True)
 
     css = """
     <style>
@@ -96,6 +122,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             --success: #159769;
             --danger: #d95b65;
             --shadow: 0 6px 18px rgba(20, 48, 78, .055);
+            --gf-sidebar-width: 238px;
         }
 
         html, body, [class*="css"] {
@@ -234,10 +261,8 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             display: none !important;
         }
 
-        /* Botões próprios. A abertura é fixa no cabeçalho, e a saída da
-           lateral fica sobre seu conteúdo, sem depender do botão nativo. */
-        .st-key-gf_sidebar_open_button,
-        .st-key-gf_sidebar_close_button {
+        /* Único botão próprio: mesma posição e o mesmo widget ao abrir/fechar. */
+        .st-key-gf_sidebar_toggle {
             position: fixed !important;
             top: 15px !important;
             left: 12px !important;
@@ -248,9 +273,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             margin: 0 !important;
             pointer-events: auto !important;
         }
-
-        .st-key-gf_sidebar_open_button button,
-        .st-key-gf_sidebar_close_button button {
+        .st-key-gf_sidebar_toggle button {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -262,27 +285,22 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             border: 1px solid rgba(255,255,255,.16) !important;
             border-radius: 9px !important;
             background: rgba(255,255,255,.09) !important;
-            color: #ffffff !important;
+            color: #fff !important;
             font-size: 25px !important;
             font-weight: 700 !important;
             line-height: 1 !important;
             box-shadow: none !important;
-            cursor: pointer !important;
         }
-        .st-key-gf_sidebar_open_button button:hover,
-        .st-key-gf_sidebar_close_button button:hover {
+        .st-key-gf_sidebar_toggle button:hover {
             background: rgba(255,255,255,.19) !important;
         }
-        .st-key-gf_sidebar_open_button button p,
-        .st-key-gf_sidebar_close_button button p {
+        .st-key-gf_sidebar_toggle button p {
             color: #fff !important;
             font-size: 25px !important;
             line-height: 1 !important;
             margin: 0 !important;
         }
-
-        /* Oculta o espaço que o widget de abertura reservaria no dashboard. */
-        [data-testid="stElementContainer"]:has(.st-key-gf_sidebar_open_button) {
+        [data-testid="stElementContainer"]:has(.st-key-gf_sidebar_toggle) {
             height: 0 !important;
             min-height: 0 !important;
             margin: 0 !important;
@@ -298,29 +316,28 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             box-sizing: border-box !important;
         }
 
-        /* SIDEBAR */
-        section[data-testid="stSidebar"],
-        [data-testid="stSidebar"] {
+        /* Uma única fonte para a largura: a classe CSS e o estado do fragmento.
+           Manter o elemento montado torna possível a animação sem display:none. */
+        section[data-testid="stSidebar"] {
             background: linear-gradient(180deg, var(--nav) 0%, var(--nav-2) 100%) !important;
             border-right: 1px solid rgba(255,255,255,.06) !important;
-        }
-        /* Quando aberta, a lateral e o botão de fechar permanecem acima do topo. */
-        section[data-testid="stSidebar"][aria-expanded="true"] {
+            box-sizing: border-box !important;
+            overflow: hidden !important;
             z-index: 100020 !important;
+            transition: width .23s ease, min-width .23s ease,
+                        max-width .23s ease, flex-basis .23s ease,
+                        opacity .18s ease !important;
+            will-change: width;
         }
 
-        /* Nunca forçar largura zero no estado recolhido: o próprio Streamlit
-           gerencia a animação, o espaço principal e o controle de reabrir. */
-        section[data-testid="stSidebar"][aria-expanded="true"],
-        [data-testid="stSidebar"][aria-expanded="true"] {
-            min-width: 238px !important;
-            width: 238px !important;
-            max-width: 238px !important;
-        }
-
-        section[data-testid="stSidebar"][aria-expanded="true"] > div {
-            width: 238px !important;
+        section[data-testid="stSidebar"] > div {
+            width: var(--gf-sidebar-width) !important;
+            min-width: var(--gf-sidebar-width) !important;
             padding: 0 !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            section[data-testid="stSidebar"] { transition: none !important; }
         }
 
         [data-testid="stSidebarUserContent"],
@@ -733,21 +750,14 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         /* Notebook: escala intermediária sem redimensionar o mobile.
            A sidebar usa o recolhimento nativo; não travar transform/flex dos pais. */
         @media (min-width: 901px) and (max-width: 1600px) {
-            :root { --gf-dashboard-gap: 10px; }
+            :root {
+                --gf-dashboard-gap: 10px;
+                --gf-sidebar-width: 212px;
+            }
 
             .block-container {
                 max-width: min(100%, 1380px) !important;
                 padding: 82px 12px 16px !important;
-            }
-
-            section[data-testid="stSidebar"][aria-expanded="true"],
-            [data-testid="stSidebar"][aria-expanded="true"] {
-                min-width: 212px !important;
-                width: 212px !important;
-                max-width: 212px !important;
-            }
-            section[data-testid="stSidebar"][aria-expanded="true"] > div {
-                width: 212px !important;
             }
 
             .gf-brand { margin: 10px 11px 8px; padding-bottom: 11px; }
@@ -817,18 +827,9 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             .gf-header-user-caption { display: none; }
             [data-testid="stSidebarUserContent"],
             [data-testid="stSidebarContent"] { padding-top: 70px !important; }
-            .st-key-gf_sidebar_open_button,
-            .st-key-gf_sidebar_close_button { top: 12px !important; left: 7px !important; }
+            .st-key-gf_sidebar_toggle { top: 12px !important; left: 7px !important; }
 
-            section[data-testid="stSidebar"][aria-expanded="true"],
-            [data-testid="stSidebar"][aria-expanded="true"] {
-                min-width: 210px !important;
-                width: 210px !important;
-                max-width: 210px !important;
-            }
-            section[data-testid="stSidebar"][aria-expanded="true"] > div {
-                width: 210px !important;
-            }
+            :root { --gf-sidebar-width: 210px; }
 
             .block-container {
                 padding: 80px 10px 18px !important;
@@ -847,53 +848,6 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
     """
 
     st.markdown(css.replace("__CONTENT_MAX__", content_max), unsafe_allow_html=True)
-    # Estado único: não depender de aria-expanded, alterado apenas pelo frontend.
-    if sidebar_open:
-        sidebar_style = """
-        <style>
-            section[data-testid="stSidebar"] {
-                display: flex !important;
-                visibility: visible !important;
-                transform: none !important;
-                pointer-events: auto !important;
-                min-width: 238px !important;
-                width: 238px !important;
-                max-width: 238px !important;
-            }
-            @media (min-width: 901px) and (max-width: 1600px) {
-                section[data-testid="stSidebar"] {
-                    min-width: 212px !important;
-                    width: 212px !important;
-                    max-width: 212px !important;
-                }
-            }
-            @media (max-width: 900px) {
-                section[data-testid="stSidebar"] {
-                    min-width: 210px !important;
-                    width: 210px !important;
-                    max-width: 210px !important;
-                }
-            }
-        </style>
-        """
-    else:
-        sidebar_style = """
-        <style>
-            section[data-testid="stSidebar"] {
-                display: none !important;
-                visibility: hidden !important;
-                min-width: 0 !important;
-                width: 0 !important;
-                max-width: 0 !important;
-                pointer-events: none !important;
-            }
-        </style>
-        """
-    st.markdown(sidebar_style, unsafe_allow_html=True)
-
-
-
-
 def render_app_header() -> None:
     """Faixa de identidade fixa, sem controles falsos ou uma segunda navegação."""
     st.markdown(
@@ -922,15 +876,6 @@ def render_sidebar(is_db_configured: bool) -> str:
         st.session_state["current_page"] = current
 
     with st.sidebar:
-        if st.session_state.get("gf_sidebar_open", True):
-            st.button(
-                "«",
-                key="gf_sidebar_close_button",
-                help="Fechar menu lateral",
-                on_click=_set_sidebar_open,
-                args=(False,),
-            )
-
         for option in NAV_OPTIONS:
             st.button(
                 f"{NAV_ICONS.get(option, '')}   {option}",
