@@ -282,7 +282,6 @@ def render(view_mode: str = "Desktop") -> None:
     ]
 
     show_metric_grid(cards, view_mode=view_mode)
-    st.markdown("<div class='gf-gap'></div>", unsafe_allow_html=True)
 
     if view_mode == "Desktop":
         chart_left, chart_right = st.columns([1.55, .75], gap="small")
@@ -306,7 +305,6 @@ def render(view_mode: str = "Desktop") -> None:
             )
             st.altair_chart(_category_chart(movements), use_container_width=True)
 
-    st.markdown("<div class='gf-gap'></div>", unsafe_allow_html=True)
 
     if view_mode == "Desktop":
         bottom_left, bottom_right = st.columns([1.55, .75], gap="small")
