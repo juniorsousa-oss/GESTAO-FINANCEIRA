@@ -113,7 +113,8 @@ def render(view_mode: str = "Desktop"):
     ]
     show_metric_grid(cards, view_mode=view_mode)
 
-    chart_left, chart_right = st.columns(2 if view_mode == "Desktop" else 1, gap="large")
+    chart_slots = st.columns(2, gap="large") if view_mode == "Desktop" else [st.container(), st.container()]
+    chart_left, chart_right = chart_slots
 
     with chart_left:
         with st.container(border=True):
@@ -159,7 +160,8 @@ def render(view_mode: str = "Desktop"):
                     top_cats["Valor"] = top_cats["value"].map(brl)
                     st.dataframe(top_cats[["category", "Valor"]].rename(columns={"category": "Categoria"}), hide_index=True, use_container_width=True)
 
-    bottom_left, bottom_right = st.columns(2 if view_mode == "Desktop" else 1, gap="large")
+    bottom_slots = st.columns(2, gap="large") if view_mode == "Desktop" else [st.container(), st.container()]
+    bottom_left, bottom_right = bottom_slots
 
     with bottom_left:
         with st.container(border=True):
@@ -171,7 +173,8 @@ def render(view_mode: str = "Desktop"):
             section_header("Conciliação de Saldo", "Quanto mais perto de 100%, mais alinhada está sua base de gestão.")
             conciliacao = 100.0 if abs(divergencia) < 0.01 else max(0.0, 100.0 - (abs(divergencia) / max(abs(saldo_realizado), 1)) * 100)
             st.progress(conciliacao / 100)
-            c1, c2 = st.columns([1, 2])
+            conciliation_slots = st.columns([1, 2]) if view_mode == "Desktop" else [st.container(), st.container()]
+            c1, c2 = conciliation_slots
             with c1:
                 st.metric("Conciliação", f"{conciliacao:.0f}%")
             with c2:
