@@ -7,8 +7,6 @@ from services.importer import parse_excel
 
 
 def render():
-    st.title("Importar Excel")
-    st.caption("Importa a estrutura atual do ACOMPANHAMENTOS.xlsx sem armazenar o arquivo no GitHub.")
 
     if is_configured():
         st.success("Banco Supabase conectado. Os dados importados poderão ser persistidos.")
