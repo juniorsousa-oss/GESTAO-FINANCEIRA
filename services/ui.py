@@ -68,21 +68,31 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         /* Mantém apenas a estrutura necessária para recolher/abrir a sidebar. */
         header[data-testid="stHeader"] {
-            height: 2.35rem !important;
-            min-height: 2.35rem !important;
+            height: 3.05rem !important;
+            min-height: 3.05rem !important;
             background: rgba(255,255,255,.98) !important;
             border-bottom: 1px solid #e5ebf2 !important;
             backdrop-filter: blur(8px);
+        }
+
+        footer {
+            display: none !important;
+            visibility: hidden !important;
         }
 
         [data-testid="stToolbar"],
         [data-testid="stAppToolbar"],
         [data-testid="stDecoration"],
         .stAppDeployButton,
-        #MainMenu,
-        footer {
-            display: none !important;
-            visibility: hidden !important;
+        #MainMenu {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        [data-testid="stToolbar"],
+        [data-testid="stAppToolbar"] {
+            align-items: center !important;
         }
 
         [data-testid="collapsedControl"],
@@ -153,7 +163,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
         .block-container {
             max-width: __MAX_WIDTH__;
-            padding: 8px 13px 16px !important;
+            padding: 12px 13px 16px !important;
         }
 
         section[data-testid="stSidebar"],
