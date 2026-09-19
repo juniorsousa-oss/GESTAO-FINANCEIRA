@@ -478,7 +478,7 @@ def render_sidebar(is_db_configured: bool) -> str:
     state_class = "gf-status-ok" if is_db_configured else "gf-status-test"
     state_text = "Banco conectado" if is_db_configured else "Modo de teste"
 
-    sidebar_html = f"""
+    sidebar_html = dedent(f"""
     <div class="gf-sidebar-shell">
         <div class="gf-brand">
             <div class="gf-brand-mark"><span></span><span></span><span></span></div>
@@ -504,10 +504,10 @@ def render_sidebar(is_db_configured: bool) -> str:
             <div class="gf-status {state_class}">● {state_text}</div>
         </div>
     </div>
-    """
+    """)
 
     with st.sidebar:
-        st.markdown(sidebar_html, unsafe_allow_html=True)
+        st.markdown(dedent(sidebar_html), unsafe_allow_html=True)
 
     return current
 
