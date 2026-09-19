@@ -442,225 +442,225 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             }}
 
             /* ESCALA DESKTOP FINAL - vence estilos nativos do Streamlit */
-            @media (min-width: 901px) {
+            @media (min-width: 901px) {{
                 section[data-testid="stSidebar"],
-                [data-testid="stSidebar"] {
+                [data-testid="stSidebar"] {{
                     min-width: 184px !important;
                     width: 184px !important;
                     max-width: 184px !important;
-                }
+                }}
 
                 section[data-testid="stSidebar"] > div,
-                [data-testid="stSidebar"] > div:first-child {
+                [data-testid="stSidebar"] > div:first-child {{
                     width: 184px !important;
-                }
+                }}
 
-                .gf-sidebar-shell {
+                .gf-sidebar-shell {{
                     margin-top: 0 !important;
                     padding: .42rem .48rem .48rem !important;
-                }
+                }}
 
-                .gf-brand {
+                .gf-brand {{
                     gap: 6px !important;
                     padding: 0 3px 7px !important;
                     margin-bottom: 4px !important;
-                }
+                }}
 
-                .gf-brand-mark {
+                .gf-brand-mark {{
                     width: 22px !important;
                     height: 22px !important;
                     border-radius: 7px !important;
                     padding: 4px !important;
-                }
+                }}
 
-                .gf-brand-title {
+                .gf-brand-title {{
                     font-size: .72rem !important;
-                }
+                }}
 
-                .gf-brand-sub {
+                .gf-brand-sub {{
                     font-size: .47rem !important;
-                }
+                }}
 
-                .gf-nav {
+                .gf-nav {{
                     gap: 2px !important;
                     margin-top: 2px !important;
-                }
+                }}
 
-                .gf-nav-item {
+                .gf-nav-item {{
                     min-height: 27px !important;
                     padding: 0 6px !important;
                     gap: 5px !important;
                     border-radius: 6px !important;
                     font-size: .60rem !important;
-                }
+                }}
 
-                .gf-nav-icon {
+                .gf-nav-icon {{
                     width: 12px !important;
                     flex-basis: 12px !important;
                     font-size: .62rem !important;
-                }
+                }}
 
-                .gf-view-label {
+                .gf-view-label {{
                     margin: 8px 3px 4px !important;
                     font-size: .47rem !important;
-                }
+                }}
 
-                .gf-mode {
+                .gf-mode {{
                     gap: 3px !important;
-                }
+                }}
 
-                .gf-mode-item {
+                .gf-mode-item {{
                     min-height: 25px !important;
                     font-size: .56rem !important;
                     border-radius: 6px !important;
-                }
+                }}
 
-                .gf-trust {
+                .gf-trust {{
                     margin-top: 8px !important;
                     padding: 7px 7px !important;
                     border-radius: 8px !important;
-                }
+                }}
 
-                .gf-trust-title {
+                .gf-trust-title {{
                     font-size: .55rem !important;
                     margin-bottom: 2px !important;
-                }
+                }}
 
-                .gf-trust-text {
+                .gf-trust-text {{
                     font-size: .47rem !important;
                     line-height: 1.28 !important;
-                }
+                }}
 
-                .gf-status {
+                .gf-status {{
                     margin-top: 5px !important;
                     padding: 2px 5px !important;
                     font-size: .48rem !important;
-                }
+                }}
 
-                .block-container {
+                .block-container {{
                     padding-top: 0 !important;
                     padding-left: .42rem !important;
                     padding-right: .42rem !important;
                     padding-bottom: .35rem !important;
                     max-width: 1800px !important;
-                }
+                }}
 
-                .gf-page-header {
+                .gf-page-header {{
                     padding: 0 0 .16rem !important;
                     margin: 0 !important;
-                }
+                }}
 
-                .gf-page-eyebrow {
+                .gf-page-eyebrow {{
                     font-size: .43rem !important;
                     margin: 0 0 1px !important;
                     letter-spacing: .10em !important;
-                }
+                }}
 
                 h1.gf-page-title,
-                .gf-page-title {
+                .gf-page-title {{
                     font-size: .88rem !important;
                     line-height: 1 !important;
                     margin: 0 !important;
                     font-weight: 850 !important;
-                }
+                }}
 
                 p.gf-page-subtitle,
-                .gf-page-subtitle {
+                .gf-page-subtitle {{
                     font-size: .50rem !important;
                     line-height: 1.15 !important;
                     margin: 2px 0 0 !important;
-                }
+                }}
 
-                .gf-month {
+                .gf-month {{
                     padding: 3px 5px !important;
                     font-size: .49rem !important;
                     border-radius: 6px !important;
-                }
+                }}
 
-                .gf-card {
+                .gf-card {{
                     min-height: 68px !important;
                     padding: 6px 7px 5px !important;
                     border-radius: 9px !important;
-                }
+                }}
 
-                .gf-card-label {
+                .gf-card-label {{
                     gap: 5px !important;
                     margin-bottom: 3px !important;
                     font-size: .55rem !important;
                     line-height: 1 !important;
-                }
+                }}
 
-                .gf-card-icon {
+                .gf-card-icon {{
                     width: 18px !important;
                     height: 18px !important;
                     border-radius: 6px !important;
                     font-size: .55rem !important;
-                }
+                }}
 
-                .gf-card-value {
+                .gf-card-value {{
                     font-size: .76rem !important;
                     line-height: 1 !important;
                     margin-bottom: 2px !important;
-                }
+                }}
 
-                .gf-card-footnote {
+                .gf-card-footnote {{
                     font-size: .45rem !important;
                     line-height: 1.15 !important;
-                }
+                }}
 
-                div[data-testid="stVerticalBlock"] {
+                div[data-testid="stVerticalBlock"] {{
                     gap: .24rem !important;
-                }
+                }}
 
-                div[data-testid="stHorizontalBlock"] {
+                div[data-testid="stHorizontalBlock"] {{
                     gap: .28rem !important;
-                }
+                }}
 
-                div[data-testid="stVerticalBlockBorderWrapper"] {
+                div[data-testid="stVerticalBlockBorderWrapper"] {{
                     border-radius: 8px !important;
-                }
+                }}
 
-                div[data-testid="stVerticalBlockBorderWrapper"] > div {
+                div[data-testid="stVerticalBlockBorderWrapper"] > div {{
                     padding-top: .34rem !important;
                     padding-bottom: .30rem !important;
                     padding-left: .38rem !important;
                     padding-right: .38rem !important;
-                }
+                }}
 
-                .gf-section-title {
+                .gf-section-title {{
                     font-size: .60rem !important;
                     line-height: 1 !important;
                     margin-bottom: 1px !important;
-                }
+                }}
 
-                .gf-section-caption {
+                .gf-section-caption {{
                     font-size: .47rem !important;
                     line-height: 1.1 !important;
                     margin-bottom: .14rem !important;
-                }
+                }}
 
-                .gf-checklist li {
+                .gf-checklist li {{
                     font-size: .48rem !important;
                     margin: .08rem 0 !important;
-                }
+                }}
 
-                .gf-footer-note {
+                .gf-footer-note {{
                     font-size: .48rem !important;
                     margin-top: .32rem !important;
-                }
+                }}
 
-                .gf-gap-sm { height: 3px !important; }
-                .gf-gap-md { height: 5px !important; }
-                .gf-gap-lg { height: 7px !important; }
+                .gf-gap-sm {{ height: 3px !important; }}
+                .gf-gap-md {{ height: 5px !important; }}
+                .gf-gap-lg {{ height: 7px !important; }}
 
-                [data-testid="stDataFrame"] {
+                [data-testid="stDataFrame"] {{
                     font-size: .58rem !important;
-                }
+                }}
 
-                div[data-testid="stMetricValue"] {
+                div[data-testid="stMetricValue"] {{
                     font-size: .8rem !important;
-                }
-            }
+                }}
+            }}
 
         </style>
         """,
