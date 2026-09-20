@@ -299,7 +299,7 @@ def render(view_mode: str = "Desktop") -> None:
             chart_right = st.container()
 
         with chart_left:
-            with st.container(border=True):
+            with st.container(border=True, key="gf_chart_evolution"):
                 section_header(
                     "▥  Evolução Financeira Mensal",
                     "Receitas, despesas e saldo nos últimos seis meses.",
@@ -307,7 +307,7 @@ def render(view_mode: str = "Desktop") -> None:
                 st.altair_chart(_finance_chart(monthly).properties(height=182 if view_mode == "Desktop" else 215), use_container_width=True)
 
         with chart_right:
-            with st.container(border=True):
+            with st.container(border=True, key="gf_chart_categories"):
                 section_header(
                     "◉  Despesas por Categoria",
                     "Distribuição das saídas registradas.",
@@ -326,7 +326,7 @@ def render(view_mode: str = "Desktop") -> None:
             bottom_right = st.container()
 
         with bottom_left:
-            with st.container(border=True):
+            with st.container(border=True, key="gf_bottom_forecasts"):
                 section_header(
                     "▣  Próximas Contas e Previsões",
                     "Agenda financeira para acompanhamento imediato.",
@@ -344,7 +344,7 @@ def render(view_mode: str = "Desktop") -> None:
                 )
 
         with bottom_right:
-            with st.container(border=True):
+            with st.container(border=True, key="gf_bottom_conciliation"):
                 section_header(
                     "▰  Conciliação de Saldo",
                     "Conferência entre saldo calculado e saldo localizado.",
