@@ -51,9 +51,13 @@ def _headers(prefer: str | None = None) -> dict[str, str]:
     key = _secret("SUPABASE_KEY") or ""
     headers = {
         "apikey": key,
-        "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
     }
+    # Chaves modernas sb_secret_* não são JWTs. Usá-las em
+    # Authorization: Bearer pode causar "Invalid JWT". A chave de serviço
+    # legada (JWT) continua compatível com o cabeçalho Authorization.
+    if not key.startswith("sb_secret_"):
+        headers["Authorization"] = f"Bearer {key}"
     if prefer:
         headers["Prefer"] = prefer
     return headers
