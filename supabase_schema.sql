@@ -59,5 +59,33 @@ create index if not exists idx_finance_movements_competence on public.finance_mo
 create index if not exists idx_finance_forecasts_due_date on public.finance_forecasts(due_date);
 create index if not exists idx_finance_forecasts_competence on public.finance_forecasts(competence);
 
--- V1 simples: as políticas de acesso devem ser definidas de acordo com a chave usada no app.
--- Se utilizar service_role exclusivamente nos secrets do Streamlit, não exponha a chave no código ou no navegador.
+-- DADOS FINANCEIROS PRIVADOS: bloqueados para clientes anon/authenticated.
+-- O servidor Streamlit usa uma chave de serviço EXCLUSIVAMENTE em Secrets,
+-- protegida por APP_ACCESS_PASSWORD. Nunca publicar chave no GitHub ou JS.
+-- Este SQL prepara um projeto SEPARADO escolhido pelo proprietário; não
+-- executar no projeto compartilhado sem autorização.
+alter table public.finance_movements enable row level security;
+alter table public.finance_forecasts enable row level security;
+alter table public.finance_accounts enable row level security;
+alter table public.finance_debts enable row level security;
+alter table public.finance_settings enable row level security;
+
+revoke all on table
+    public.finance_movements,
+    public.finance_forecasts,
+    public.finance_accounts,
+    public.finance_debts,
+    public.finance_settings
+from anon, authenticated;
+
+grant select, insert, update, delete on table
+    public.finance_movements,
+    public.finance_forecasts,
+    public.finance_accounts,
+    public.finance_debts,
+    public.finance_settings
+to service_role;
+
+-- Apenas a credencial de serviço, mantida no back-end, administra os dados.
+-- Não foram criadas políticas públicas de leitura ou gravação.
+
