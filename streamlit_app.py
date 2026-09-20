@@ -4,6 +4,7 @@ import streamlit as st
 
 from modules import configuracoes, dashboard, dividas, importacao, movimentacoes, previsoes, saldos
 from services.db import _secret, is_configured, verify_database
+from services.login import render_login
 from services.ui import inject_global_css, render_app_header, render_page_header, render_sidebar, render_sidebar_toggle, render_header_search
 
 
@@ -26,16 +27,15 @@ if is_configured():
         st.stop()
 
     if not st.session_state.get("_gf_authenticated", False):
-        st.title("Acesso à gestão financeira")
-        with st.form("gf_private_login"):
-            entered_password = st.text_input("Senha de acesso", type="password")
-            submitted = st.form_submit_button("Entrar")
+        submitted, entered_password = render_login()
         if submitted:
             if hmac.compare_digest(entered_password, expected_password):
                 st.session_state["_gf_authenticated"] = True
+                st.session_state.pop("_gf_login_error", None)
                 st.rerun()
             else:
-                st.error("Senha incorreta.")
+                st.session_state["_gf_login_error"] = True
+                st.rerun()
         st.stop()
 
     if not st.session_state.get("_gf_db_verified", False):
