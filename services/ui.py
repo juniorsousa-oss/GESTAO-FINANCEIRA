@@ -878,6 +878,98 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             box-sizing: border-box !important;
         }
 
+        /* Conteúdo interno preenche os cartões pareados sem alterar sua borda.
+           A rosca continua menor que o gráfico mensal, mas centralizada
+           dentro da área disponível. */
+        .st-key-gf_chart_evolution [data-testid="stVegaLiteChart"],
+        .st-key-gf_chart_categories [data-testid="stVegaLiteChart"] {
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+        .st-key-gf_chart_categories [data-testid="stVegaLiteChart"] {
+            display: flex !important;
+            justify-content: center !important;
+        }
+
+        /* Previsões: quando vazias, um estado informativo ocupa a mesma
+           área que a tabela com dados, sem simular lançamentos financeiros. */
+        .gf-empty-forecasts {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 218px;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 18px 14px;
+            border: 1px dashed #d7e3ed;
+            border-radius: 9px;
+            background: #f8fbfe;
+            color: var(--muted);
+            text-align: center;
+        }
+        .gf-empty-forecasts-icon {
+            font-size: 25px;
+            line-height: 1;
+            color: #4c7795;
+        }
+        .gf-empty-forecasts strong {
+            color: var(--ink);
+            font-size: 13px;
+            font-weight: 750;
+        }
+        .gf-empty-forecasts span {
+            font-size: 11px;
+            max-width: 320px;
+            line-height: 1.4;
+        }
+
+        /* Conciliação: distribuir o percentual e as verificações pelo
+           espaço livre em vez de concentrar tudo na metade superior. */
+        .st-key-gf_bottom_conciliation .gf-conciliation-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 14px;
+            min-height: 203px;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 2px 2px;
+        }
+        .gf-conciliation-summary {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 3px;
+        }
+        .gf-conciliation-summary strong {
+            color: var(--ink);
+            font-size: 29px;
+            font-weight: 850;
+            line-height: 1.05;
+        }
+        .gf-conciliation-summary span {
+            color: #36506b;
+            font-size: 12px;
+            font-weight: 750;
+        }
+        .st-key-gf_bottom_conciliation .gf-checklist {
+            padding-left: 1.1rem;
+        }
+        .st-key-gf_bottom_conciliation .gf-checklist li {
+            margin: 5px 0;
+            font-size: 10.5px;
+            line-height: 1.35;
+        }
+        @media (max-width: 900px) {
+            .gf-empty-forecasts,
+            .st-key-gf_bottom_conciliation .gf-conciliation-content {
+                min-height: 0;
+            }
+            .gf-empty-forecasts { padding-block: 36px; }
+        }
+
         /* Identidade das tabelas: cabeçalho verde profundo, conteúdo claro
            e status categorizados por cor; todas preservam seleção/rolagem. */
         .gf-table-heading {
