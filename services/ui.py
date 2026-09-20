@@ -850,6 +850,77 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             width: 100%;
         }
 
+        /* Mesmo tamanho dos cartões em cada fileira do Dashboard.
+           Somente o arco interno permanece reduzido para caber na rosca. */
+        .st-key-gf_chart_evolution,
+        .st-key-gf_chart_categories {
+            height: 320px !important;
+            min-height: 320px !important;
+            box-sizing: border-box !important;
+        }
+        .st-key-gf_bottom_forecasts,
+        .st-key-gf_bottom_conciliation {
+            height: 265px !important;
+            min-height: 265px !important;
+            box-sizing: border-box !important;
+        }
+        /* Faz o contêiner com borda ocupar toda a altura do card. */
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.st-key-gf_chart_evolution),
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.st-key-gf_chart_categories),
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.st-key-gf_bottom_forecasts),
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.st-key-gf_bottom_conciliation) {
+            height: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Identidade das tabelas: cabeçalho verde profundo, conteúdo claro
+           e status categorizados por cor; todas preservam seleção/rolagem. */
+        .gf-table-heading {
+            border-radius: 9px 9px 0 0;
+            padding: 8px 12px;
+            background: #245849;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 780;
+            letter-spacing: .025em;
+            line-height: 1.3;
+        }
+        .st-key-gf_table_movements,
+        .st-key-gf_table_forecasts,
+        .st-key-gf_table_accounts,
+        .st-key-gf_table_debts,
+        .st-key-gf_table_import_movements,
+        .st-key-gf_table_import_forecasts,
+        .st-key-gf_table_import_accounts,
+        .st-key-gf_table_import_debts {
+            border: 1px solid #cfded7 !important;
+            border-radius: 10px !important;
+            overflow: hidden !important;
+            background: #fff !important;
+        }
+        .st-key-gf_table_movements [data-testid="stVerticalBlock"],
+        .st-key-gf_table_forecasts [data-testid="stVerticalBlock"],
+        .st-key-gf_table_accounts [data-testid="stVerticalBlock"],
+        .st-key-gf_table_debts [data-testid="stVerticalBlock"] {
+            gap: 0 !important;
+        }
+        .st-key-gf_table_movements [data-testid="stDataFrame"],
+        .st-key-gf_table_forecasts [data-testid="stDataFrame"],
+        .st-key-gf_table_accounts [data-testid="stDataFrame"],
+        .st-key-gf_table_debts [data-testid="stDataFrame"] {
+            border: 0 !important;
+            border-radius: 0 !important;
+        }
+        @media (max-width: 900px) {
+            .st-key-gf_chart_evolution,
+            .st-key-gf_chart_categories,
+            .st-key-gf_bottom_forecasts,
+            .st-key-gf_bottom_conciliation {
+                height: auto !important;
+                min-height: 0 !important;
+            }
+        }
+
         /* KPI CARDS */
         .gf-kpi {
             min-height: 94px;
