@@ -901,26 +901,49 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             width: 100% !important;
             min-width: 0 !important;
         }
-        /* Gráfico e legenda cabem integralmente na área útil do cartão.
-           Não mover o canvas por transform: isso fazia a legenda invadir a
-           borda inferior. O cartão externo continua pareado com o vizinho. */
+        /* Rosca Altair e legenda externa: sem altura rígida, transform ou
+           redimensionamento do canvas que possa cortar sua parte superior. */
         .st-key-gf_chart_categories [data-testid="stVegaLiteChart"] {
             display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
             justify-content: center !important;
-            height: 268px !important;
-            max-height: 268px !important;
+            align-items: center !important;
             width: 100% !important;
+            height: auto !important;
+            max-height: none !important;
             min-width: 0 !important;
-            transform: none !important;
+            overflow: visible !important;
             box-sizing: border-box !important;
+            transform: none !important;
         }
-        @media (max-width: 900px) {
-            .st-key-gf_chart_categories [data-testid="stVegaLiteChart"] {
-                height: auto !important;
-                max-height: none !important;
-            }
+        .st-key-gf_chart_categories .gf-category-legend {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 8px 13px;
+            max-width: 100%;
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            margin: 1px auto 0;
+            padding: 0 5px 6px;
+            font-size: 10px;
+            line-height: 1.35;
+            color: #60748c;
+        }
+        .st-key-gf_chart_categories .gf-category-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+        .st-key-gf_chart_categories .gf-category-legend-item i {
+            display: inline-block;
+            flex: 0 0 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
         }
 
         /* Área útil dos gráficos quando a base está vazia: ocupação
