@@ -5,6 +5,7 @@ import streamlit as st
 from modules import configuracoes, dashboard, dividas, importacao, movimentacoes, previsoes, saldos
 from services.db import _secret, is_configured, verify_database
 from services.login import render_login
+from services.profile import clean_display_name
 from services.ui import inject_global_css, render_app_header, render_page_header, render_sidebar, render_sidebar_toggle, render_header_search
 
 
@@ -27,11 +28,19 @@ if is_configured():
         st.stop()
 
     if not st.session_state.get("_gf_authenticated", False):
-        submitted, entered_password = render_login()
+        submitted, entered_name, entered_password = render_login()
         if submitted:
-            if hmac.compare_digest(entered_password, expected_password):
+            display_name = clean_display_name(entered_name)
+            if not display_name:
+                st.session_state["_gf_login_name_error"] = True
+                st.rerun()
+            elif hmac.compare_digest(entered_password, expected_password):
                 st.session_state["_gf_authenticated"] = True
+                # Nome escolhido pelo usuário, sem confundir com identidade
+                # autenticada: a V1 ainda usa uma senha compartilhada.
+                st.session_state["_gf_display_name"] = display_name
                 st.session_state.pop("_gf_login_error", None)
+                st.session_state.pop("_gf_login_name_error", None)
                 st.rerun()
             else:
                 st.session_state["_gf_login_error"] = True
