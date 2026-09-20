@@ -161,7 +161,7 @@ def _category_chart(movements: pd.DataFrame) -> alt.Chart:
 
     return (
         alt.Chart(data)
-        .mark_arc(innerRadius=29, outerRadius=48)
+        .mark_arc(innerRadius=40, outerRadius=65)
         .encode(
             theta=alt.Theta(field="value", type="quantitative"),
             color=alt.Color(
@@ -182,7 +182,7 @@ def _category_chart(movements: pd.DataFrame) -> alt.Chart:
                 alt.Tooltip("value", title="Valor", format=",.2f"),
             ],
         )
-        .properties(height=134)
+        .properties(height=232)
     )
 
 
@@ -304,7 +304,10 @@ def render(view_mode: str = "Desktop") -> None:
                     "▥  Evolução Financeira Mensal",
                     "Receitas, despesas e saldo nos últimos seis meses.",
                 )
-                st.altair_chart(_finance_chart(monthly).properties(height=182 if view_mode == "Desktop" else 215), use_container_width=True)
+                st.altair_chart(
+                    _finance_chart(monthly).properties(height=250),
+                    use_container_width=True,
+                )
 
         with chart_right:
             with st.container(border=True, key="gf_chart_categories"):
@@ -334,14 +337,23 @@ def render(view_mode: str = "Desktop") -> None:
 
                 table = _forecast_table(forecasts)
                 if table.empty:
-                    st.caption("Nenhuma previsão carregada ainda.")
-
-                st.dataframe(
-                    styled_financial_table(table),
-                    hide_index=True,
-                    use_container_width=True,
-                    height=145 if view_mode == "Desktop" else 150,
-                )
+                    st.markdown(
+                        """
+                        <div class="gf-empty-forecasts">
+                            <div class="gf-empty-forecasts-icon" aria-hidden="true">▣</div>
+                            <strong>Nenhuma previsão carregada ainda.</strong>
+                            <span>As próximas contas aparecerão aqui após o cadastro ou a importação.</span>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st.dataframe(
+                        styled_financial_table(table),
+                        hide_index=True,
+                        use_container_width=True,
+                        height=222,
+                    )
 
         with bottom_right:
             with st.container(border=True, key="gf_bottom_conciliation"):
@@ -365,18 +377,18 @@ def render(view_mode: str = "Desktop") -> None:
 
                 st.markdown(
                     f"""
-                    <div style="font-size:1.35rem;font-weight:850;color:#10233f;margin:.30rem 0 .05rem;">
-                        {conciliacao:.0f}%
+                    <div class="gf-conciliation-content">
+                        <div class="gf-conciliation-summary">
+                            <strong>{conciliacao:.0f}%</strong>
+                            <span>Dados conciliados</span>
+                        </div>
+                        <ul class="gf-checklist">
+                            <li>Movimentações separadas das previsões</li>
+                            <li>Saldos localizados comparados ao sistema</li>
+                            <li>Divergência atual: {brl(divergencia)}</li>
+                            <li>{"Base pronta para conferência" if has_data else "Aguardando importação da base"}</li>
+                        </ul>
                     </div>
-                    <div style="font-size:.72rem;font-weight:800;color:#36506b;margin-bottom:6px;">
-                        Dados conciliados
-                    </div>
-                    <ul class="gf-checklist">
-                        <li>Movimentações separadas das previsões</li>
-                        <li>Saldos localizados comparados ao sistema</li>
-                        <li>Divergência atual: {brl(divergencia)}</li>
-                        <li>{"Base pronta para conferência" if has_data else "Aguardando importação da base"}</li>
-                    </ul>
                     """,
                     unsafe_allow_html=True,
                 )
