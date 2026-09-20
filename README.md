@@ -30,16 +30,38 @@ streamlit run streamlit_app.py
 
 ## Configurar Supabase
 
-Execute `supabase_schema.sql` no SQL Editor do projeto Supabase.
+Para dinheiro pessoal, prefira **um projeto Supabase dedicado**, separado dos
+bancos operacionais da empresa. A execução do SQL no projeto e a ativação das
+credenciais devem ocorrer somente após a escolha do projeto pelo responsável.
 
-Depois, em **Streamlit Cloud > App settings > Secrets**, adicione:
+1. Execute `supabase_schema.sql` no SQL Editor do projeto escolhido. O script
+   prepara cinco tabelas, habilita RLS e remove acesso direto de
+   `anon`/`authenticated`. Não crie políticas públicas para esses dados.
+2. Em **Streamlit Cloud → App settings → Secrets**, adicione os três valores:
 
 ```toml
 SUPABASE_URL = "https://SEU-PROJETO.supabase.co"
-SUPABASE_KEY = "SUA-CHAVE"
+SUPABASE_KEY = "SUA-CHAVE-PRIVADA-DE-SERVICO"
+APP_ACCESS_PASSWORD = "SUA-SENHA-PRIVADA-FORTE"
 ```
 
-Nunca coloque a chave em um arquivo versionado no GitHub.
+3. Use exclusivamente a chave de serviço privada no backend Streamlit.
+   Não insira nenhuma chave ou senha no GitHub, no navegador ou no chat.
+   Não use `anon`/`publishable` para contornar as restrições de acesso.
+4. O aplicativo exige senha antes de acessar o banco e só libera as páginas
+   após testar (somente leitura) as cinco tabelas. Sem credenciais, continua
+   funcionando em modo de sessão para validar visual e regras.
+5. Faça backup do Excel original antes de habilitar o projeto, pois os dados
+   em memória do modo de teste **não migram automaticamente** para o Supabase.
+6. A importação inicial permite gravar nas quatro tabelas financeiras vazias.
+   Se já houver dados persistidos, o sistema bloqueia a substituição para
+   evitar perda acidental. Reimportação/mesclagem futura exige backup e
+   operação transacional.
+
+A senha simples desta V1 é apenas uma barreira inicial para **validação
+privada**. Antes de disponibilizar o aplicativo a vários usuários, implemente
+autenticação individual, autorização por usuário e políticas RLS vinculadas
+à identidade de cada conta.
 
 ## Importação do Excel
 
