@@ -22,6 +22,20 @@ def render():
             "Nunca compartilhe essas credenciais no chat ou no GitHub."
         )
 
+    if is_configured() and st.button(
+        "Sair / trocar usuário",
+        key="gf_logout_button",
+        help="Encerra a sessão atual e volta à tela de senha.",
+    ):
+        # Não limpar outros dados financeiros persistidos no banco.
+        for key in (
+            "_gf_authenticated", "_gf_user_id", "_gf_display_name",
+            "_gf_is_admin", "_gf_avatar_uri", "_gf_db_verified",
+            "_gf_login_failures", "_gf_login_error", "_gf_lock_until",
+        ):
+            st.session_state.pop(key, None)
+        st.rerun()
+
     st.subheader("Meu perfil")
     st.caption(
         "O nome e a foto deste perfil são associados à sua senha de acesso."
