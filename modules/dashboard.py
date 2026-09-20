@@ -193,7 +193,7 @@ def _category_chart(movements: pd.DataFrame) -> alt.Chart:
                 alt.Tooltip("value", title="Valor", format=",.2f"),
             ],
         )
-        .properties(height=284)
+        .properties(height=210)
     )
 
 
