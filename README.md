@@ -30,21 +30,25 @@ streamlit run streamlit_app.py
 
 ## Configurar Supabase
 
-Para dinheiro pessoal, prefira **um projeto Supabase dedicado**, separado dos
-bancos operacionais da empresa. A execução do SQL no projeto e a ativação das
-credenciais devem ocorrer somente após a escolha do projeto pelo responsável.
+**Projeto escolhido:** `cuixazpxkvniqldmmnth` (Supabase existente). Em
+20/09/2026 foram criadas e validadas as cinco tabelas `finance_*` nesse
+projeto. O esquema `supabase_schema.sql` já foi aplicado; não é necessário
+executá-lo novamente. Todas as cinco tabelas estão com RLS ativado e sem
+permissões de acesso para `anon`/`authenticated`. Nenhuma tabela dos outros
+aplicativos foi alterada nesta migração.
 
-1. Execute `supabase_schema.sql` no SQL Editor do projeto escolhido. O script
-   prepara cinco tabelas, habilita RLS e remove acesso direto de
-   `anon`/`authenticated`. Não crie políticas públicas para esses dados.
-2. Em **Streamlit Cloud → App settings → Secrets**, adicione os três valores:
+1. Em **Streamlit Cloud → App settings → Secrets**, adicione os três valores:
 
 ```toml
-SUPABASE_URL = "https://SEU-PROJETO.supabase.co"
+SUPABASE_URL = "https://cuixazpxkvniqldmmnth.supabase.co"
 SUPABASE_KEY = "SUA-CHAVE-PRIVADA-DE-SERVICO"
 APP_ACCESS_PASSWORD = "SUA-SENHA-PRIVADA-FORTE"
 ```
 
+2. No painel do Supabase, obtenha a chave privada (`service_role` ou
+   `sb_secret_...`) nas configurações de API do mesmo projeto e defina
+   uma senha forte e exclusiva para `APP_ACCESS_PASSWORD`.
+   Não envie esses segredos por mensagem nem os inclua em arquivos GitHub.
 3. Use exclusivamente a chave de serviço privada no backend Streamlit.
    Não insira nenhuma chave ou senha no GitHub, no navegador ou no chat.
    Não use `anon`/`publishable` para contornar as restrições de acesso.
