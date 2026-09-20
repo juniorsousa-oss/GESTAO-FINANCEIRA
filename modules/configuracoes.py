@@ -7,10 +7,18 @@ from services.db import get_settings, is_configured, save_setting
 
 def render():
     if is_configured():
-        st.success("Supabase conectado — persistência habilitada.")
+        st.success("Banco financeiro validado em leitura. Acesso persistente protegido pela senha da sessão.")
     else:
-        st.warning("Modo de teste — sem Supabase. Cadastros e importações permanecem apenas enquanto esta sessão estiver ativa.")
-        st.code('SUPABASE_URL = "https://SEU-PROJETO.supabase.co"\nSUPABASE_KEY = "SUA-CHAVE"', language="toml")
+        st.warning(
+            "Modo de teste — sem banco persistente. Os registros desta sessão "
+            "não migram automaticamente quando o Supabase for habilitado."
+        )
+        st.info(
+            "Para conectar um projeto financeiro privado, prepare as cinco tabelas "
+            "do supabase_schema.sql e defina SUPABASE_URL, SUPABASE_KEY e "
+            "APP_ACCESS_PASSWORD nos Secrets do Streamlit Cloud. "
+            "Nunca compartilhe essas credenciais no chat ou no GitHub."
+        )
 
     settings = get_settings()
     st.subheader("Metas")
