@@ -3,6 +3,8 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from services.ui import render_financial_table
+
 from services.db import TABLES, insert_row, select_rows, update_row
 from services.finance import brl, financial_table, numeric, to_df
 
@@ -51,10 +53,10 @@ def render():
 
     cols = [c for c in ["id", "description", "status", "total_value", "total_installments", "paid_installments", "installment_value", "open_value"] if c in df.columns]
     display_df = financial_table(df[cols])
-    st.dataframe(
+    render_financial_table(
         display_df,
-        use_container_width=True,
-        hide_index=True,
+        key="debts",
+        title="DÍVIDAS",
         height=min(360, max(110, (len(display_df) + 1) * 33)),
     )
 
