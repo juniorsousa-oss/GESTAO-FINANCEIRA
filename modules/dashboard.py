@@ -304,10 +304,22 @@ def render(view_mode: str = "Desktop") -> None:
                     "▥  Evolução Financeira Mensal",
                     "Receitas, despesas e saldo nos últimos seis meses.",
                 )
-                st.altair_chart(
-                    _finance_chart(monthly).properties(height=250),
-                    use_container_width=True,
-                )
+                if monthly[["Receitas", "Despesas"]].abs().to_numpy().sum() == 0:
+                    st.markdown(
+                        """
+                        <div class="gf-chart-empty">
+                            <div class="gf-chart-empty-icon" aria-hidden="true">▥</div>
+                            <strong>Nenhuma movimentação no período.</strong>
+                            <span>Cadastre uma entrada ou saída para visualizar a evolução dos últimos seis meses.</span>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st.altair_chart(
+                        _finance_chart(monthly).properties(height=250),
+                        use_container_width=True,
+                    )
 
         with chart_right:
             with st.container(border=True, key="gf_chart_categories"):
@@ -315,7 +327,19 @@ def render(view_mode: str = "Desktop") -> None:
                     "◉  Despesas por Categoria",
                     "Distribuição das saídas registradas.",
                 )
-                st.altair_chart(_category_chart(movements), use_container_width=True)
+                if saidas <= 0:
+                    st.markdown(
+                        """
+                        <div class="gf-chart-empty">
+                            <div class="gf-chart-empty-icon" aria-hidden="true">◉</div>
+                            <strong>Nenhuma despesa registrada.</strong>
+                            <span>As categorias serão exibidas aqui depois do cadastro ou da importação das saídas.</span>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st.altair_chart(_category_chart(movements), use_container_width=True)
 
     st.markdown("<div class='gf-dashboard-band-gap' aria-hidden='true'></div>", unsafe_allow_html=True)
 
