@@ -52,7 +52,7 @@ html, body, .stApp,
     max-width: none !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    padding: clamp(120px, 17vh, 165px) 20px 34px !important;
+    padding: clamp(88px, 11vh, 118px) 18px 24px !important;
     margin: 0 auto !important;
 }
 div[data-testid="stElementContainer"]:has(.gf-login-brandbar) {
@@ -67,9 +67,9 @@ div[data-testid="stElementContainer"]:has(.gf-login-brandbar) {
     top: 0;
     left: 0;
     right: 0;
-    min-height: 88px;
+    min-height: 72px;
     box-sizing: border-box;
-    padding: 15px clamp(20px, 3vw, 52px);
+    padding: 12px clamp(18px, 2vw, 36px);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -85,35 +85,35 @@ div[data-testid="stElementContainer"]:has(.gf-login-brandbar) {
     min-width: 0;
 }
 .gf-login-brand-logo {
-    width: 54px;
-    height: 54px;
-    flex: 0 0 54px;
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
     border-radius: 10px;
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    gap: 5px;
-    padding-bottom: 13px;
+    gap: 4px;
+    padding-bottom: 10px;
     box-sizing: border-box;
     background: linear-gradient(145deg, #14bdb1, #36cbbb);
 }
 .gf-login-brand-logo i {
     display: block;
-    width: 7px;
+    width: 6px;
     background: white;
     border-radius: 3px 3px 1px 1px;
 }
-.gf-login-brand-logo i:nth-child(1) { height: 13px; opacity: .85; }
-.gf-login-brand-logo i:nth-child(2) { height: 23px; }
-.gf-login-brand-logo i:nth-child(3) { height: 31px; }
+.gf-login-brand-logo i:nth-child(1) { height: 11px; opacity: .85; }
+.gf-login-brand-logo i:nth-child(2) { height: 19px; }
+.gf-login-brand-logo i:nth-child(3) { height: 26px; }
 .gf-login-brand-name {
-    font: 800 clamp(17px, 1.65vw, 27px)/1.1 Inter, ui-sans-serif, system-ui, sans-serif;
+    font: 800 clamp(15px, 1.3vw, 22px)/1.1 Inter, ui-sans-serif, system-ui, sans-serif;
     letter-spacing: -.025em;
     white-space: nowrap;
 }
 .gf-login-brand-subtitle {
-    margin-top: 6px;
-    font: 400 clamp(10px, .9vw, 14px)/1.25 Inter, ui-sans-serif, system-ui, sans-serif;
+    margin-top: 4px;
+    font: 400 clamp(9px, .8vw, 12px)/1.2 Inter, ui-sans-serif, system-ui, sans-serif;
     color: #c4d6e7;
     white-space: nowrap;
 }
@@ -138,13 +138,13 @@ div[data-testid="stElementContainer"]:has(.gf-login-brandbar) {
     position: relative;
     z-index: 1;
     box-sizing: border-box;
-    width: min(100%, 720px) !important;
-    max-width: 720px !important;
-    padding: clamp(25px, 3vw, 42px) clamp(22px, 3vw, 38px) 31px !important;
+    width: min(100%, 600px) !important;
+    max-width: 600px !important;
+    padding: 24px 24px 22px !important;
     margin: 0 auto !important;
     background: #fff !important;
     border: 1px solid #d9e4ef !important;
-    border-radius: 16px !important;
+    border-radius: 14px !important;
     box-shadow: 0 15px 40px rgba(17, 48, 80, .055) !important;
 }
 .st-key-gf_login_card [data-testid="stVerticalBlock"] {
@@ -156,31 +156,32 @@ div[data-testid="stElementContainer"]:has(.gf-login-brandbar) {
     align-items: center;
     text-align: center;
     gap: 0;
-    padding-bottom: 27px;
+    padding-bottom: 20px;
 }
 .gf-login-shield {
     box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 92px;
-    height: 92px;
+    width: 68px;
+    height: 68px;
     border-radius: 50%;
     background: #e4fbfb;
     color: #0b4265;
-    margin-bottom: 20px;
+    margin-bottom: 14px;
 }
+.gf-login-shield svg { width: 40px; height: 40px; }
 .gf-login-intro h1 {
     margin: 0;
     color: #14233b;
-    font: 800 clamp(24px, 2.5vw, 37px)/1.12 Inter, ui-sans-serif, system-ui, sans-serif;
+    font: 800 clamp(20px, 2vw, 30px)/1.1 Inter, ui-sans-serif, system-ui, sans-serif;
     letter-spacing: -.035em;
 }
 .gf-login-intro p {
-    margin: 16px 0 0;
+    margin: 10px 0 0;
     color: #63748a;
-    font: 400 clamp(13px, 1.1vw, 17px)/1.5 Inter, ui-sans-serif, system-ui, sans-serif;
-    max-width: 590px;
+    font: 400 clamp(12px, 1vw, 15px)/1.45 Inter, ui-sans-serif, system-ui, sans-serif;
+    max-width: 470px;
 }
 .st-key-gf_login_card [data-testid="stForm"] {
     padding: 0 !important;
@@ -189,19 +190,19 @@ div[data-testid="stElementContainer"]:has(.gf-login-brandbar) {
     width: 100% !important;
 }
 .st-key-gf_login_card [data-testid="stForm"] [data-testid="stVerticalBlock"] {
-    gap: 15px !important;
+    gap: 12px !important;
 }
 .st-key-gf_login_card [data-testid="stWidgetLabel"] p {
-    margin: 0 0 5px !important;
+    margin: 0 0 4px !important;
     color: #182b44 !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
     font-weight: 750 !important;
 }
 .st-key-gf_login_card [data-baseweb="input"] {
     border: 1px solid #cddbea !important;
-    border-radius: 10px !important;
+    border-radius: 9px !important;
     background: #fff !important;
-    min-height: 52px !important;
+    min-height: 46px !important;
     box-shadow: none !important;
 }
 .st-key-gf_login_card [data-baseweb="input"]:focus-within {
@@ -210,19 +211,19 @@ div[data-testid="stElementContainer"]:has(.gf-login-brandbar) {
 }
 .st-key-gf_login_card input {
     color: #182b44 !important;
-    font-size: 15px !important;
-    min-height: 52px !important;
+    font-size: 14px !important;
+    min-height: 46px !important;
     background: transparent !important;
 }
 .st-key-gf_login_card input::placeholder { color: #8492a3 !important; }
 .st-key-gf_login_card [data-testid="stFormSubmitButton"] button {
     width: 100% !important;
-    min-height: 54px !important;
+    min-height: 46px !important;
     border: 0 !important;
-    border-radius: 9px !important;
+    border-radius: 8px !important;
     background: #14385b !important;
     color: #fff !important;
-    font-size: 17px !important;
+    font-size: 15px !important;
     font-weight: 750 !important;
     box-shadow: 0 4px 8px rgba(12,45,76,.10) !important;
 }
@@ -234,14 +235,14 @@ div[data-testid="stElementContainer"]:has(.gf-login-brandbar) {
     outline-offset: 2px !important;
 }
 .gf-login-trust {
-    margin-top: 28px;
+    margin-top: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
     color: #6a7c91;
     text-align: center;
-    font: 400 12px/1.4 Inter, ui-sans-serif, system-ui, sans-serif;
+    font: 400 11px/1.4 Inter, ui-sans-serif, system-ui, sans-serif;
 }
 .gf-login-trust::before, .gf-login-trust::after {
     content: "";
@@ -270,13 +271,13 @@ div[data-testid="stElementContainer"]:has(.gf-login-brandbar) {
     .gf-login-security-icon { width: 35px; height: 35px; flex-basis: 35px; }
     .gf-login-security-icon svg { width: 22px; height: 22px; }
     .gf-login-security > div:last-child { display: none; }
-    [data-testid="stMain"] .block-container { padding: 108px 12px 24px !important; }
-    .st-key-gf_login_card { padding: 28px 21px !important; }
-    .gf-login-shield { width: 72px; height: 72px; margin-bottom: 18px; }
-    .gf-login-shield svg { width: 45px; height: 45px; }
-    .gf-login-intro { padding-bottom: 24px; }
+    [data-testid="stMain"] .block-container { padding: 94px 12px 24px !important; }
+    .st-key-gf_login_card { padding: 24px 20px !important; }
+    .gf-login-shield { width: 62px; height: 62px; margin-bottom: 12px; }
+    .gf-login-shield svg { width: 38px; height: 38px; }
+    .gf-login-intro { padding-bottom: 18px; }
     .gf-login-intro p { margin-top: 12px; }
-    .gf-login-trust { margin-top: 23px; font-size: 10px; gap: 7px; }
+    .gf-login-trust { margin-top: 16px; font-size: 10px; gap: 7px; }
 }
 @media (prefers-reduced-motion: reduce) {
     .st-key-gf_login_card * { transition: none !important; }
