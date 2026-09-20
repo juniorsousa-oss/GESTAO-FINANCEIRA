@@ -971,19 +971,41 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             color: var(--ink) !important;
         }
 
-        [data-testid="stMetric"] {
-            padding: 12px 14px !important;
+        /* Cartões das telas operacionais: o Dashboard utiliza seus
+           próprios KPIs (.gf-kpi) e não recebe essas alterações. */
+        [data-testid="stMain"] [data-testid="stMetric"] {
+            padding: 9px 11px !important;
+            min-height: 76px !important;
             border: 1px solid var(--line) !important;
             border-radius: 10px !important;
             background: var(--panel) !important;
         }
-
-        [data-testid="stMetricLabel"] {
+        [data-testid="stMain"] [data-testid="stMetricLabel"],
+        [data-testid="stMain"] [data-testid="stMetricLabel"] * {
             color: var(--muted) !important;
+            font-size: 12px !important;
+            line-height: 1.25 !important;
         }
-
-        [data-testid="stMetricValue"] {
+        [data-testid="stMain"] [data-testid="stMetricValue"],
+        [data-testid="stMain"] [data-testid="stMetricValue"] * {
             color: var(--ink) !important;
+            font-size: clamp(17px, 1.65vw, 25px) !important;
+            line-height: 1.15 !important;
+            font-weight: 750 !important;
+            letter-spacing: -.01em !important;
+        }
+        [data-testid="stMain"] [data-testid="stMetric"] [data-testid="stVerticalBlock"] {
+            gap: 3px !important;
+        }
+        /* Tabelas operacionais mais densas, sem alterar tamanho dos
+           campos de formulário nem forçar redução de texto no menu. */
+        [data-testid="stMain"] [data-testid="stDataFrame"] {
+            font-size: 12px !important;
+            min-width: 0 !important;
+        }
+        [data-testid="stMain"] [data-testid="stWidgetLabel"] p {
+            font-size: 12px !important;
+            line-height: 1.25 !important;
         }
 
         [data-testid="stExpander"] {
