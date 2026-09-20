@@ -320,6 +320,21 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             font-size: 9px;
             font-weight: 500;
         }
+        .gf-header-user-identity { min-width: 0; max-width: 180px; }
+        .gf-header-user-name {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .gf-header-user-avatar { overflow: hidden; flex: 0 0 34px; }
+        .gf-header-user-photo {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+            border-radius: 50%;
+        }
 
         /* A sidebar nativa não é usada; evitar botão duplicado no celular
            preservando as ações normais da toolbar (Share/GitHub). */
@@ -1391,7 +1406,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             .gf-header-name { font-size: 13px; }
             .gf-header-tagline { display: none; }
             .gf-header-user { gap: 5px; font-size: 10px; }
-            .gf-header-user-avatar { width: 25px; height: 25px; font-size: 10px; border-width: 1px; }
+            .gf-header-user-avatar { width: 25px; height: 25px; flex-basis: 25px; font-size: 10px; border-width: 1px; }
             .gf-header-user-caption { display: none; }
             .st-key-gf_custom_side {
                 top: 110px !important;
@@ -1420,9 +1435,24 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
     st.markdown(css.replace("__CONTENT_MAX__", content_max), unsafe_allow_html=True)
 def render_app_header() -> None:
-    """Faixa de identidade fixa, sem controles falsos ou uma segunda navegação."""
+    """Marca e perfil de exibição escolhidos na sessão autenticada."""
+    display_name = escape(str(st.session_state.get("_gf_display_name") or "Usuário"))
+    avatar_uri = st.session_state.get("_gf_avatar_uri")
+    # A imagem foi validada como JPEG/PNG e convertida em data URI controlada
+    # no momento do upload. Não aceitar URLs externas nem HTML do usuário.
+    if isinstance(avatar_uri, str) and avatar_uri.startswith(
+        ("data:image/png;base64,", "data:image/jpeg;base64,")
+    ):
+        avatar = (
+            '<img class="gf-header-user-photo" alt="" src="'
+            + escape(avatar_uri, quote=True)
+            + '"/>'
+        )
+    else:
+        avatar = escape(display_name[:1].upper() or "U")
+
     st.markdown(
-        """
+        f"""
         <div class="gf-app-header" role="banner">
             <div class="gf-header-brand">
                 <div class="gf-header-logo" aria-label="Marca Gestão Financeira"><i></i><i></i><i></i></div>
@@ -1432,8 +1462,11 @@ def render_app_header() -> None:
                 </div>
             </div>
             <div class="gf-header-user">
-                <div class="gf-header-user-avatar" aria-hidden="true">U</div>
-                <div>Olá, Usuário<div class="gf-header-user-caption">Conta principal</div></div>
+                <div class="gf-header-user-avatar" aria-hidden="true">{avatar}</div>
+                <div class="gf-header-user-identity">
+                    <div class="gf-header-user-name">Olá, {display_name}</div>
+                    <div class="gf-header-user-caption">Conta principal</div>
+                </div>
             </div>
         </div>
         """,
