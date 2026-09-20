@@ -6,7 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from services.db import TABLES, delete_row, insert_row, select_rows
-from services.finance import brl, current_competence, normalize_competence_options, numeric, to_df
+from services.finance import brl, financial_table, current_competence, normalize_competence_options, numeric, to_df
 
 
 DEFAULT_CATEGORIES = ["ENTRADAS", "CONTAS FIXAS", "LAZER", "INVESTIMENTOS", "ALIMENTAÇÃO", "TRANSPORTE", "SAÚDE", "OUTROS"]
@@ -72,7 +72,14 @@ def render():
     c3.metric("Resultado", brl(entries - exits))
 
     show_cols = [c for c in ["id", "movement_date", "description", "value", "category", "competence", "classification", "allocation_value", "fixed_variable"] if c in filtered.columns]
-    st.dataframe(filtered[show_cols], use_container_width=True, hide_index=True)
+    display_df = financial_table(filtered[show_cols])
+    st.dataframe(
+        display_df,
+        use_container_width=True,
+        hide_index=True,
+        row_height=30,
+        height=min(360, max(110, (len(display_df) + 1) * 33)),
+    )
 
     with st.expander("Excluir movimentação"):
         choices = {f"#{int(r['id'])} — {r.get('description','')} — {brl(r.get('value',0))}": int(r["id"]) for _, r in filtered.iterrows() if pd.notna(r.get("id"))}
