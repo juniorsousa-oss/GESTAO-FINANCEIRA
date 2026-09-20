@@ -326,16 +326,20 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             display: none !important;
         }
 
-        /* Oculta apenas o botão Share (incluindo variantes do Streamlit).
-           Não esconder stToolbar/stHeaderActionElements: os demais ícones
-           e o controle próprio de abrir e fechar devem permanecer visíveis. */
+        /* Community Cloud renderiza o Share como o PRIMEIRO item em
+           stToolbarActions / stToolbarActionButton, não como stShareButton.
+           O seletor com label evita ocultar os ícones sem texto ao lado. */
+        [data-testid="stToolbarActions"]
+          > [data-testid="stToolbarActionButton"]:first-child:has(
+              [data-testid="stToolbarActionButtonLabel"]
+          ),
+        [data-testid="stToolbarActions"]
+          > [data-testid="stToolbarActionButton"]:first-child:has(
+              button[title="Share"]
+          ),
         header[data-testid="stHeader"] button[aria-label="Share"],
         header[data-testid="stHeader"] button[title="Share"],
-        header[data-testid="stHeader"] [data-testid="stShareButton"],
-        header[data-testid="stHeader"] [data-testid="stShareButton"] button,
-        [data-testid="stToolbar"] [data-testid="stShareButton"],
-        [data-testid="stAppToolbar"] button[aria-label="Share"],
-        [data-testid="stHeaderActionElements"] button[aria-label="Share"] {
+        header[data-testid="stHeader"] [data-testid="stShareButton"] {
             display: none !important;
         }
 
