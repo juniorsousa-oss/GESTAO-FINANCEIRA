@@ -43,7 +43,7 @@ def list_users() -> list[dict]:
         _url(USERS_TABLE),
         headers=_headers(),
         params={
-            "select": "id,display_name,password_hash,is_admin,is_active,avatar_data_uri",
+            "select": "id,display_name,password_hash,is_admin,is_active",
             "order": "id.asc",
             "limit": "250",
         },
@@ -53,12 +53,29 @@ def list_users() -> list[dict]:
     return response.json()
 
 
+def _load_avatar(user_id: int) -> str | None:
+    """Busca apenas a foto da conta autenticada (evita carregar fotos de todos)."""
+    response = requests.get(
+        _url(USERS_TABLE),
+        headers=_headers(),
+        params={
+            "select": "avatar_data_uri",
+            "id": f"eq.{int(user_id)}",
+            "limit": "1",
+        },
+        timeout=20,
+    )
+    response.raise_for_status()
+    rows = response.json()
+    return rows[0].get("avatar_data_uri") if rows else None
+
+
 def identify_user(password: str) -> dict | None:
     """Senha correta identifica a conta, não um nome fornecido no login."""
     accounts = list_users()
     for account in accounts:
         if account.get("is_active") and matches_password(password, account["password_hash"]):
-            return account
+            return {**account, "avatar_data_uri": _load_avatar(int(account["id"]))}
 
     # Migração única da senha já configurada no Streamlit: após criar o
     # primeiro usuário, a senha legada deixa de ser uma rota alternativa.
