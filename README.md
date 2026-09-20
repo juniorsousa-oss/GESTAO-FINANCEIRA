@@ -31,30 +31,38 @@ streamlit run streamlit_app.py
 ## Configurar Supabase
 
 **Projeto escolhido:** `cuixazpxkvniqldmmnth` (Supabase existente). Em
-20/09/2026 foram criadas e validadas as cinco tabelas `finance_*` nesse
-projeto. O esquema `supabase_schema.sql` já foi aplicado; não é necessário
-executá-lo novamente. Todas as cinco tabelas estão com RLS ativado e sem
-permissões de acesso para `anon`/`authenticated`. Nenhuma tabela dos outros
-aplicativos foi alterada nesta migração.
+20/09/2026 foram criadas as cinco tabelas financeiras e, posteriormente, a
+tabela privada `finance_users` para identificar o usuário pela senha.
+O esquema `supabase_schema.sql` já foi aplicado ao projeto conectado;
+não é necessário executá-lo novamente. As seis tabelas estão com RLS
+ativado e sem permissões de acesso para `anon`/`authenticated`.
+Nenhuma tabela dos outros aplicativos foi alterada nesta migração.
 
-1. Em **Streamlit Cloud → App settings → Secrets**, adicione os três valores:
+1. Em **Streamlit Cloud → App settings → Secrets**, mantenha as credenciais privadas:
 
 ```toml
 SUPABASE_URL = "https://cuixazpxkvniqldmmnth.supabase.co"
 SUPABASE_KEY = "SUA-CHAVE-PRIVADA-DE-SERVICO"
 APP_ACCESS_PASSWORD = "SUA-SENHA-PRIVADA-FORTE"
+# Opcional, apenas para nomear o primeiro perfil:
+APP_OWNER_NAME = "Júnior"
 ```
 
 2. No painel do Supabase, obtenha a chave privada (`service_role` ou
-   `sb_secret_...`) nas configurações de API do mesmo projeto e defina
-   uma senha forte e exclusiva para `APP_ACCESS_PASSWORD`.
-   Não envie esses segredos por mensagem nem os inclua em arquivos GitHub.
+   `sb_secret_...`) nas configurações de API do projeto.
+   Na **primeira entrada**, se `finance_users` ainda estiver vazia, a senha
+   `APP_ACCESS_PASSWORD` cria o perfil administrador com o nome de
+   `APP_OWNER_NAME` (por padrão, Júnior), sem gravar a senha em texto claro.
+   Depois desse primeiro cadastro, o login identifica a conta pelo hash da
+   senha no banco; a senha legada deixa de funcionar como alternativa.
+   Não envie segredos por mensagem nem os inclua no GitHub.
 3. Use exclusivamente a chave de serviço privada no backend Streamlit.
    Não insira nenhuma chave ou senha no GitHub, no navegador ou no chat.
    Não use `anon`/`publishable` para contornar as restrições de acesso.
-4. O aplicativo exige senha antes de acessar o banco e só libera as páginas
-   após testar (somente leitura) as cinco tabelas. Sem credenciais, continua
-   funcionando em modo de sessão para validar visual e regras.
+4. A tela inicial solicita **apenas senha**. A identidade, nome e foto são
+   carregados automaticamente da conta correspondente. A verificação da
+   conexão abrange as cinco tabelas financeiras e a tabela de perfis.
+   Sem credenciais, o modo de teste continua em sessão local.
 5. Faça backup do Excel original antes de habilitar o projeto, pois os dados
    em memória do modo de teste **não migram automaticamente** para o Supabase.
 6. A importação inicial permite gravar nas quatro tabelas financeiras vazias.
@@ -62,10 +70,27 @@ APP_ACCESS_PASSWORD = "SUA-SENHA-PRIVADA-FORTE"
    evitar perda acidental. Reimportação/mesclagem futura exige backup e
    operação transacional.
 
-A senha simples desta V1 é apenas uma barreira inicial para **validação
-privada**. Antes de disponibilizar o aplicativo a vários usuários, implemente
-autenticação individual, autorização por usuário e políticas RLS vinculadas
-à identidade de cada conta.
+## Identificação de usuários
+
+No primeiro login, entre com a senha que já estava em `APP_ACCESS_PASSWORD`.
+Em **Configurações → Meu perfil**, salve seu nome e foto (PNG/JPEG de até 1 MB).
+O perfil é recuperado automaticamente nos próximos logins.
+
+Na seção **Configurações → Gerenciar usuários**, o administrador pode criar
+outro perfil, definindo o nome e uma senha exclusiva com pelo menos 12
+caracteres. O sistema rejeita senhas já utilizadas por outra conta e as
+armazena como hash PBKDF2 com salt. O novo usuário acessa a tela inicial
+somente com sua senha. Use **Sair / trocar usuário** em Configurações
+para iniciar outra sessão.
+
+**Atenção à privacidade:** a identificação individual e os perfis não
+isolam o conteúdo das tabelas financeiras. Nesta versão, todos os usuários
+cadastrados visualizam e podem alterar a mesma base de movimentações,
+previsões, contas e dívidas. O cadastro de outro usuário requer
+confirmação explícita desse compartilhamento. Para disponibilizar
+informações financeiras privativas por pessoa, é necessária uma migração
+de propriedade dos registros, autorização por usuário e políticas de acesso
+aos respectivos dados antes de permitir o uso multiusuário real.
 
 ## Importação do Excel
 
