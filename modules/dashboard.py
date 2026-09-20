@@ -161,7 +161,7 @@ def _category_chart(movements: pd.DataFrame) -> alt.Chart:
 
     return (
         alt.Chart(data)
-        .mark_arc(innerRadius=40, outerRadius=65)
+        .mark_arc(innerRadius=51, outerRadius=83)
         .encode(
             theta=alt.Theta(field="value", type="quantitative"),
             color=alt.Color(
@@ -182,7 +182,7 @@ def _category_chart(movements: pd.DataFrame) -> alt.Chart:
                 alt.Tooltip("value", title="Valor", format=",.2f"),
             ],
         )
-        .properties(height=232)
+        .properties(height=284)
     )
 
 
@@ -317,7 +317,7 @@ def render(view_mode: str = "Desktop") -> None:
                     )
                 else:
                     st.altair_chart(
-                        _finance_chart(monthly).properties(height=250),
+                        _finance_chart(monthly).properties(height=284),
                         use_container_width=True,
                     )
 
