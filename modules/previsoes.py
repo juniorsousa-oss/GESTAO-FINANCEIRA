@@ -5,6 +5,8 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
+from services.ui import render_financial_table
+
 from services.db import TABLES, insert_row, select_rows, update_row
 from services.finance import brl, financial_table, current_competence, normalize_competence_options, numeric, to_df
 
@@ -71,10 +73,10 @@ def render():
 
     cols = [c for c in ["id", "due_date", "description", "category", "final_value", "type", "status", "simulate_payment", "competence"] if c in filtered.columns]
     display_df = financial_table(filtered[cols])
-    st.dataframe(
+    render_financial_table(
         display_df,
-        use_container_width=True,
-        hide_index=True,
+        key="forecasts",
+        title="CONTROLE FINANCEIRO",
         height=min(360, max(110, (len(display_df) + 1) * 33)),
     )
 
