@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from services.profile import avatar_data_uri, clean_display_name
 from services.db import get_settings, is_configured, save_setting
 
 
@@ -19,6 +20,59 @@ def render():
             "APP_ACCESS_PASSWORD nos Secrets do Streamlit Cloud. "
             "Nunca compartilhe essas credenciais no chat ou no GitHub."
         )
+
+    st.subheader("Meu perfil")
+    st.caption(
+        "O nome e a foto são de exibição nesta sessão. A versão atual "
+        "ainda usa uma senha compartilhada, sem contas individuais."
+    )
+    current_name = st.session_state.get("_gf_display_name", "")
+    display_name = st.text_input(
+        "Nome no cabeçalho",
+        value=current_name,
+        max_chars=40,
+        key="gf_profile_name_input",
+    )
+    if st.button("Atualizar nome", key="gf_profile_save_name"):
+        normalized = clean_display_name(display_name)
+        if not normalized:
+            st.warning("Informe um nome para exibir no cabeçalho.")
+        else:
+            st.session_state["_gf_display_name"] = normalized
+            st.rerun()
+
+    avatar_file = st.file_uploader(
+        "Foto de perfil (PNG ou JPEG, até 1 MB)",
+        type=["png", "jpg", "jpeg"],
+        accept_multiple_files=False,
+        key="gf_profile_photo",
+    )
+    col_save, col_remove = st.columns(2)
+    if col_save.button(
+        "Aplicar foto",
+        key="gf_profile_apply_photo",
+        disabled=avatar_file is None,
+        use_container_width=True,
+    ):
+        try:
+            st.session_state["_gf_avatar_uri"] = avatar_data_uri(avatar_file)
+        except ValueError as exc:
+            st.error(str(exc))
+        else:
+            st.rerun()
+    if col_remove.button(
+        "Remover foto",
+        key="gf_profile_remove_photo",
+        use_container_width=True,
+    ):
+        st.session_state.pop("_gf_avatar_uri", None)
+        st.rerun()
+    st.caption(
+        "A foto fica somente nesta sessão e não é enviada ao Supabase. "
+        "Para mantê-la após um novo login, será necessário armazenamento "
+        "de perfis individuais em uma versão futura."
+    )
+    st.divider()
 
     settings = get_settings()
     st.subheader("Metas")
