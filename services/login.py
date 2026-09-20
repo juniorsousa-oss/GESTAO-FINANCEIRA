@@ -310,18 +310,13 @@ _TRUST = """
 """
 
 
-def render_login() -> tuple[bool, str, str]:
-    """Solicita nome de exibição e senha; autenticação continua no entrypoint."""
+def render_login() -> tuple[bool, str]:
+    """A identificação do usuário é resolvida pela senha no servidor."""
     st.markdown(_LOGIN_CSS, unsafe_allow_html=True)
     st.markdown(_HEADER, unsafe_allow_html=True)
     with st.container(key="gf_login_card"):
         st.markdown(_INTRO, unsafe_allow_html=True)
         with st.form("gf_private_login"):
-            display_name = st.text_input(
-                "Seu nome",
-                placeholder="Como deseja ser chamado?",
-                max_chars=40,
-            )
             password = st.text_input(
                 "Senha de acesso",
                 type="password",
@@ -331,9 +326,7 @@ def render_login() -> tuple[bool, str, str]:
                 "Entrar   →",
                 use_container_width=True,
             )
-        if st.session_state.pop("_gf_login_name_error", False):
-            st.error("Informe seu nome para continuar.")
         if st.session_state.pop("_gf_login_error", False):
             st.error("Senha incorreta.")
         st.markdown(_TRUST, unsafe_allow_html=True)
-    return submitted, display_name, password
+    return submitted, password
