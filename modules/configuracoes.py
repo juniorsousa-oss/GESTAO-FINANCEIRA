@@ -64,10 +64,14 @@ def render():
                 st.error("Não foi possível salvar o nome no perfil.")
 
     avatar_file = st.file_uploader(
-        "Foto de perfil (PNG ou JPEG, até 1 MB)",
+        "Foto de perfil (PNG ou JPEG, até 15 MB)",
         type=["png", "jpg", "jpeg"],
         accept_multiple_files=False,
         key="gf_profile_photo",
+    )
+    st.caption(
+        "Fotos maiores são redimensionadas automaticamente para uma miniatura "
+        "leve antes de serem salvas. A imagem original não fica armazenada no banco."
     )
     col_save, col_remove = st.columns(2)
     if col_save.button(
