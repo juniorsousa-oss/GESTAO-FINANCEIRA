@@ -97,3 +97,23 @@ to service_role;
 -- Apenas a credencial de serviço, mantida no back-end, administra os dados.
 -- Não foram criadas políticas públicas de leitura ou gravação.
 
+
+-- Perfis de login. Criada no projeto já conectado por migração específica.
+-- Cada senha é armazenada apenas como hash PBKDF2 + salt (nunca texto).
+-- Atenção: esta tabela separa os PERFIS; as bases financeiras existentes
+-- ainda são compartilhadas entre usuários até uma futura migração de dados.
+create table if not exists public.finance_users (
+    id bigint generated always as identity primary key,
+    display_name varchar(40) not null
+        check (length(btrim(display_name)) between 1 and 40),
+    password_hash text not null,
+    is_admin boolean not null default false,
+    is_active boolean not null default true,
+    avatar_data_uri text null
+        check (avatar_data_uri is null or length(avatar_data_uri) <= 1400000),
+    created_at timestamptz not null default now()
+);
+alter table public.finance_users enable row level security;
+revoke all on table public.finance_users from anon, authenticated;
+grant select, insert, update, delete on table public.finance_users to service_role;
+grant usage, select on sequence public.finance_users_id_seq to service_role;
