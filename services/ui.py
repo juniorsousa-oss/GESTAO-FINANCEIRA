@@ -859,14 +859,14 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
            Somente o arco interno permanece reduzido para caber na rosca. */
         .st-key-gf_chart_evolution,
         .st-key-gf_chart_categories {
-            height: 320px !important;
-            min-height: 320px !important;
+            height: 355px !important;
+            min-height: 355px !important;
             box-sizing: border-box !important;
         }
         .st-key-gf_bottom_forecasts,
         .st-key-gf_bottom_conciliation {
-            height: 265px !important;
-            min-height: 265px !important;
+            height: 300px !important;
+            min-height: 300px !important;
             box-sizing: border-box !important;
         }
         /* Faz o contêiner com borda ocupar toda a altura do card. */
