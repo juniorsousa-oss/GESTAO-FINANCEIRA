@@ -528,7 +528,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             width: 100% !important;
             max-width: __CONTENT_MAX__ !important;
             margin-inline: auto !important;
-            padding: 46px 14px 18px !important;
+            padding: 30px 14px 18px !important;
             box-sizing: border-box !important;
         }
 
@@ -889,6 +889,14 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
         .st-key-gf_chart_categories [data-testid="stVegaLiteChart"] {
             display: flex !important;
             justify-content: center !important;
+            /* A legenda inferior desloca visualmente a rosca para cima.
+               Ajustar somente o gráfico, sem mexer na altura do card. */
+            transform: translateY(34px);
+        }
+        @media (max-width: 900px) {
+            .st-key-gf_chart_categories [data-testid="stVegaLiteChart"] {
+                transform: none !important;
+            }
         }
 
         /* Área útil dos gráficos quando a base está vazia: ocupação
@@ -1295,7 +1303,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 
             .block-container {
                 max-width: min(100%, 1380px) !important;
-                padding: 44px 12px 16px !important;
+                padding: 28px 12px 16px !important;
             }
 
             .gf-brand { margin: 10px 11px 8px; padding-bottom: 11px; }
@@ -1384,7 +1392,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             .st-key-gf_sidebar_toggle { top: 12px !important; left: 7px !important; }
 
             .block-container {
-                padding: 96px 10px 18px !important;
+                padding: 88px 10px 18px !important;
             }
 
             .gf-page-header {
