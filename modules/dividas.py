@@ -55,7 +55,6 @@ def render():
         display_df,
         use_container_width=True,
         hide_index=True,
-        row_height=30,
         height=min(360, max(110, (len(display_df) + 1) * 33)),
     )
 
