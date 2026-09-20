@@ -3,6 +3,8 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from services.ui import render_financial_table
+
 from services.finance import financial_table
 from services.db import TABLES, is_configured, replace_table
 from services.importer import parse_excel
@@ -39,16 +41,15 @@ def render():
             ("Contas e saldos", "accounts"),
             ("Dívidas", "debts"),
         ):
-            st.caption(title)
             if not parsed[key]:
-                st.caption("Nenhum registro nesta base.")
+                st.caption(f"{title}: nenhum registro nesta base.")
                 continue
             preview = financial_table(pd.DataFrame(parsed[key][:5]))
-            st.dataframe(
+            render_financial_table(
                 preview,
-                hide_index=True,
-                use_container_width=True,
-                        height=min(225, (len(preview) + 1) * 33),
+                key=f"import_{key}",
+                title=title.upper(),
+                height=min(225, (len(preview) + 1) * 33),
             )
 
     confirm = st.checkbox("Entendo que a importação substituirá os dados atuais dessas quatro bases")
