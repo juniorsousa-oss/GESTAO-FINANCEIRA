@@ -321,7 +321,6 @@ def render_login() -> tuple[bool, str, str]:
                 "Seu nome",
                 placeholder="Como deseja ser chamado?",
                 max_chars=40,
-                autocomplete="name",
             )
             password = st.text_input(
                 "Senha de acesso",
