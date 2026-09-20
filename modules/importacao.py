@@ -48,8 +48,7 @@ def render():
                 preview,
                 hide_index=True,
                 use_container_width=True,
-                row_height=30,
-                height=min(225, (len(preview) + 1) * 33),
+                        height=min(225, (len(preview) + 1) * 33),
             )
 
     confirm = st.checkbox("Entendo que a importação substituirá os dados atuais dessas quatro bases")
