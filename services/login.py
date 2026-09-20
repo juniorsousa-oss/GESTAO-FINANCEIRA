@@ -78,7 +78,7 @@ div[data-testid="stElementContainer"]:has(.gf-login-brandbar) {
     border-bottom: 1px solid rgba(255,255,255,.12);
     color: #fff;
 }
-.gf-login-brand, .gf-login-security {
+.gf-login-brand {
     display: flex;
     align-items: center;
     gap: 14px;
@@ -117,23 +117,6 @@ div[data-testid="stElementContainer"]:has(.gf-login-brandbar) {
     color: #c4d6e7;
     white-space: nowrap;
 }
-.gf-login-security-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    flex: 0 0 44px;
-    border-radius: 50%;
-    border: 1.5px solid #9ab5d0;
-    color: #d9e8f6;
-}
-.gf-login-security strong, .gf-login-security span {
-    display: block;
-    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-}
-.gf-login-security strong { font-size: 13px; font-weight: 750; }
-.gf-login-security span { color: #c4d6e7; font-size: 11px; margin-top: 2px; }
 .st-key-gf_login_card {
     position: relative;
     z-index: 1;
@@ -267,10 +250,6 @@ div[data-testid="stElementContainer"]:has(.gf-login-brandbar) {
     .gf-login-brand-logo i:nth-child(3) { height: 24px; }
     .gf-login-brand-name { font-size: 16px; }
     .gf-login-brand-subtitle { font-size: 9px; }
-    .gf-login-security { gap: 0; }
-    .gf-login-security-icon { width: 35px; height: 35px; flex-basis: 35px; }
-    .gf-login-security-icon svg { width: 22px; height: 22px; }
-    .gf-login-security > div:last-child { display: none; }
     [data-testid="stMain"] .block-container { padding: 94px 12px 24px !important; }
     .st-key-gf_login_card { padding: 24px 20px !important; }
     .gf-login-shield { width: 62px; height: 62px; margin-bottom: 12px; }
@@ -296,15 +275,6 @@ _HEADER = """
             <div class="gf-login-brand-name">Gestão Financeira</div>
             <div class="gf-login-brand-subtitle">Controle, clareza e confiança.</div>
         </div>
-    </div>
-    <div class="gf-login-security">
-        <div class="gf-login-security-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
-                <circle cx="12" cy="7.5" r="3.5"/>
-                <path d="M5 20v-1.5a7 7 0 0 1 14 0V20H5Z"/>
-            </svg>
-        </div>
-        <div><strong>Acesso seguro</strong><span>Sua informação protegida</span></div>
     </div>
 </div>
 """
