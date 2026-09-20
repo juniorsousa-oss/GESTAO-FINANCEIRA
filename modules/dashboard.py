@@ -7,7 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from services.db import TABLES, get_settings, select_rows
-from services.finance import brl, competence_key, date_br, numeric, to_df
+from services.finance import brl, competence_key, date_br, numeric, styled_financial_table, to_df
 from services.ui import metric_card, section_header, show_metric_grid
 
 
@@ -337,7 +337,7 @@ def render(view_mode: str = "Desktop") -> None:
                     st.caption("Nenhuma previsão carregada ainda.")
 
                 st.dataframe(
-                    table,
+                    styled_financial_table(table),
                     hide_index=True,
                     use_container_width=True,
                     height=145 if view_mode == "Desktop" else 150,
