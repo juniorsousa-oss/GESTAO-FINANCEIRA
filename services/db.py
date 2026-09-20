@@ -26,6 +26,27 @@ def is_configured() -> bool:
     return bool(_secret("SUPABASE_URL") and _secret("SUPABASE_KEY"))
 
 
+def verify_database() -> tuple[bool, str]:
+    """Testa em leitura as cinco tabelas exigidas antes de habilitar o app."""
+    if not is_configured():
+        return False, "Credenciais do Supabase ainda não configuradas."
+    for table in TABLES.values():
+        try:
+            response = requests.get(
+                _url(table),
+                headers=_headers(),
+                params={"select": "id", "limit": 1},
+                timeout=10,
+            )
+            response.raise_for_status()
+        except requests.RequestException:
+            return False, (
+                f"Não foi possível validar a tabela {table}. Confira o projeto, "
+                "a chave e a aplicação do supabase_schema.sql."
+            )
+    return True, "Conexão validada com as cinco tabelas financeiras."
+
+
 def _headers(prefer: str | None = None) -> dict[str, str]:
     key = _secret("SUPABASE_KEY") or ""
     headers = {
@@ -154,13 +175,15 @@ def replace_table(table: str, rows: list[dict[str, Any]]) -> None:
         insert_rows(table, rows)
         return
 
-    response = requests.delete(
-        _url(table),
-        headers=_headers("return=minimal"),
-        params={"id": "not.is.null"},
-        timeout=30,
-    )
-    response.raise_for_status()
+    # Validação inicial: não apagar registros persistentes já existentes.
+    # A importação completa deve ser transacional/ter backup antes de
+    # permitir uma substituição de dados reais em produção.
+    if select_rows(table):
+        raise RuntimeError(
+            f"A tabela {table} já contém dados no banco. "
+            "A substituição está bloqueada para evitar perda irreversível. "
+            "Exporte os registros existentes antes de uma nova carga."
+        )
     insert_rows(table, rows)
 
 
