@@ -138,13 +138,15 @@ def _category_chart(movements: pd.DataFrame) -> alt.Chart:
         colors = ["#dce6f0"]
     else:
         # A rosca segue o mesmo recorte temporal do gráfico mensal.
-        competence = movements["competence"].map(competence_key)
+        competence = movements["competence"].map(
+            lambda value: competence_key(value) >= (CHART_START.year, CHART_START.month)
+        )
         out = movements.loc[
             movements["classification"]
             .astype(str)
             .str.upper()
             .str.contains("SAÍDA|SAIDA", regex=True)
-            & competence.ge((CHART_START.year, CHART_START.month))
+            & competence
         ].copy()
 
         data = (
@@ -343,8 +345,10 @@ def render(view_mode: str = "Desktop") -> None:
                     and (
                         movements["classification"].astype(str).str.upper()
                         .str.contains("SAÍDA|SAIDA", regex=True)
-                        & movements["competence"].map(competence_key)
-                        .ge((CHART_START.year, CHART_START.month))
+                        & movements["competence"].map(
+                            lambda value: competence_key(value)
+                            >= (CHART_START.year, CHART_START.month)
+                        )
                     ).any()
                 )
                 if not visible_expenses:
