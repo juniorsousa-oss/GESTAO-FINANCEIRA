@@ -62,8 +62,8 @@ create index if not exists idx_finance_forecasts_competence on public.finance_fo
 -- DADOS FINANCEIROS PRIVADOS: bloqueados para clientes anon/authenticated.
 -- O servidor Streamlit usa uma chave de serviço EXCLUSIVAMENTE em Secrets,
 -- protegida por APP_ACCESS_PASSWORD. Nunca publicar chave no GitHub ou JS.
--- Este SQL prepara um projeto SEPARADO escolhido pelo proprietário; não
--- executar no projeto compartilhado sem autorização.
+-- Este SQL pode ser aplicado ao projeto compartilhado quando autorizado,
+-- pois opera somente nas cinco tabelas financeiras (prefixo finance_).
 alter table public.finance_movements enable row level security;
 alter table public.finance_forecasts enable row level security;
 alter table public.finance_accounts enable row level security;
@@ -84,6 +84,14 @@ grant select, insert, update, delete on table
     public.finance_accounts,
     public.finance_debts,
     public.finance_settings
+to service_role;
+
+grant usage, select on sequence
+    public.finance_movements_id_seq,
+    public.finance_forecasts_id_seq,
+    public.finance_accounts_id_seq,
+    public.finance_debts_id_seq,
+    public.finance_settings_id_seq
 to service_role;
 
 -- Apenas a credencial de serviço, mantida no back-end, administra os dados.
