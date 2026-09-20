@@ -6,7 +6,7 @@ import streamlit as st
 from services.ui import render_financial_table
 
 from services.finance import financial_table
-from services.db import TABLES, is_configured, replace_table
+from services.db import TABLES, is_configured, replace_table, select_rows
 from services.importer import parse_excel
 
 
@@ -52,8 +52,28 @@ def render():
                 height=min(225, (len(preview) + 1) * 33),
             )
 
-    confirm = st.checkbox("Entendo que a importação substituirá os dados atuais dessas quatro bases")
-    if st.button("Importar e substituir base", type="primary", disabled=not confirm, use_container_width=True):
+    if is_configured():
+        try:
+            occupied = [
+                name for name in ("movements", "forecasts", "accounts", "debts")
+                if select_rows(TABLES[name])
+            ]
+        except Exception:
+            st.error("Não foi possível verificar se há dados no banco. Nenhuma carga será realizada.")
+            return
+        if occupied:
+            st.warning(
+                "Importação inicial bloqueada: já existem registros persistentes em "
+                + ", ".join(occupied)
+                + ". Exporte e confira seus dados antes de realizar uma substituição."
+            )
+            return
+
+    confirm = st.checkbox(
+        "Conferi a prévia e autorizo a importação inicial. "
+        "No modo de teste, os dados anteriores desta sessão serão substituídos."
+    )
+    if st.button("Importar base validada", type="primary", disabled=not confirm, use_container_width=True):
         try:
             replace_table(TABLES["movements"], parsed["movements"])
             replace_table(TABLES["forecasts"], parsed["forecasts"])
