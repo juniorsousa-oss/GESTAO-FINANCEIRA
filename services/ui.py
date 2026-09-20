@@ -5,7 +5,12 @@ import unicodedata
 from datetime import datetime
 from textwrap import dedent
 
+from html import escape
+
+import pandas as pd
 import streamlit as st
+
+from services.finance import styled_financial_table
 
 
 NAV_OPTIONS = [
@@ -1392,3 +1397,24 @@ def section_header(title: str, caption: str = "") -> None:
     st.markdown(f"<div class='gf-section-title'>{title}</div>", unsafe_allow_html=True)
     if caption:
         st.markdown(f"<div class='gf-section-caption'>{caption}</div>", unsafe_allow_html=True)
+
+
+def render_financial_table(
+    display_df: pd.DataFrame,
+    *,
+    key: str,
+    title: str,
+    height: int = 320,
+) -> None:
+    """Tabela com estilo comum, mantendo scroll, seleção e ordenação."""
+    with st.container(key=f"gf_table_{key}"):
+        st.markdown(
+            f'<div class="gf-table-heading">{escape(title)}</div>',
+            unsafe_allow_html=True,
+        )
+        st.dataframe(
+            styled_financial_table(display_df),
+            use_container_width=True,
+            hide_index=True,
+            height=height,
+        )
