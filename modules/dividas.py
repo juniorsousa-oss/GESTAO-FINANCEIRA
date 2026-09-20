@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from services.db import TABLES, insert_row, select_rows, update_row
-from services.finance import brl, numeric, to_df
+from services.finance import brl, financial_table, numeric, to_df
 
 
 def render():
@@ -50,7 +50,14 @@ def render():
     c3.metric("Não renegociado", brl(non_reneg))
 
     cols = [c for c in ["id", "description", "status", "total_value", "total_installments", "paid_installments", "installment_value", "open_value"] if c in df.columns]
-    st.dataframe(df[cols], use_container_width=True, hide_index=True)
+    display_df = financial_table(df[cols])
+    st.dataframe(
+        display_df,
+        use_container_width=True,
+        hide_index=True,
+        row_height=30,
+        height=min(360, max(110, (len(display_df) + 1) * 33)),
+    )
 
     st.subheader("Atualizar pagamento")
     choices = {f"#{int(r['id'])} — {r.get('description','')}": int(r["id"]) for _, r in df.iterrows() if pd.notna(r.get("id"))}
