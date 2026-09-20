@@ -4,11 +4,12 @@ import streamlit as st
 
 from services.profile import avatar_data_uri, clean_display_name
 from services.db import get_settings, is_configured, save_setting
+from services.users import create_user, update_own_profile
 
 
 def render():
     if is_configured():
-        st.success("Banco financeiro validado em leitura. Acesso persistente protegido pela senha da sessão.")
+        st.success("Banco financeiro conectado. Acesso associado ao usuário identificado pela senha.")
     else:
         st.warning(
             "Modo de teste — sem banco persistente. Os registros desta sessão "
@@ -23,8 +24,7 @@ def render():
 
     st.subheader("Meu perfil")
     st.caption(
-        "O nome e a foto são de exibição nesta sessão. A versão atual "
-        "ainda usa uma senha compartilhada, sem contas individuais."
+        "O nome e a foto deste perfil são associados à sua senha de acesso."
     )
     current_name = st.session_state.get("_gf_display_name", "")
     display_name = st.text_input(
@@ -38,8 +38,16 @@ def render():
         if not normalized:
             st.warning("Informe um nome para exibir no cabeçalho.")
         else:
-            st.session_state["_gf_display_name"] = normalized
-            st.rerun()
+            try:
+                if is_configured():
+                    update_own_profile(
+                        int(st.session_state["_gf_user_id"]),
+                        {"display_name": normalized},
+                    )
+                st.session_state["_gf_display_name"] = normalized
+                st.rerun()
+            except Exception:
+                st.error("Não foi possível salvar o nome no perfil.")
 
     avatar_file = st.file_uploader(
         "Foto de perfil (PNG ou JPEG, até 1 MB)",
@@ -55,9 +63,17 @@ def render():
         use_container_width=True,
     ):
         try:
-            st.session_state["_gf_avatar_uri"] = avatar_data_uri(avatar_file)
+            photo = avatar_data_uri(avatar_file)
+            if is_configured():
+                update_own_profile(
+                    int(st.session_state["_gf_user_id"]),
+                    {"avatar_data_uri": photo},
+                )
+            st.session_state["_gf_avatar_uri"] = photo
         except ValueError as exc:
             st.error(str(exc))
+        except Exception:
+            st.error("Não foi possível salvar a foto no perfil.")
         else:
             st.rerun()
     if col_remove.button(
@@ -65,14 +81,69 @@ def render():
         key="gf_profile_remove_photo",
         use_container_width=True,
     ):
-        st.session_state.pop("_gf_avatar_uri", None)
-        st.rerun()
+        try:
+            if is_configured():
+                update_own_profile(
+                    int(st.session_state["_gf_user_id"]),
+                    {"avatar_data_uri": None},
+                )
+            st.session_state.pop("_gf_avatar_uri", None)
+            st.rerun()
+        except Exception:
+            st.error("Não foi possível remover a foto do perfil.")
     st.caption(
-        "A foto fica somente nesta sessão e não é enviada ao Supabase. "
-        "Para mantê-la após um novo login, será necessário armazenamento "
-        "de perfis individuais em uma versão futura."
+        "A foto é armazenada no perfil privado e será carregada no próximo login."
+        if is_configured() else "No modo de teste, a foto permanece somente nesta sessão."
     )
     st.divider()
+
+    if is_configured() and st.session_state.get("_gf_is_admin"):
+        st.subheader("Gerenciar usuários")
+        st.caption(
+            "Cada usuário possui uma senha própria. Ao entrar, o aplicativo "
+            "carrega automaticamente seu nome e sua foto."
+        )
+        st.warning(
+            "Atenção: nesta versão, todos os usuários cadastrados têm acesso "
+            "à MESMA base de movimentações, contas, previsões e dívidas. "
+            "Os dados financeiros ainda não são separados por usuário."
+        )
+        with st.form("gf_create_user_form", clear_on_submit=True):
+            new_name = st.text_input(
+                "Nome do novo usuário", max_chars=40, key="gf_new_user_name"
+            )
+            new_password = st.text_input(
+                "Senha exclusiva do novo usuário (mínimo de 12 caracteres)",
+                type="password", key="gf_new_user_password"
+            )
+            password_confirmation = st.text_input(
+                "Confirmar senha do novo usuário",
+                type="password", key="gf_new_user_password_confirm"
+            )
+            accepts_sharing = st.checkbox(
+                "Estou ciente de que esse usuário poderá visualizar e alterar "
+                "a mesma base financeira."
+            )
+            register = st.form_submit_button(
+                "Cadastrar usuário", use_container_width=True
+            )
+        if register:
+            if not accepts_sharing:
+                st.warning("Confirme o compartilhamento dos dados para continuar.")
+            elif new_password != password_confirmation:
+                st.error("As senhas digitadas não são iguais.")
+            else:
+                try:
+                    created = create_user(new_name, new_password)
+                    st.success(
+                        f"Usuário {created['display_name']} cadastrado. "
+                        "A nova senha já pode ser utilizada na tela inicial."
+                    )
+                except ValueError as exc:
+                    st.warning(str(exc))
+                except Exception:
+                    st.error("Não foi possível cadastrar o usuário.")
+        st.divider()
 
     settings = get_settings()
     st.subheader("Metas")
