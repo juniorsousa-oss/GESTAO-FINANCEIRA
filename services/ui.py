@@ -1437,6 +1437,7 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
 def render_app_header() -> None:
     """Marca e perfil de exibição escolhidos na sessão autenticada."""
     display_name = escape(str(st.session_state.get("_gf_display_name") or "Usuário"))
+    profile_caption = "Conta principal" if st.session_state.get("_gf_is_admin") else "Usuário"
     avatar_uri = st.session_state.get("_gf_avatar_uri")
     # A imagem foi validada como JPEG/PNG e convertida em data URI controlada
     # no momento do upload. Não aceitar URLs externas nem HTML do usuário.
@@ -1465,7 +1466,7 @@ def render_app_header() -> None:
                 <div class="gf-header-user-avatar" aria-hidden="true">{avatar}</div>
                 <div class="gf-header-user-identity">
                     <div class="gf-header-user-name">Olá, {display_name}</div>
-                    <div class="gf-header-user-caption">Conta principal</div>
+                    <div class="gf-header-user-caption">{profile_caption}</div>
                 </div>
             </div>
         </div>
