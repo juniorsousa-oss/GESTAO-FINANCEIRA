@@ -16,9 +16,9 @@ def render():
             "não migram automaticamente quando o Supabase for habilitado."
         )
         st.info(
-            "Para conectar um projeto financeiro privado, prepare as cinco tabelas "
+            "Para conectar um projeto financeiro privado, prepare as seis tabelas "
             "do supabase_schema.sql e defina SUPABASE_URL, SUPABASE_KEY e "
-            "APP_ACCESS_PASSWORD nos Secrets do Streamlit Cloud. "
+            "APP_ACCESS_PASSWORD (senha inicial do administrador) nos Secrets do Streamlit Cloud. "
             "Nunca compartilhe essas credenciais no chat ou no GitHub."
         )
 
