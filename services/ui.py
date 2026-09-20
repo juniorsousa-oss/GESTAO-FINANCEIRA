@@ -891,6 +891,54 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             justify-content: center !important;
         }
 
+        /* Área útil dos gráficos quando a base está vazia: ocupação
+           uniforme dos dois cards sem desenhar linha falsa ou rosca dummy. */
+        .st-key-gf_chart_evolution .gf-chart-empty,
+        .st-key-gf_chart_categories .gf-chart-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            width: 100%;
+            min-height: 272px;
+            box-sizing: border-box;
+            padding: 22px 16px;
+            border: 1px dashed #d7e3ed;
+            border-radius: 9px;
+            background: #f8fbfe;
+            color: var(--muted);
+            text-align: center;
+        }
+        .gf-chart-empty-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: #edf4fa;
+            color: #4c7795;
+            font-size: 23px;
+            line-height: 1;
+        }
+        .gf-chart-empty strong {
+            color: var(--ink);
+            font-size: 13px;
+            font-weight: 750;
+        }
+        .gf-chart-empty span {
+            max-width: 360px;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        @media (max-width: 900px) {
+            .st-key-gf_chart_evolution .gf-chart-empty,
+            .st-key-gf_chart_categories .gf-chart-empty {
+                min-height: 180px;
+            }
+        }
+
         /* Previsões: quando vazias, um estado informativo ocupa a mesma
            área que a tabela com dados, sem simular lançamentos financeiros. */
         .gf-empty-forecasts {
