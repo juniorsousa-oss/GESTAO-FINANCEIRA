@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from services.db import TABLES, insert_row, select_rows, update_row
-from services.finance import brl, numeric, to_df
+from services.finance import brl, financial_table, numeric, to_df
 
 
 def render():
@@ -45,7 +45,14 @@ def render():
         st.info("Nenhuma conta/local cadastrado.")
         return
 
-    st.dataframe(accounts[[c for c in ["id", "name", "balance"] if c in accounts.columns]], use_container_width=True, hide_index=True)
+    display_df = financial_table(accounts[[c for c in ["id", "name", "balance"] if c in accounts.columns]])
+    st.dataframe(
+        display_df,
+        use_container_width=True,
+        hide_index=True,
+        row_height=30,
+        height=min(360, max(110, (len(display_df) + 1) * 33)),
+    )
 
     st.subheader("Atualizar saldo")
     choices = {f"{r.get('name','')} — {brl(r.get('balance',0))}": int(r["id"]) for _, r in accounts.iterrows() if pd.notna(r.get("id"))}
