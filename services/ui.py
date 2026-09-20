@@ -886,16 +886,25 @@ def inject_global_css(view_mode: str = "Desktop") -> None:
             width: 100% !important;
             min-width: 0 !important;
         }
+        /* Gráfico e legenda cabem integralmente na área útil do cartão.
+           Não mover o canvas por transform: isso fazia a legenda invadir a
+           borda inferior. O cartão externo continua pareado com o vizinho. */
         .st-key-gf_chart_categories [data-testid="stVegaLiteChart"] {
             display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
             justify-content: center !important;
-            /* A legenda inferior desloca visualmente a rosca para cima.
-               Ajustar somente o gráfico, sem mexer na altura do card. */
-            transform: translateY(34px);
+            height: 268px !important;
+            max-height: 268px !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            transform: none !important;
+            box-sizing: border-box !important;
         }
         @media (max-width: 900px) {
             .st-key-gf_chart_categories [data-testid="stVegaLiteChart"] {
-                transform: none !important;
+                height: auto !important;
+                max-height: none !important;
             }
         }
 
