@@ -117,3 +117,63 @@ def financial_table(df: pd.DataFrame, *, hide_id: bool = True) -> pd.DataFrame:
             lambda value: "Sim" if value is True or str(value).lower() in {"true", "sim", "1"} else "Não"
         )
     return shown.rename(columns={key: label for key, label in TABLE_LABELS.items() if key in shown.columns})
+
+
+# Paleta compartilhada com o aplicativo e inspirada na planilha original.
+# O Streamlit aplica cor de fundo/texto do pandas Styler sem perder
+# ordenação, seleção de células ou rolagem do st.dataframe.
+_CATEGORY_TONES = {
+    "ENTRADAS": ("#e1f4d5", "#205b38"),
+    "CONTAS FIXAS": ("#eee1fb", "#603a82"),
+    "LAZER": ("#ffe3d4", "#874521"),
+    "ALIMENTAÇÃO": ("#fff0c8", "#795319"),
+    "TRANSPORTE": ("#dceafa", "#255584"),
+    "SAÚDE": ("#daf1ec", "#205d51"),
+    "INVESTIMENTOS": ("#d5eceb", "#235f5b"),
+    "HABITAÇÃO": ("#e9e5df", "#544d43"),
+    "HABITACAO": ("#e9e5df", "#544d43"),
+    "FILHOS": ("#ffe2e2", "#833e3e"),
+}
+_MONEY_LABELS = frozenset(TABLE_LABELS[name] for name in MONEY_COLUMNS)
+
+
+def _cell_tone(value: object, column: str) -> str:
+    text = str(value).strip()
+    upper = text.upper()
+    if column == "Categoria":
+        background, foreground = _CATEGORY_TONES.get(upper, ("#edf2f6", "#42586f"))
+        return f"background-color: {background}; color: {foreground};"
+    if column in {"Classificação", "Tipo"}:
+        if upper in {"SAÍDA", "SAIDA"}:
+            return "background-color: #fde3e3; color: #a12d35; font-weight: 700;"
+        if upper in {"ENTRADA"}:
+            return "background-color: #e3f5e7; color: #246b3e; font-weight: 700;"
+    if column == "Status":
+        if upper in {"PAGO", "SIM", "RECEBIDO", "RENEGOCIADO"}:
+            return "background-color: #e3f5de; color: #246a35; font-weight: 650;"
+        if upper in {"NÃO PAGO", "NAO PAGO", "NÃO RENEGOCIADO", "NAO RENEGOCIADO"}:
+            return "background-color: #ffe1db; color: #8b382d; font-weight: 650;"
+    if column == "Fixo / variável":
+        return (
+            "background-color: #e5f0ff; color: #245c91;"
+            if upper == "VARIÁVEL"
+            else "background-color: #e9f4e5; color: #39633a;"
+        )
+    if column in _MONEY_LABELS:
+        return (
+            "color: #ad3441; font-weight: 650;"
+            if text.startswith("-")
+            else "color: #19364a; font-weight: 600;"
+        )
+    return ""
+
+
+def styled_financial_table(shown: pd.DataFrame) -> pd.io.formats.style.Styler:
+    """Adiciona cores de leitura sem alterar nenhuma célula ou cálculo."""
+    styler = shown.style
+    for column in shown.columns:
+        if column in _MONEY_LABELS or column in {
+            "Categoria", "Classificação", "Tipo", "Status", "Fixo / variável"
+        }:
+            styler = styler.map(lambda value, col=column: _cell_tone(value, col), subset=[column])
+    return styler
