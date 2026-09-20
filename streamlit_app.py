@@ -1,7 +1,9 @@
+import hmac
+
 import streamlit as st
 
 from modules import configuracoes, dashboard, dividas, importacao, movimentacoes, previsoes, saldos
-from services.db import is_configured
+from services.db import _secret, is_configured, verify_database
 from services.ui import inject_global_css, render_app_header, render_page_header, render_sidebar, render_sidebar_toggle, render_header_search
 
 
@@ -11,6 +13,37 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Segurança da V1: dados persistentes só ficam acessíveis com senha
+# configurada nos secrets privados do Streamlit. Nenhuma senha no GitHub.
+if is_configured():
+    expected_password = _secret("APP_ACCESS_PASSWORD")
+    if not expected_password:
+        st.error(
+            "Conexão financeira bloqueada: configure APP_ACCESS_PASSWORD "
+            "nos Secrets do Streamlit antes de disponibilizar o banco."
+        )
+        st.stop()
+
+    if not st.session_state.get("_gf_authenticated", False):
+        st.title("Acesso à gestão financeira")
+        with st.form("gf_private_login"):
+            entered_password = st.text_input("Senha de acesso", type="password")
+            submitted = st.form_submit_button("Entrar")
+        if submitted:
+            if hmac.compare_digest(entered_password, expected_password):
+                st.session_state["_gf_authenticated"] = True
+                st.rerun()
+            else:
+                st.error("Senha incorreta.")
+        st.stop()
+
+    if not st.session_state.get("_gf_db_verified", False):
+        ready, message = verify_database()
+        if not ready:
+            st.error(message)
+            st.stop()
+        st.session_state["_gf_db_verified"] = True
 
 # O layout acompanha o tamanho da tela via CSS; não há modo manual.
 st.session_state["view_mode"] = "Desktop"
