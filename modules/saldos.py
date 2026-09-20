@@ -3,6 +3,8 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from services.ui import render_financial_table
+
 from services.db import TABLES, insert_row, select_rows, update_row
 from services.finance import brl, financial_table, numeric, to_df
 
@@ -46,10 +48,10 @@ def render():
         return
 
     display_df = financial_table(accounts[[c for c in ["id", "name", "balance"] if c in accounts.columns]])
-    st.dataframe(
+    render_financial_table(
         display_df,
-        use_container_width=True,
-        hide_index=True,
+        key="accounts",
+        title="CONTAS E SALDOS",
         height=min(360, max(110, (len(display_df) + 1) * 33)),
     )
 
