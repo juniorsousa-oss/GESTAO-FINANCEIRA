@@ -19,9 +19,15 @@ def _safe_percent(base: float, value: float) -> str | None:
     return f"{arrow} {abs(pct):.1f}%"
 
 
+# Início de visualização dos gráficos; o histórico do banco permanece intacto.
+CHART_START = pd.Period("2026-07", freq="M")
+
+
 def _recent_competences(n: int = 6) -> list[str]:
-    now = pd.Timestamp(datetime.now().date())
-    periods = pd.period_range(end=now.to_period("M"), periods=n, freq="M")
+    current = pd.Timestamp(datetime.now().date()).to_period("M")
+    # Manter janela de no máximo seis meses, mas nunca mostrar antes de 07/2026.
+    first = max(CHART_START, current - (n - 1))
+    periods = pd.period_range(start=first, end=max(first, current), freq="M")
     return [f"{p.month:02d}/{p.year}" for p in periods]
 
 
@@ -131,11 +137,14 @@ def _category_chart(movements: pd.DataFrame) -> alt.Chart:
         data = pd.DataFrame({"category": ["Sem dados"], "value": [1.0]})
         colors = ["#dce6f0"]
     else:
-        out = movements[
+        # A rosca segue o mesmo recorte temporal do gráfico mensal.
+        competence = movements["competence"].map(competence_key)
+        out = movements.loc[
             movements["classification"]
             .astype(str)
             .str.upper()
             .str.contains("SAÍDA|SAIDA", regex=True)
+            & competence.ge((CHART_START.year, CHART_START.month))
         ].copy()
 
         data = (
@@ -302,7 +311,7 @@ def render(view_mode: str = "Desktop") -> None:
             with st.container(border=True, key="gf_chart_evolution"):
                 section_header(
                     "▥  Evolução Financeira Mensal",
-                    "Receitas, despesas e saldo nos últimos seis meses.",
+                    "Receitas, despesas e saldo a partir de julho de 2026.",
                 )
                 if monthly[["Receitas", "Despesas"]].abs().to_numpy().sum() == 0:
                     st.markdown(
@@ -310,7 +319,7 @@ def render(view_mode: str = "Desktop") -> None:
                         <div class="gf-chart-empty">
                             <div class="gf-chart-empty-icon" aria-hidden="true">▥</div>
                             <strong>Nenhuma movimentação no período.</strong>
-                            <span>Cadastre uma entrada ou saída para visualizar a evolução dos últimos seis meses.</span>
+                            <span>Cadastre uma entrada ou saída a partir de julho de 2026 para visualizar a evolução.</span>
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -327,7 +336,18 @@ def render(view_mode: str = "Desktop") -> None:
                     "◉  Despesas por Categoria",
                     "Distribuição das saídas registradas.",
                 )
-                if saidas <= 0:
+                # A ausência de despesas deve considerar o período mostrado,
+                # não as saídas históricas usadas nos indicadores financeiros.
+                visible_expenses = (
+                    not movements.empty
+                    and (
+                        movements["classification"].astype(str).str.upper()
+                        .str.contains("SAÍDA|SAIDA", regex=True)
+                        & movements["competence"].map(competence_key)
+                        .ge((CHART_START.year, CHART_START.month))
+                    ).any()
+                )
+                if not visible_expenses:
                     st.markdown(
                         """
                         <div class="gf-chart-empty">
