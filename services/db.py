@@ -11,6 +11,7 @@ TABLES = {
     "accounts": "finance_accounts",
     "debts": "finance_debts",
     "settings": "finance_settings",
+    "users": "finance_users",
 }
 
 
@@ -27,7 +28,7 @@ def is_configured() -> bool:
 
 
 def verify_database() -> tuple[bool, str]:
-    """Testa em leitura as cinco tabelas exigidas antes de habilitar o app."""
+    """Testa em leitura as seis tabelas exigidas antes de habilitar o app."""
     if not is_configured():
         return False, "Credenciais do Supabase ainda não configuradas."
     for table in TABLES.values():
@@ -44,7 +45,7 @@ def verify_database() -> tuple[bool, str]:
                 f"Não foi possível validar a tabela {table}. Confira o projeto, "
                 "a chave e a aplicação do supabase_schema.sql."
             )
-    return True, "Conexão validada com as cinco tabelas financeiras."
+    return True, "Conexão validada com as tabelas financeiras e perfis de acesso."
 
 
 def _headers(prefer: str | None = None) -> dict[str, str]:
