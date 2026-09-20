@@ -1,7 +1,7 @@
-"""Perfil de exibição local à sessão Streamlit.
+"""Validação de nome e foto de perfil individual do Gestão Financeira.
 
-A V1 usa uma senha compartilhada: o nome informado não autentica uma
-identidade individual. A foto é opcional e não é enviada ao banco.
+O nome/foto são associados no banco à conta cuja senha foi verificada.
+O campo da foto recebe PNG ou JPEG e tem limite de 1 MB.
 """
 
 import base64
