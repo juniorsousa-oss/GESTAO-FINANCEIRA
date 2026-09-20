@@ -20,7 +20,7 @@ def avatar_data_uri(uploaded: Any) -> str:
     payload = uploaded.getvalue()
     if not payload or len(payload) > MAX_AVATAR_BYTES:
         raise ValueError("A foto deve ter até 1 MB.")
-    if payload.startswith(b"\x89PNG\\r\\n\x1a\\n"):
+    if payload.startswith(b"\x89PNG\r\n\x1a\n"):
         mime = "image/png"
     elif payload.startswith(b"\xff\xd8\xff"):
         mime = "image/jpeg"
