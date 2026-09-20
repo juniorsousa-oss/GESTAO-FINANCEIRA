@@ -7,7 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from services.db import TABLES, get_settings, select_rows
-from services.finance import brl, competence_key, numeric, to_df
+from services.finance import brl, competence_key, date_br, numeric, to_df
 from services.ui import metric_card, section_header, show_metric_grid
 
 
@@ -70,7 +70,7 @@ def _forecast_table(forecasts: pd.DataFrame) -> pd.DataFrame:
     work = work.sort_values(["status", "due_date"], ascending=[True, True]).head(5)
 
     out = pd.DataFrame()
-    out["Vencimento"] = work["due_date"].fillna("-")
+    out["Vencimento"] = work["due_date"].map(date_br)
     out["Descrição"] = work["description"]
     out["Categoria"] = work["category"].replace("", "-")
     out["Tipo"] = work["type"]
@@ -161,7 +161,7 @@ def _category_chart(movements: pd.DataFrame) -> alt.Chart:
 
     return (
         alt.Chart(data)
-        .mark_arc(innerRadius=48, outerRadius=75)
+        .mark_arc(innerRadius=29, outerRadius=48)
         .encode(
             theta=alt.Theta(field="value", type="quantitative"),
             color=alt.Color(
@@ -171,9 +171,10 @@ def _category_chart(movements: pd.DataFrame) -> alt.Chart:
                 legend=alt.Legend(
                     title=None,
                     orient="bottom",
-                    columns=2,
+                    columns=3,
                     labelFontSize=8,
-                    symbolSize=48,
+                    labelLimit=94,
+                    symbolSize=34,
                 ),
             ),
             tooltip=[
@@ -181,7 +182,7 @@ def _category_chart(movements: pd.DataFrame) -> alt.Chart:
                 alt.Tooltip("value", title="Valor", format=",.2f"),
             ],
         )
-        .properties(height=215)
+        .properties(height=134)
     )
 
 
@@ -311,7 +312,7 @@ def render(view_mode: str = "Desktop") -> None:
                     "◉  Despesas por Categoria",
                     "Distribuição das saídas registradas.",
                 )
-                st.altair_chart(_category_chart(movements).properties(height=182 if view_mode == "Desktop" else 215), use_container_width=True)
+                st.altair_chart(_category_chart(movements), use_container_width=True)
 
     st.markdown("<div class='gf-dashboard-band-gap' aria-hidden='true'></div>", unsafe_allow_html=True)
 
