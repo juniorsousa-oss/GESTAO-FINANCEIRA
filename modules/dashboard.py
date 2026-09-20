@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from html import escape
 
 import altair as alt
 import pandas as pd
@@ -132,69 +133,72 @@ def _finance_chart(monthly: pd.DataFrame) -> alt.Chart:
     return (bars + line).properties(height=215)
 
 
-def _category_chart(movements: pd.DataFrame) -> alt.Chart:
+_CATEGORY_COLORS = [
+    "#2f76c7", "#2f9fc5", "#1aab9f", "#6c8dd4",
+    "#92aac7", "#8bcdbf", "#c5d1df",
+]
+
+
+def _category_data(movements: pd.DataFrame) -> pd.DataFrame:
+    """Uma fonte única para as fatias e a legenda, desde julho de 2026."""
     if movements.empty:
-        data = pd.DataFrame({"category": ["Sem dados"], "value": [1.0]})
-        colors = ["#dce6f0"]
-    else:
-        # A rosca segue o mesmo recorte temporal do gráfico mensal.
-        competence = movements["competence"].map(
-            lambda value: competence_key(value) >= (CHART_START.year, CHART_START.month)
-        )
-        out = movements.loc[
-            movements["classification"]
-            .astype(str)
-            .str.upper()
-            .str.contains("SAÍDA|SAIDA", regex=True)
-            & competence
-        ].copy()
+        return pd.DataFrame(columns=["category", "value"])
+    visible = movements["competence"].map(
+        lambda value: competence_key(value) >= (CHART_START.year, CHART_START.month)
+    )
+    is_expense = (
+        movements["classification"].astype(str).str.upper()
+        .str.contains("SAÍDA|SAIDA", regex=True)
+    )
+    out = movements.loc[visible & is_expense].copy()
+    if out.empty:
+        return pd.DataFrame(columns=["category", "value"])
+    out["category"] = out["category"].fillna("Sem categoria").astype(str)
+    out["value"] = pd.to_numeric(out["value"], errors="coerce").fillna(0)
+    return (
+        out.groupby("category", as_index=False)["value"]
+        .sum()
+        .query("value > 0")
+        .sort_values("value", ascending=False)
+        .head(7)
+    )
 
-        data = (
-            out.groupby("category", as_index=False)["value"]
-            .sum()
-            .sort_values("value", ascending=False)
-            .head(7)
-        )
 
-        if data.empty:
-            data = pd.DataFrame({"category": ["Sem dados"], "value": [1.0]})
-            colors = ["#dce6f0"]
-        else:
-            colors = [
-                "#2f76c7",
-                "#2f9fc5",
-                "#1aab9f",
-                "#6c8dd4",
-                "#92aac7",
-                "#8bcdbf",
-                "#c5d1df",
-            ]
-
+def _category_chart(data: pd.DataFrame) -> alt.Chart:
+    """Rosca sem legenda embutida: ambos ocupam áreas independentes no card."""
+    categories = data["category"].tolist()
     return (
         alt.Chart(data)
-        .mark_arc(innerRadius=51, outerRadius=83)
+        .mark_arc(innerRadius=46, outerRadius=76)
         .encode(
-            theta=alt.Theta(field="value", type="quantitative"),
+            theta=alt.Theta("value:Q"),
             color=alt.Color(
-                field="category",
-                type="nominal",
-                scale=alt.Scale(range=colors),
-                legend=alt.Legend(
-                    title=None,
-                    orient="bottom",
-                    columns=3,
-                    labelFontSize=8,
-                    labelLimit=94,
-                    symbolSize=34,
+                "category:N",
+                scale=alt.Scale(
+                    domain=categories,
+                    range=_CATEGORY_COLORS[:len(categories)],
                 ),
+                legend=None,
             ),
             tooltip=[
-                alt.Tooltip("category", title="Categoria"),
-                alt.Tooltip("value", title="Valor", format=",.2f"),
+                alt.Tooltip("category:N", title="Categoria"),
+                alt.Tooltip("value:Q", title="Valor", format=",.2f"),
             ],
         )
-        .properties(height=210)
+        .properties(width=180, height=180)
     )
+
+
+def _category_legend(data: pd.DataFrame) -> str:
+    """Legenda responsiva externa ao canvas do Altair, sem corte por altura."""
+    labels = []
+    for color, label in zip(_CATEGORY_COLORS, data["category"]):
+        labels.append(
+            '<span class="gf-category-legend-item">'
+            f'<i style="background:{color}" aria-hidden="true"></i>'
+            f'{escape(str(label))}</span>'
+        )
+    return '<div class="gf-category-legend">' + "".join(labels) + "</div>"
 
 
 def render(view_mode: str = "Desktop") -> None:
@@ -363,7 +367,18 @@ def render(view_mode: str = "Desktop") -> None:
                         unsafe_allow_html=True,
                     )
                 else:
-                    st.altair_chart(_category_chart(movements), use_container_width=True)
+                    category_data = _category_data(movements)
+                    if category_data.empty:
+                        st.info("Nenhuma despesa com valor positivo no período.")
+                    else:
+                        st.altair_chart(
+                            _category_chart(category_data),
+                            use_container_width=False,
+                        )
+                        st.markdown(
+                            _category_legend(category_data),
+                            unsafe_allow_html=True,
+                        )
 
     st.markdown("<div class='gf-dashboard-band-gap' aria-hidden='true'></div>", unsafe_allow_html=True)
 
