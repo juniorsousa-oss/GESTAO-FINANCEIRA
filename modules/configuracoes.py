@@ -4,7 +4,7 @@ import streamlit as st
 
 from services.profile import avatar_data_uri, clean_display_name
 from services.db import get_settings, is_configured, save_setting
-from services.users import create_user, update_own_profile
+from services.users import create_user, list_users, update_own_profile
 
 
 def render():
@@ -122,6 +122,24 @@ def render():
             "à MESMA base de movimentações, contas, previsões e dívidas. "
             "Os dados financeiros ainda não são separados por usuário."
         )
+        with st.expander("Usuários cadastrados"):
+            try:
+                accounts = list_users()
+                st.dataframe(
+                    [
+                        {
+                            "Nome": account["display_name"],
+                            "Perfil": "Administrador" if account["is_admin"] else "Usuário",
+                            "Situação": "Ativo" if account["is_active"] else "Inativo",
+                        }
+                        for account in accounts
+                    ],
+                    hide_index=True,
+                    use_container_width=True,
+                )
+            except Exception:
+                st.error("Não foi possível consultar os usuários cadastrados.")
+
         with st.form("gf_create_user_form", clear_on_submit=True):
             new_name = st.text_input(
                 "Nome do novo usuário", max_chars=40, key="gf_new_user_name"
