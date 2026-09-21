@@ -185,7 +185,7 @@ def _category_chart(data: pd.DataFrame) -> alt.Chart:
                 alt.Tooltip("value:Q", title="Valor", format=",.2f"),
             ],
         )
-        .properties(width=180, height=180)
+        .properties(height=180)
     )
 
 
@@ -373,7 +373,7 @@ def render(view_mode: str = "Desktop") -> None:
                     else:
                         st.altair_chart(
                             _category_chart(category_data),
-                            use_container_width=False,
+                            use_container_width=True,
                         )
                         st.markdown(
                             _category_legend(category_data),
