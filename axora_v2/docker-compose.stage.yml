@@ -2,7 +2,7 @@
 services:
   axora-web:
     build:
-      context: https://github.com/juniorsousa-oss/GESTAO-FINANCEIRA.git#main
+      context: https://github.com/juniorsousa-oss/GESTAO-FINANCEIRA.git#feat/axora-web-v2-20261009
       dockerfile: axora_v2/Dockerfile
     restart: unless-stopped
     environment:
