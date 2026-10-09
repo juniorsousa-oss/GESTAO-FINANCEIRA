@@ -84,7 +84,7 @@ def current(request: Request):
         raise HTTPException(401, "Sua sessão expirou. Faça login novamente.") from None
     users = db.select(
         "users",
-        fields="id,display_name,is_admin,is_active,avatar_data_uri",
+        fields="id,display_name,is_admin,is_active",
         params={"id": "eq." + str(uid), "limit": 1},
     )
     if not users or not users[0].get("is_active"):
