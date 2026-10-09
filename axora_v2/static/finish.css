@@ -1,0 +1,459 @@
+/* AXORA | Acabamento executivo aprovado — login, shell, sidebar e mobile.
+   Camada isolada (styles.css -> premium.css -> identity.css -> finish.css).
+   Sem impacto em API, dados financeiros, autenticação ou navegação. */
+:root{
+  --finish-midnight:#091E38;
+  --finish-ocean:#0D3853;
+  --finish-teal:#10BCB2;
+  --finish-aqua:#64E4DA;
+  --finish-ink:#112946;
+  --finish-hairline:#DCE8EF;
+  --finish-surface:#FFFFFF;
+  --finish-float:0 6px 16px rgba(15,40,66,.035),0 21px 50px rgba(15,40,66,.075);
+}
+
+/* Card de login com profundidade discreta e acabamento tecnológico proprietário. */
+#login.login-screen{
+  background:
+    radial-gradient(ellipse at 10% 12%,rgba(38,211,208,.38) 0%,transparent 37%),
+    radial-gradient(ellipse at 91% 83%,rgba(30,160,179,.27) 0%,transparent 43%),
+    linear-gradient(115deg,rgba(4,35,57,.70),rgba(5,41,61,.72)),
+    url("/assets/axora-network.svg") center/cover no-repeat;
+  padding:clamp(18px,3.3vw,52px);
+}
+#login.login-screen::before{
+  background:url("/assets/axora-network.svg") center/cover no-repeat;
+  opacity:.16;
+  filter:blur(2px);
+}
+#login .login-card{
+  width:min(1040px,100%);
+  min-height:578px;
+  grid-template-columns:minmax(0,50%) minmax(0,50%);
+  border-radius:27px;
+  border:1px solid rgba(212,253,251,.33);
+  box-shadow:0 30px 95px rgba(3,18,35,.32),0 6px 24px rgba(2,33,53,.13);
+}
+#login .login-card::after{
+  border-color:rgba(234,255,255,.24);
+}
+#login .login-art{
+  min-height:578px;
+  padding:clamp(34px,4vw,54px);
+  background:
+    linear-gradient(145deg,rgba(2,25,48,.24),rgba(3,28,53,.67)),
+    url("/assets/axora-network.svg") 50% 44%/auto 116% no-repeat,
+    radial-gradient(circle at 80% 64%,rgba(14,217,207,.28) 0%,transparent 50%),
+    linear-gradient(128deg,#08213C,#063650 71%,#0E5C68);
+}
+#login .login-art::after{
+  border-color:rgba(115,232,229,.15);
+}
+#login .login-art h1{
+  font-size:clamp(34px,3.4vw,43px);
+  max-width:425px;
+  font-weight:800;
+  line-height:1.21;
+  letter-spacing:-1.55px;
+  margin-bottom:17px;
+  text-wrap:balance;
+}
+#login .login-art h1 em{color:#4EE7DF}
+#login .login-brand{gap:13px}
+#login .login-brand img{height:62px;width:62px;border-radius:17px}
+#login .login-brand strong{
+  font-family:Manrope,Inter,sans-serif;
+  font-size:23px;letter-spacing:2.35px;
+}
+#login .login-brand small{letter-spacing:2.55px;font-size:9px}
+#login .login-art p:not(.eyebrow){
+  max-width:365px;font-size:13px;line-height:1.8;color:#D1E3EC;
+}
+#login .login-pill{
+  margin-top:26px;padding-top:15px;
+  font-size:11px;border-color:rgba(127,226,229,.2);
+}
+#login .login-panel{
+  min-height:578px;
+  padding:clamp(34px,4.2vw,62px);
+  background:linear-gradient(156deg,#fff 0%,#fff 72%,#F8FCFD 100%);
+}
+#login .login-form-wrap{max-width:400px}
+#login .login-panel .overline{
+  color:#079F9C;font-size:10px;letter-spacing:2.1px;
+}
+#login .login-panel h2{
+  font-family:Manrope,Inter,sans-serif;
+  font-size:clamp(29px,2.7vw,36px);
+  letter-spacing:-1.25px;
+  font-weight:800;line-height:1.25;
+  margin:18px 0 13px;
+}
+#login .login-panel p.muted{
+  font-size:13px;line-height:1.72;max-width:365px;
+}
+#login .login-form{margin-top:32px;gap:12px}
+#login .login-form label{
+  font-size:12px;color:#1C3853;font-weight:700;
+}
+#login .password-wrap{
+  min-height:55px;
+  border:1px solid #D8E6EC;
+  border-radius:12px;
+}
+#login .password-wrap:focus-within{
+  border-color:#34C8C0;
+  box-shadow:0 0 0 3px rgba(52,200,192,.10);
+}
+#login .password-icon{color:#8AA8BD}
+#login .password-wrap input{min-height:53px;font-size:13px}
+#login .login-form .btn{
+  min-height:56px;
+  font-size:13px;
+  border-radius:12px;
+  background:linear-gradient(109deg,#0DBBAF 0%,#0893C0 100%);
+  box-shadow:0 11px 24px rgba(10,158,174,.17);
+  transition:transform .2s ease,box-shadow .2s ease,filter .2s ease;
+}
+#login .login-form .btn:hover{
+  transform:translateY(-2px);
+  filter:saturate(1.05);
+  box-shadow:0 14px 29px rgba(10,158,174,.25);
+}
+
+/* Assinatura Nexon: pequena e institucional, sem competir com o AXORA.
+   A imagem continua vindo da configuração de branding no Supabase. */
+#login .login-foot.nexon-lockup{
+  display:flex!important;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:8px;
+  width:100%;
+  padding-top:17px;
+  margin-top:33px;
+  border-top:1px solid #E3ECF2;
+}
+#login .nexon-lockup small{
+  font-family:Inter,sans-serif;
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0;
+  color:#8799AB;
+}
+#login .nexon-lockup img[data-institutional-logo]{
+  width:148px;
+  max-width:52%;
+  height:43px;
+  max-height:43px;
+  object-fit:contain;
+  object-position:center;
+  flex:none;
+  opacity:.76;
+  filter:grayscale(1);
+}
+#login .nexon-lockup .institutional-brand-fallback{
+  font-size:11px;
+  font-weight:650;
+  color:#8494A6;
+  letter-spacing:.4px;
+}
+.nexon-app-footer{
+  min-height:72px;
+  gap:13px;
+  padding:15px 12px 12px;
+  align-items:center;
+}
+.nexon-app-footer img[data-institutional-logo]{
+  width:145px;
+  max-width:48vw;
+  height:39px;
+  max-height:39px;
+  flex:none;
+  opacity:.76;
+  object-fit:contain;
+  filter:grayscale(1);
+}
+
+/* Shell visual: moldura, sidebar sofisticada, topbar e superfície. */
+body{background:#E8F0F5}
+.workspace{gap:0}
+.sidebar{
+  width:258px;
+  flex:0 0 258px;
+  padding:22px 13px 17px;
+  background:
+    radial-gradient(circle at 95% -13%,rgba(64,190,193,.16),transparent 36%),
+    linear-gradient(170deg,#102C45 0%,#0D2540 42%,#0A1A32 100%);
+  border-color:rgba(170,226,234,.13);
+}
+.sidebar::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;height:150px;
+  border-radius:25px 0 0 0;
+  pointer-events:none;
+  background:linear-gradient(125deg,rgba(26,198,186,.065),transparent 80%);
+}
+.side-brand{
+  min-height:76px;
+  gap:12px;
+  padding:7px 12px 4px;
+  position:relative;
+}
+.sidebar-brand-mark{
+  width:49px;height:49px;flex:0 0 49px;
+  object-fit:contain;
+  border-radius:15px;
+  box-shadow:0 9px 22px rgba(0,11,30,.32);
+}
+.side-brand strong{
+  font-size:19px;
+  letter-spacing:2.15px;
+  line-height:1.15;
+  font-weight:800;
+}
+.side-brand span{
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:.6px;
+  color:#AFC5D7;
+}
+.side-separator{
+  margin:12px 13px 20px;
+  border-color:rgba(197,232,245,.1);
+}
+.nav-label{
+  color:#8BA8BD;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:1.7px;
+  padding:0 8px;
+  margin:11px 12px 13px;
+  font-family:Inter,sans-serif;
+}
+.nav-separator{
+  padding-top:18px;
+  margin-top:13px;
+  border-top:1px solid rgba(207,237,244,.07);
+}
+.nav{gap:5px;position:relative}
+.nav-link{
+  min-height:49px;
+  padding:10px 12px;
+  gap:13px;
+  border:1px solid transparent;
+  border-radius:13px;
+  font-size:12.3px;
+  font-weight:600;
+  line-height:1.3;
+  color:#BDD0DF;
+  font-family:Inter,sans-serif;
+  letter-spacing:-.05px;
+  transition:color .2s,border-color .2s,background .2s,box-shadow .2s,transform .2s;
+}
+.nav-icon{
+  width:31px;height:31px;flex:0 0 31px;
+  display:grid;place-items:center;
+  color:#A5C5D8;
+  background:rgba(212,244,248,.035);
+  border:1px solid rgba(190,237,245,.08);
+  border-radius:9px;
+  transition:color .2s,background .2s,border-color .2s;
+}
+.nav-icon svg{
+  width:18px;height:18px;
+  display:block;
+  stroke:currentColor;fill:none;
+  stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.nav-link:hover{
+  background:rgba(106,205,212,.095);
+  border-color:rgba(128,221,229,.12);
+  color:#fff;
+  transform:translateX(2px);
+}
+.nav-link:hover .nav-icon{
+  color:#A9F4E7;
+  border-color:rgba(128,221,229,.17);
+  background:rgba(42,200,191,.11);
+}
+.nav-link.active{
+  background:linear-gradient(108deg,rgba(15,159,167,.31),rgba(41,95,147,.25));
+  color:#fff;
+  border-color:rgba(90,216,212,.3);
+  box-shadow:inset 3px 0 #35E0CB,0 6px 18px rgba(0,14,35,.14);
+  transform:none;
+  font-weight:750;
+}
+.nav-link.active .nav-icon{
+  color:#56EBDE;
+  background:rgba(22,183,171,.15);
+  border-color:rgba(93,230,215,.2);
+}
+.sidebar-bottom{
+  position:relative;
+  margin-top:auto;
+  padding:17px 12px 8px;
+  border-color:rgba(179,231,238,.13);
+  background:linear-gradient(180deg,transparent,rgba(3,19,36,.09));
+  font-size:10px;
+  line-height:1.6;
+}
+.sidebar-status{
+  display:flex;align-items:center;
+  gap:5px;
+  color:#B9D4DD;
+  font-weight:650;
+  margin-bottom:7px;
+}
+.sidebar-status .online-dot{width:7px;height:7px;flex:0 0 7px}
+.sidebar-bottom small{color:#7D9BB1}
+.app-column{
+  background:linear-gradient(142deg,#FAFDFE 0%,#F2F8FB 55%,#F1F6FA 100%);
+}
+.topbar{
+  background:rgba(255,255,255,.94);
+  border-bottom:1px solid #E2ECF2;
+  backdrop-filter:blur(15px);
+  -webkit-backdrop-filter:blur(15px);
+}
+.profile-pill{box-shadow:0 2px 10px rgba(25,47,74,.04)}
+.main-area{max-width:1660px}
+.page-heading h1{
+  color:#112741;
+  font-family:Manrope,Inter,sans-serif;
+  font-weight:800;
+}
+.page-heading .eyebrow{font-weight:800;letter-spacing:1.8px}
+.metric-card,.panel{
+  border-radius:21px;
+  border:1px solid #E2ECF2;
+  box-shadow:var(--finish-float);
+}
+.metric-card:hover,.panel:hover{
+  border-color:#D3E8EB;
+  box-shadow:0 9px 22px rgba(14,51,72,.058),0 25px 57px rgba(14,51,72,.082);
+}
+.metric-card:first-child{
+  background:linear-gradient(120deg,#FFF 52%,#F0FBF9);
+  border-color:#CBEDE6;
+}
+.panel-heading h2{
+  font-family:Manrope,Inter,sans-serif;
+  font-weight:800;
+}
+.table-panel{border-radius:21px}
+.data-table th{
+  background:#F2F7FA;
+  font-weight:750;
+}
+.data-table tbody tr:hover td{background:#F0FAF9}
+.btn.primary{background:linear-gradient(110deg,#0FBCAE,#0C93B9)}
+.btn.primary:hover{background:linear-gradient(110deg,#0BA799,#087FAB)}
+
+/* Desktop recolhido: apenas ícones limpos, sem texto espremido. */
+@media(min-width:851px){
+  .workspace.sidebar-collapsed .sidebar{width:84px;flex-basis:84px}
+  .workspace.sidebar-collapsed .side-brand{min-height:70px;padding:6px 0}
+  .workspace.sidebar-collapsed .nav-link{
+    min-height:54px;
+    justify-content:center;
+    padding:8px;
+    gap:0;
+  }
+  .workspace.sidebar-collapsed .nav-link .nav-icon{
+    width:36px;height:36px;flex-basis:36px;
+    border-radius:11px;
+  }
+  .workspace.sidebar-collapsed .nav-label{display:none}
+  .workspace.sidebar-collapsed .nav{
+    gap:6px;margin-top:15px;
+  }
+  .workspace.sidebar-collapsed .sidebar-brand-mark{width:48px;height:48px;flex-basis:48px}
+}
+/* Tablets/mobile mantêm drawer utilizável; não escondem a navegação. */
+@media(max-width:1100px) and (min-width:851px){
+  #login .login-card{min-height:540px}
+  #login .login-art,#login .login-panel{min-height:540px}
+  #login .login-art{padding:35px}
+  #login .login-panel{padding:35px}
+}
+@media(max-width:850px){
+  #login.login-screen{padding:clamp(10px,3vw,20px)}
+  #login .login-card{
+    width:min(620px,100%);
+    min-height:0;
+    grid-template-columns:minmax(0,1fr);
+    border-radius:24px;
+    overflow:hidden;
+  }
+  #login .login-art{
+    min-height:237px;
+    padding:26px 28px 51px;
+    background:
+      linear-gradient(120deg,rgba(3,27,48,.22),rgba(3,28,53,.53)),
+      url("/assets/axora-network.svg") center/cover no-repeat,
+      linear-gradient(110deg,#08233F,#0F5F69);
+  }
+  #login .login-art h1{margin:27px 0 0;font-size:clamp(24px,4.3vw,32px);letter-spacing:-.8px}
+  #login .login-panel{
+    min-height:0;
+    margin:-23px 12px 13px;
+    padding:30px clamp(20px,4vw,37px) 27px;
+    border-radius:20px;
+  }
+  #login .login-form{margin-top:26px}
+  #login .login-foot.nexon-lockup{margin-top:28px;gap:7px}
+  #login .nexon-lockup img[data-institutional-logo]{
+    width:135px;height:40px;max-height:40px;
+  }
+  .sidebar{
+    position:fixed;
+    width:min(310px,calc(100vw - 56px));
+    padding:22px 13px;
+    border-radius:23px;
+  }
+  .sidebar.open{box-shadow:0 25px 75px rgba(1,18,39,.35)}
+  .sidebar-overlay.open{background:rgba(3,21,37,.58);backdrop-filter:blur(4px)}
+}
+@media(max-width:680px){
+  #login.login-screen{padding:8px 8px 14px}
+  #login .login-card{border-radius:22px}
+  #login .login-art{min-height:213px;padding:25px 23px 44px}
+  #login .login-art h1{font-size:clamp(22px,5.2vw,27px);margin-top:24px}
+  #login .login-panel{
+    margin:-19px 9px 10px;
+    padding:25px 19px 22px;
+    border-radius:18px;
+  }
+  #login .login-panel h2{font-size:27px}
+  #login .login-form .btn{min-height:51px}
+  #login .login-foot.nexon-lockup{
+    margin-top:25px;
+    padding-top:16px;
+  }
+  #login .nexon-lockup img[data-institutional-logo]{
+    width:127px;max-width:60%;height:38px;max-height:38px;
+  }
+  .sidebar{padding:23px 13px}
+  .side-brand strong{font-size:19px}
+  .nav-link{min-height:52px}
+  .nav-icon{height:33px;width:33px;flex-basis:33px}
+  .metric-card,.panel{border-radius:19px}
+  .nexon-app-footer img[data-institutional-logo]{
+    width:130px;height:37px;max-height:37px;
+  }
+}
+@media(max-width:390px){
+  #login .login-panel{padding:24px 15px}
+  #login .nexon-lockup img[data-institutional-logo]{
+    width:119px;height:36px;max-height:36px;
+  }
+  .sidebar{width:min(300px,calc(100vw - 43px))}
+}
+@media(prefers-reduced-motion:reduce){
+  .nav-link,.nav-icon,#login .login-form .btn{transition:none!important}
+}
