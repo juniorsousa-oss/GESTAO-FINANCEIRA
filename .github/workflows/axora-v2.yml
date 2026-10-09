@@ -24,6 +24,7 @@ jobs:
       - run: python -m compileall -q axora_v2
       - run: python -m pytest axora_v2/tests -q
       - run: node --check axora_v2/static/app.js
+      - run: docker build --file axora_v2/Dockerfile --tag axora-v2-ci .
       - run: |
           if grep -R -E '^import streamlit|^from streamlit' axora_v2 --include='*.py'; then
             echo "O AXORA v2 não pode importar Streamlit."
