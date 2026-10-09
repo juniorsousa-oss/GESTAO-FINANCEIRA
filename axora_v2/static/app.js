@@ -64,6 +64,7 @@ const columns = {
 };
 let me=null,snapshot=null,page="dashboard",filters={},excelFile=null,toastTimeout=0;
 let institutionalBrand={has_logo:false,updated_at:null};
+let syncStatus="loading";
 let institutionalPreviewUrl=null;
 async function api(path,opts={}) {
   const headers={...(opts.headers||{})};
@@ -103,6 +104,7 @@ function logoutVisual(){me=null;snapshot=null;$("#workspace").classList.add("hid
 function enterVisual(){ $("#login").classList.add("hidden");$("#workspace").classList.remove("hidden");$("#user-name").textContent=me.display_name;const a=$("#avatar");a.replaceChildren();if(me.avatar_data_uri){const i=document.createElement("img");i.src=me.avatar_data_uri;i.alt="";a.append(i)}else a.textContent=(me.display_name||"A")[0].toUpperCase()}
 async function start(){try{me=await api("/api/me");enterVisual();await refresh()}catch{logoutVisual()}}
 function updateSyncStatus(status){
+  syncStatus=status;
   const timestamp=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
   const text=status==="ready"?"Conectado":status==="loading"?"Atualizando":"Falha ao atualizar";
   const sidebar=status==="ready"?"Dados sincronizados":status==="loading"?"Atualizando dados":"Verifique a conexão";
@@ -113,6 +115,8 @@ function updateSyncStatus(status){
   if($("#top-sync-label"))$("#top-sync-label").textContent=text;
   if($("#sidebar-sync-label"))$("#sidebar-sync-label").textContent=sidebar;
   if($("#sidebar-sync-time"))$("#sidebar-sync-time").textContent=description;
+  const settings=$("#settings-connection-status");
+  if(settings)settings.textContent=status==="ready"?"Dados financeiros sincronizados":status==="loading"?"Atualizando informações financeiras":"Falha ao atualizar informações financeiras";
 }
 async function refresh(){
   const button=$("#refresh");
@@ -299,7 +303,7 @@ function settingsPage(){
   let adminForm='<div class="notice warning">Atenção: novos usuários poderão visualizar e alterar a <b>mesma base financeira</b>. Não há isolamento por usuário nesta versão.</div><form id="new-user-form" class="settings-form"><div class="field"><label>Nome</label><input name="display_name" required maxlength="40"></div><div class="field"><label>Senha exclusiva (mínimo 12 caracteres)</label><input name="password" type="password" minlength="12" required></div><div class="field checkbox full"><input id="share-ack" name="share_ack" type="checkbox" required><label for="share-ack">Confirmo que o usuário terá acesso à base financeira compartilhada</label></div><button type="submit" class="btn primary">Cadastrar usuário</button></form><div id="users-table" class="table-wrap"></div>';
   const signaturePanel='<div class="institutional-brand-editor"><div class="institutional-preview"><img data-institutional-logo alt="Prévia da assinatura Nexon Labs" width="220" height="60" hidden><span class="institutional-brand-fallback" data-institutional-fallback>by Nexon Labs</span></div><p id="institutional-logo-status" class="panel-copy"></p>'+
     (me.is_admin?'<div class="field"><label for="institutional-logo-upload">Enviar logo institucional · PNG, JPG ou WebP (até 5 MB)</label><input id="institutional-logo-upload" type="file" accept="image/png,image/jpeg,image/webp"></div><div class="page-actions"><button class="btn primary" type="button" data-action="upload-institutional-logo">Salvar assinatura</button><button class="btn ghost" type="button" data-action="delete-institutional-logo">Restaurar padrão</button></div>':'<div class="notice">Somente administradores podem alterar a identidade institucional.</div>')+'</div>';
-  return '<div class="settings-grid"><div class="stack">'+panel("Meu perfil","Personalize a identificação associada à sua senha.",profile)+panel("Identidade institucional","Uma única imagem para o login e o rodapé. O símbolo do AXORA permanece inalterado.",signaturePanel)+(me.is_admin?panel("Usuários e permissões","Criação de contas e acesso à base compartilhada.",adminForm):"")+'</div><div class="stack">'+panel("Metas financeiras","Defina renda, reserva, percentuais e patrimônio.",goalForm)+panel("Conectividade","Informações sobre os serviços do AXORA.",'<div class="notice"><span class="online-dot"></span> Supabase conectado · FastAPI · Hospedagem Hostinger</div><p class="panel-copy">AXORA by Nexon Labs. A versão web não utiliza a interface ou infraestrutura Streamlit.</p>')+'</div></div>';
+  return '<div class="settings-grid"><div class="stack">'+panel("Meu perfil","Personalize a identificação associada à sua senha.",profile)+panel("Identidade institucional","Uma única imagem para o login e o rodapé. O símbolo do AXORA permanece inalterado.",signaturePanel)+(me.is_admin?panel("Usuários e permissões","Criação de contas e acesso à base compartilhada.",adminForm):"")+'</div><div class="stack">'+panel("Metas financeiras","Defina renda, reserva, percentuais e patrimônio.",goalForm)+panel("Conectividade","Informações sobre os serviços do AXORA.",'<div class="notice"><span class="online-dot"></span> <span id="settings-connection-status">'+(syncStatus==="ready"?"Dados financeiros sincronizados":syncStatus==="loading"?"Atualizando informações financeiras":"Falha ao atualizar informações financeiras")+'</span> · FastAPI · Hostinger</div><p class="panel-copy">AXORA by Nexon Labs. A versão web não utiliza a interface ou infraestrutura Streamlit.</p>')+'</div></div>';
 }
 async function doExport(){try{const res=await api("/api/export");const blob=await res.blob();const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="axora_export.xlsx";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);showToast("Planilha exportada.")}catch(e){showToast(e.message,true)}}
 async function uploadExcel(endpoint){
