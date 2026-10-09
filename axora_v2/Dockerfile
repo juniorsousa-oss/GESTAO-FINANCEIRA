@@ -1,4 +1,3 @@
-# AXORA 2.0: Dockerfile padrão da Hostinger. O Streamlit Cloud permanece independente.
 FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111d33">
+  <meta name="description" content="AXORA — inteligência e controle financeiro, by Nexon Labs.">
+  <title>AXORA | by Nexon Labs</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <div id="login" class="login-screen">
+    <div class="login-art" aria-hidden="true">
+      <div class="login-orb"></div>
+      <div class="login-art-content">
+        <div class="brand-mark large">A</div>
+        <p class="eyebrow light">AXORA · BY NEXON LABS</p>
+        <h1>Seu futuro financeiro merece clareza.</h1>
+        <p>Transforme números em decisões. Organize, acompanhe e evolua com confiança.</p>
+        <div class="login-pill">Clareza para decidir. Liberdade para crescer.</div>
+      </div>
+    </div>
+    <div class="login-panel">
+      <div class="login-form-wrap">
+        <div class="login-mobile-brand"><span class="brand-mark">A</span><b>AXORA</b></div>
+        <span class="overline">BEM-VINDO DE VOLTA</span>
+        <h2>Acesse seu espaço.</h2>
+        <p class="muted">Entre com sua senha pessoal para acessar seus dados financeiros.</p>
+        <form id="login-form" class="login-form">
+          <label for="login-password">Sua senha</label>
+          <div class="password-wrap"><input id="login-password" name="password" type="password" minlength="1" required autocomplete="current-password" placeholder="Digite sua senha"><button id="toggle-password" class="text-button" type="button" aria-label="Mostrar senha">Mostrar</button></div>
+          <button class="btn primary full" type="submit">Entrar no AXORA <span aria-hidden="true">→</span></button>
+        </form>
+        <p id="login-error" class="form-error" role="alert"></p>
+        <small class="login-foot">Ambiente privado · AXORA by Nexon Labs</small>
+      </div>
+    </div>
+  </div>
+
+  <div id="workspace" class="workspace hidden">
+    <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+    <aside id="sidebar" class="sidebar" aria-label="Menu principal">
+      <div class="side-brand"><div class="brand-mark">A</div><div><strong>AXORA</strong><span>by Nexon Labs</span></div><button id="close-menu" class="icon-button mobile-only" aria-label="Fechar menu" type="button">×</button></div>
+      <div class="side-separator"></div>
+      <div class="nav-label">VISÃO GERAL</div>
+      <nav id="main-nav" class="nav" aria-label="Seções do AXORA">
+        <button data-page="dashboard" class="nav-link active"><span class="nav-icon">▦</span> Visão financeira</button>
+        <div class="nav-label nav-separator">GERENCIAMENTO</div>
+        <button data-page="movements" class="nav-link"><span class="nav-icon">↔</span> Movimentações</button>
+        <button data-page="forecasts" class="nav-link"><span class="nav-icon">◷</span> Contas e previsões</button>
+        <button data-page="accounts" class="nav-link"><span class="nav-icon">▤</span> Contas e saldos</button>
+        <button data-page="debts" class="nav-link"><span class="nav-icon">▥</span> Dívidas</button>
+        <div class="nav-label nav-separator">FERRAMENTAS</div>
+        <button data-page="import" class="nav-link"><span class="nav-icon">⇧</span> Importar / Exportar</button>
+        <button data-page="settings" class="nav-link"><span class="nav-icon">⚙</span> Configurações</button>
+      </nav>
+      <div class="sidebar-bottom"><div class="sidebar-status"><span class="online-dot"></span> Plataforma conectada</div><small>AXORA · Versão web 2.0</small></div>
+    </aside>
+
+    <div class="app-column">
+      <header class="topbar">
+        <div class="top-left">
+          <button id="menu-toggle" type="button" class="icon-button" aria-label="Abrir menu">☰</button>
+          <div class="breadcrumbs">NEXON LABS <span>/</span> <b id="crumb-current">VISÃO FINANCEIRA</b></div>
+        </div>
+        <div class="top-right">
+          <span class="top-status"><span class="online-dot"></span> Conectado</span>
+          <button id="refresh" class="icon-button" type="button" aria-label="Atualizar informações" title="Atualizar">↻</button>
+          <button id="profile-button" class="profile-pill" type="button" aria-label="Ir para configurações"><span id="avatar" class="avatar">A</span><span id="user-name">Usuário</span><span class="chev">⌄</span></button>
+        </div>
+      </header>
+      <main class="main-area">
+        <div class="page-heading"><div><div class="eyebrow">GESTÃO FINANCEIRA INTELIGENTE</div><h1 id="page-title">Visão financeira</h1><p id="page-subtitle">Seu panorama financeiro em um só lugar.</p></div><div id="page-actions" class="page-actions"></div></div>
+        <div id="page-content" aria-live="polite"></div>
+        <footer class="app-footer">AXORA by Nexon Labs <span>•</span> Clareza para decidir. Liberdade para crescer.</footer>
+      </main>
+    </div>
+  </div>
+  <dialog id="editor-dialog" class="editor-dialog">
+    <form id="editor-form"><div class="dialog-heading"><div><span class="overline">AXORA</span><h2 id="editor-title">Novo registro</h2></div><button type="button" class="icon-button dialog-close" aria-label="Fechar">×</button></div><div id="editor-fields" class="form-grid"></div><div class="dialog-actions"><button type="button" class="btn ghost dialog-close">Cancelar</button><button class="btn primary" type="submit">Salvar registro</button></div></form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>

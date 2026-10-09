@@ -1,0 +1,29 @@
+# Implantação de homologação isolada; NÃO substitui a versão Streamlit ativa.
+services:
+  axora-web:
+    build:
+      context: https://github.com/juniorsousa-oss/GESTAO-FINANCEIRA.git#feat/axora-web-v2-20261009
+      dockerfile: axora_v2/Dockerfile
+    restart: unless-stopped
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL:?Configure na VPS}
+      SUPABASE_KEY: ${SUPABASE_KEY:?Configure na VPS}
+      SESSION_SECRET: ${SESSION_SECRET:?Crie um segredo aleatorio com ao menos 32 caracteres}
+      COOKIE_SECURE: "1"
+    expose:
+      - "8000"
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.axora-hml.rule=Host(`axora-hml.nexonlabs.com.br`)"
+      - traefik.http.routers.axora-hml.entrypoints=websecure
+      - traefik.http.routers.axora-hml.tls=true
+      - traefik.http.routers.axora-hml.tls.certresolver=letsencrypt
+      - traefik.http.services.axora-hml.loadbalancer.server.port=8000
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

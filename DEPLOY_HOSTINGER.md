@@ -1,3 +1,25 @@
+# AXORA 2.0 — Atualização do projeto EXISTENTE na Hostinger
+
+**Situação:** o projeto Docker `gestao-financeira` e o domínio `axora.nexonlabs.com.br` já existem. A versão antiga roda no Streamlit Community Cloud e pode continuar disponível durante o corte.
+
+## Atualização sem criar novo projeto
+
+1. **Antes do deploy:** guardar o YAML atual da Hostinger e verificar um backup restaurável do Supabase.
+2. No projeto `gestao-financeira`, acessar **Gerenciar → Editor .yaml**.
+3. Substituir o YAML pelo arquivo atualizado de [docker-compose.yml](docker-compose.yml) da branch `main` **após a integração aprovada da V2**. O nome do serviço continuará `financeiro`.
+4. Na área **Ambiente** do mesmo projeto, manter `SUPABASE_URL` e `SUPABASE_KEY` atualmente utilizados. Adicionar **`SESSION_SECRET`** com 32+ caracteres aleatórios diferentes dos usados no ATRIA e no Opera Hub; não compartilhar esse valor em chats ou prints. Guardar o segredo em local seguro, pois trocá-lo invalida sessões.
+5. Validar se o gerenciador usa a seção de variáveis do Compose ou variáveis do ambiente; com a sintaxe `${SESSION_SECRET:?}`, o valor deve estar disponível **durante a leitura do Compose**, não apenas dentro do contêiner.
+6. O novo Dockerfile passa a executar **FastAPI em 8000**, com healthcheck `/health`. O Traefik continua atendendo ao mesmo domínio.
+7. Clique em **Implantar** somente depois de conferir o YAML, as variáveis e o backup.
+8. Confirmar `https://axora.nexonlabs.com.br/health` (esperado `"engine":"FastAPI"`), login pela senha antiga, dados e layout no computador e celular.
+9. Se houver erro, não excluir bancos nem fazer SQL; verificar logs do serviço e restaurar o YAML anterior. A versão Cloud segue independente.
+
+**Branch de segurança:** `backup/axora-streamlit-before-v2-20261009` guarda o código e o Compose Streamlit anteriores.
+
+---
+
+## Referência histórica da implantação Streamlit
+
 # Migração: Streamlit Community Cloud → Hostinger (VPS)
 
 ## Escopo e isolamento

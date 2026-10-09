@@ -1,0 +1,48 @@
+name: AXORA web v2 checks
+on:
+  pull_request:
+    paths:
+      - 'axora_v2/**'
+      - '.github/workflows/axora-v2.yml'
+  push:
+    branches:
+      - feat/axora-web-v2-20261009
+    paths:
+      - 'axora_v2/**'
+      - '.github/workflows/axora-v2.yml'
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: axora_v2/requirements.txt
+      - run: pip install -r axora_v2/requirements.txt pytest httpx
+      - run: python -m compileall -q axora_v2
+      - run: python -m pytest axora_v2/tests -q
+      - run: node --check axora_v2/static/app.js
+      - run: docker build --tag axora-v2-ci .
+      - name: Testar inicialização real da imagem
+        run: |
+          docker run -d --name axora-v2-smoke -p 127.0.0.1:18080:8000 \
+            -e SUPABASE_URL=https://example.supabase.co \
+            -e SUPABASE_KEY=chave-de-testes-sem-acesso \
+            -e SESSION_SECRET=teste-aleatorio-de-mais-de-trinta-e-dois-caracteres \
+            axora-v2-ci
+          trap 'docker logs axora-v2-smoke; docker rm -f axora-v2-smoke' EXIT
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:18080/health >/dev/null; then
+              curl -fsS http://127.0.0.1:18080/ | grep -q 'AXORA'
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+      - run: |
+          if grep -R -E '^import streamlit|^from streamlit' axora_v2 --include='*.py'; then
+            echo "O AXORA v2 não pode importar Streamlit."
+            exit 1
+          fi
