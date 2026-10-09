@@ -170,7 +170,7 @@ function hideMenu(){
 }
 function trapMobileMenuFocus(e){
   if(e.key!=="Tab"||!$("#sidebar").classList.contains("open"))return;
-  const items=$("#sidebar button:not([disabled]), #sidebar a[href], #sidebar [tabindex]:not([tabindex='-1'])");
+  const items=$$("#sidebar button:not([disabled]), #sidebar a[href], #sidebar [tabindex]:not([tabindex='-1'])");
   if(!items.length)return;
   const first=items[0],last=items[items.length-1],active=document.activeElement;
   if(e.shiftKey&&(active===first||!$("#sidebar").contains(active))){
