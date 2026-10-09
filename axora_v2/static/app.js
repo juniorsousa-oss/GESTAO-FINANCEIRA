@@ -56,7 +56,7 @@ function logoutVisual(){me=null;snapshot=null;$("#workspace").classList.add("hid
 function enterVisual(){ $("#login").classList.add("hidden");$("#workspace").classList.remove("hidden");$("#user-name").textContent=me.display_name;const a=$("#avatar");a.replaceChildren();if(me.avatar_data_uri){const i=document.createElement("img");i.src=me.avatar_data_uri;i.alt="";a.append(i)}else a.textContent=(me.display_name||"A")[0].toUpperCase()}
 async function start(){try{me=await api("/api/me");enterVisual();await refresh()}catch{logoutVisual()}}
 async function refresh(){snapshot=await api("/api/snapshot");render();$("#crumb-current").textContent=labels[page].toUpperCase()}
-function go(next){page=next;filters={};hideMenu();render();window.scrollTo({top:0,behavior:"smooth"})}
+function go(next){page=next;filters={};hideMenu();render();if(next==="settings"&&me?.is_admin)loadUsers();window.scrollTo({top:0,behavior:"smooth"})}
 function showMenu(){$("#sidebar").classList.add("open");$("#sidebar-overlay").classList.add("open")}
 function hideMenu(){$("#sidebar").classList.remove("open");$("#sidebar-overlay").classList.remove("open")}
 function actionButtons(){
@@ -91,14 +91,13 @@ function dashboard(){
     ["Reserva de emergência",x.goals.emergency],["Investimento mensal",x.goals.investment],
     ["Contas fixas",x.goals.fixed],["Lazer",x.goals.leisure]
   ].map(([l,v])=>'<div class="goal-item"><small>'+esc(l)+'</small><b>'+money(v)+'</b></div>').join("")+'</div>':'<div class="empty-state">Defina sua renda líquida em Configurações para visualizar as metas.</div>';
-  let reconciliation='<div class="conciliation-big">'+num(x.conciliation).toFixed(0)+'%</div><p class="panel-copy">Nível estimado de conciliação</p><div class="progress-track"><div class="progress-fill" data-progress="'+num(x.conciliation)+'"></div></div><ul class="checklist"><li>Realizado separado do previsto</li><li>Saldos comparados com o sistema</li><li>Divergência: '+money(x.discrepancy)+'</li></ul>';
+  let reconciliation='<div class="conciliation-big">'+num(x.conciliation).toFixed(0)+'%</div><p class="panel-copy">Nível estimado de conciliação</p><progress class="progress-native" value="'+num(x.conciliation)+'" max="100" aria-label="Conciliação dos saldos"></progress><ul class="checklist"><li>Realizado separado do previsto</li><li>Saldos comparados com o sistema</li><li>Divergência: '+money(x.discrepancy)+'</li></ul>';
   const html='<div class="metric-grid">'+cards+'</div><div class="grid-two">'+
     panel("Evolução financeira mensal","Receitas, despesas e saldo a partir de julho de 2026.",chartMonthly(x.monthly))+
     panel("Despesas por categoria","Distribuição das saídas registradas.",chartDonut(x.categories))+'</div><div class="grid-two">'+
     panel("Próximas contas e previsões","Agenda financeira para acompanhamento imediato.",forecasts)+
     panel("Conciliação de saldo","Conferência do saldo calculado e localizado.",reconciliation)+'</div>'+
     panel("Suas metas financeiras","Planejamento baseado na renda líquida configurada.",goals);
-  requestAnimationFrame(()=>{const bar=$("[data-progress]");if(bar)bar.style.width=Math.max(0,Math.min(100,x.conciliation))+"%"});
   return html;
 }
 function chartMonthly(months){
@@ -121,7 +120,7 @@ function chartDonut(cats){
   if(!cats?.length)return '<div class="empty-state"><b>Nenhuma despesa cadastrada</b>As categorias aparecerão após as movimentações.</div>';
   const colors=["#277ac5","#249ebc","#1dbaa6","#7095d9","#9fb6d0","#84cec7","#c4d5e7"],total=cats.reduce((x,y)=>x+num(y.value),0);
   let offset=0;const arcs=cats.map((c,i)=>{const share=num(c.value)/total*100;const svg='<circle cx="90" cy="90" r="70" fill="none" stroke="'+colors[i]+'" stroke-width="25" stroke-dasharray="'+share+' '+(100-share)+'" stroke-dashoffset="'+(-offset)+'" pathLength="100" transform="rotate(-90 90 90)"><title>'+esc(c.name)+': '+esc(money(c.value))+'</title></circle>';offset+=share;return svg}).join("");
-  return '<div class="donut-container"><svg class="donut-svg" viewBox="0 0 180 180" role="img" aria-label="Distribuição das despesas">'+arcs+'<circle cx="90" cy="90" r="48" fill="#fff"/><text x="90" y="84" text-anchor="middle" fill="#8798a8" font-size="10">DESPESAS</text><text x="90" y="106" text-anchor="middle" font-size="12" font-weight="750" fill="#223853">'+esc(money(total))+'</text></svg><div class="donut-legend">'+cats.map((c,i)=>'<div class="donut-legend-line"><span><i style="background:'+colors[i]+'"></i>'+esc(c.name)+'</span><b>'+money(c.value)+'</b></div>').join("")+'</div></div>';
+  return '<div class="donut-container"><svg class="donut-svg" viewBox="0 0 180 180" role="img" aria-label="Distribuição das despesas">'+arcs+'<circle cx="90" cy="90" r="48" fill="#fff"/><text x="90" y="84" text-anchor="middle" fill="#8798a8" font-size="10">DESPESAS</text><text x="90" y="106" text-anchor="middle" font-size="12" font-weight="750" fill="#223853">'+esc(money(total))+'</text></svg><div class="donut-legend">'+cats.map((c,i)=>'<div class="donut-legend-line"><span><i class="swatch-'+i+'"></i>'+esc(c.name)+'</span><b>'+money(c.value)+'</b></div>').join("")+'</div></div>';
 }
 function table(headings,rows,actions=false,kind=""){
   if(!rows.length)return '<div class="empty-state"><b>Nenhum registro encontrado</b>Cadastre dados ou ajuste os filtros para continuar.</div>';
@@ -186,6 +185,7 @@ async function saveEditor(e){
 }
 function importPage(){return '<div class="stack">'+panel("Importar planilha","Modelo ACOMPANHAMENTOS.xlsx com as quatro abas financeiras obrigatórias.",'<div class="notice warning"><b>Proteção dos dados:</b> o AXORA não substitui registros existentes. A carga inicial só funciona se todas as quatro tabelas estiverem vazias. Faça backup antes de importar.</div><div class="upload-box"><b>Selecione um arquivo .xlsx</b><p>Movimentações, previsões, dinheiro e demais dívidas.</p><input type="file" id="excel-upload" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div><div id="import-preview"></div><div class="page-actions" style="margin-top:18px"><button class="btn ghost" data-action="preview-import">Conferir planilha</button><button class="btn primary" data-action="commit-import">Importar dados</button></div>')+
    panel("Exportar dados","Baixe as quatro bases financeiras em um único arquivo Excel.",'<p class="panel-copy">Exportação de movimentações, previsões, contas e dívidas. Recomendado antes de mudanças importantes.</p><button class="btn primary" data-action="export">⇩ Exportar Excel</button>')+'</div>'}
+async function loadUsers(){try{const users=await api("/api/users");const el=$("#users-table");if(el)el.innerHTML=table(["Nome","Perfil","Situação"],users.map(u=>[u.display_name,u.is_admin?"Administrador":"Usuário",u.is_active?"Ativo":"Inativo"]),false)}catch(e){showToast(e.message,true)}}
 function settingsPage(){
   const s=snapshot.settings;
   let goalInputs=[["gross_income","Renda bruta mensal (R$)"],["net_income","Renda líquida mensal (R$)"],["emergency_months","Reserva de emergência (meses)"],["investment_pct","Investimento mensal (%)"],["fixed_pct","Contas fixas (%)"],["leisure_pct","Lazer (%)"],["investment_multiple","Meta de patrimônio (x renda)"]];
@@ -246,7 +246,7 @@ function bind(){
       if(form.id==="goal-form"){Object.keys(values).forEach(k=>values[k]=Number(values[k]));await api("/api/settings",{method:"POST",body:JSON.stringify(values)})}
       if(form.id==="profile-form"){await api("/api/profile",{method:"POST",body:JSON.stringify(values)});me=await api("/api/me");enterVisual()}
       if(form.id==="new-user-form"){values.share_ack=$("#share-ack").checked;await api("/api/users",{method:"POST",body:JSON.stringify(values)});form.reset()}
-      await refresh();showToast("Alterações salvas.");
+      await refresh();if(form.id==="new-user-form")await loadUsers();showToast("Alterações salvas.");
     }catch(err){showToast(err.message,true)}
   });
 }
