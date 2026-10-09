@@ -1,5 +1,6 @@
 """AXORA 2.0: API privada e frontend web, sem bibliotecas Streamlit."""
 import io
+from datetime import datetime, timezone
 import math
 import os
 import re
@@ -12,7 +13,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from axora_v2 import db, metrics, security
+from axora_v2 import db, metrics, security, branding
 from services.importer import parse_excel
 from services.profile import clean_display_name, avatar_data_uri
 
@@ -264,6 +265,72 @@ async def avatar(request: Request, file: UploadFile = File(...), user=Depends(au
 def remove_avatar(user=Depends(authorized)):
     db.update("users", user["id"], {"avatar_data_uri": None})
     return {"ok": True}
+
+
+
+# A mesma assinatura institucional e lida no login publico e no rodape interno.
+# Apenas o administrador pode altera-la; o arquivo e armazenado no Supabase.
+def institutional_row(fields="key,updated_at"):
+    items = db.select(
+        "branding",
+        fields=fields,
+        params={"key": "eq.institutional_signature", "limit": 1},
+    )
+    return items[0] if items else None
+
+
+@app.get("/api/branding/institutional")
+def get_institutional_brand():
+    row = institutional_row()
+    return {
+        "has_logo": bool(row),
+        "updated_at": row.get("updated_at") if row else None,
+    }
+
+
+@app.get("/api/branding/institutional/image")
+def get_institutional_image():
+    row = institutional_row(fields="content_type,image_data_uri")
+    if not row:
+        raise HTTPException(404, "Assinatura ainda não configurada.")
+    raw = branding.decode_logo(row["image_data_uri"])
+    return Response(
+        raw, media_type=row["content_type"],
+        headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
+    )
+
+
+@app.post("/api/branding/institutional")
+async def upload_institutional_brand(file: UploadFile = File(...), user=Depends(authorized)):
+    admin(user)
+    raw = await file.read(branding.MAX_UPLOAD + 1)
+    mime, data_uri = branding.prepare_logo(raw, file.content_type or "")
+    timestamp = datetime.now(timezone.utc).isoformat()
+    db.call(
+        "POST",
+        db.TABLES["branding"],
+        params={"on_conflict": "key"},
+        data={
+            "key": "institutional_signature",
+            "content_type": mime,
+            "image_data_uri": data_uri,
+            "updated_at": timestamp,
+        },
+        prefer="resolution=merge-duplicates,return=representation",
+    )
+    return {"ok": True, "has_logo": True, "updated_at": timestamp}
+
+
+@app.delete("/api/branding/institutional")
+def remove_institutional_brand(user=Depends(authorized)):
+    admin(user)
+    db.call(
+        "DELETE",
+        db.TABLES["branding"],
+        params={"key": "eq.institutional_signature"},
+        prefer="return=minimal",
+    )
+    return {"ok": True, "has_logo": False, "updated_at": None}
 
 
 @app.get("/api/users")
