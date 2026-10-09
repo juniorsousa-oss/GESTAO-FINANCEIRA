@@ -49,6 +49,8 @@ const columns = {
   debts:[["description","Descrição"],["status","Situação","status"],["total_value","Original","money"],["total_installments","Parcelas"],["paid_installments","Pagas"],["installment_value","Parcela","money"],["open_value","Em aberto","money"]]
 };
 let me=null,snapshot=null,page="dashboard",filters={},excelFile=null,toastTimeout=0;
+let institutionalBrand={has_logo:false,updated_at:null};
+let institutionalPreviewUrl=null;
 async function api(path,opts={}) {
   const headers={...(opts.headers||{})};
   if(me && opts.method && opts.method !== "GET") headers["X-CSRF-Token"]=me.csrf;
@@ -62,6 +64,25 @@ async function api(path,opts={}) {
     throw Error(typeof err==="string"?err:"Não foi possível concluir a operação.");
   }
   return response.headers.get("content-type")?.includes("application/json")?response.json():response;
+}
+function applyInstitutionalBrand(){
+  const configured=Boolean(institutionalBrand.has_logo);
+  const url="/api/branding/institutional/image?v="+encodeURIComponent(institutionalBrand.updated_at||"");
+  $("[data-institutional-logo]").forEach(image=>{
+    image.hidden=!configured;
+    if(configured && image.getAttribute("src")!==url)image.setAttribute("src",url);
+    if(!configured)image.removeAttribute("src");
+  });
+  $("[data-institutional-fallback]").forEach(label=>{label.hidden=configured});
+  const status=$("#institutional-logo-status");
+  if(status)status.textContent=configured?"Assinatura institucional personalizada ativa no login e no rodapé.":"Nenhuma imagem enviada. Por enquanto, o aplicativo utiliza apenas a assinatura textual Nexon Labs.";
+}
+async function loadInstitutionalBrand(){
+  institutionalBrand=await api("/api/branding/institutional");
+  applyInstitutionalBrand();
+}
+function releaseInstitutionalPreview(){
+  if(institutionalPreviewUrl){URL.revokeObjectURL(institutionalPreviewUrl);institutionalPreviewUrl=null}
 }
 function showToast(message,error=false){const t=$("#toast");t.textContent=message;t.className="toast show"+(error?" error":"");clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>t.className="toast",4300)}
 function logoutVisual(){me=null;snapshot=null;$("#workspace").classList.add("hidden");$("#login").classList.remove("hidden");$("#login-password").value="";$("#login-password").focus()}
@@ -105,6 +126,7 @@ function render(){
   $$(".nav-link").forEach(x=>{const active=x.dataset.page===page;x.classList.toggle("active",active);if(active)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current")});
   const body=$("#page-content");
   body.innerHTML=page==="dashboard"?dashboard():meta[page]?modulePage(page):page==="import"?importPage():settingsPage();
+  applyInstitutionalBrand();
 }
 function metric(label,value,hint,icon,tone=""){return '<div class="metric-card '+tone+'"><div class="metric-label">'+esc(label)+'<span class="metric-icon">'+metricIcon(icon)+'</span></div><div class="metric-value">'+money(value)+'</div><div class="metric-meta">'+esc(hint)+'</div></div>'}
 function panel(title,desc,content){return '<section class="panel"><div class="panel-heading"><div><h2>'+title+'</h2><p>'+desc+'</p></div></div>'+content+'</section>'}
@@ -234,7 +256,9 @@ function settingsPage(){
   const goalForm='<form id="goal-form" class="settings-form">'+goalInputs.map(([k,l])=>'<div class="field"><label for="setting-'+k+'">'+esc(l)+'</label><input id="setting-'+k+'" name="'+k+'" type="number" min="0" step="0.01" value="'+esc(s[k])+'" required></div>').join("")+'<button type="submit" class="btn primary">Salvar metas</button></form>';
   let profile='<div class="notice">O AXORA identifica o usuário pela senha. Todos os usuários cadastrados nesta versão compartilham a mesma base financeira.</div><form id="profile-form" class="settings-form"><div class="field"><label for="profile-name">Nome exibido</label><input id="profile-name" name="display_name" maxlength="40" value="'+esc(me.display_name)+'" required></div><button type="submit" class="btn primary">Atualizar nome</button></form><hr><div class="field"><label for="avatar-upload">Foto de perfil · PNG ou JPEG (até 15 MB)</label><input id="avatar-upload" type="file" accept="image/png,image/jpeg"></div><div class="page-actions"><button class="btn ghost small" data-action="upload-avatar">Atualizar foto</button><button class="btn danger small" data-action="delete-avatar">Remover foto</button></div><br><button class="btn ghost" data-action="logout">Sair / trocar usuário</button>';
   let adminForm='<div class="notice warning">Atenção: novos usuários poderão visualizar e alterar a <b>mesma base financeira</b>. Não há isolamento por usuário nesta versão.</div><form id="new-user-form" class="settings-form"><div class="field"><label>Nome</label><input name="display_name" required maxlength="40"></div><div class="field"><label>Senha exclusiva (mínimo 12 caracteres)</label><input name="password" type="password" minlength="12" required></div><div class="field checkbox full"><input id="share-ack" name="share_ack" type="checkbox" required><label for="share-ack">Confirmo que o usuário terá acesso à base financeira compartilhada</label></div><button type="submit" class="btn primary">Cadastrar usuário</button></form><div id="users-table" class="table-wrap"></div>';
-  return '<div class="settings-grid"><div class="stack">'+panel("Meu perfil","Personalize a identificação associada à sua senha.",profile)+(me.is_admin?panel("Usuários e permissões","Criação de contas e acesso à base compartilhada.",adminForm):"")+'</div><div class="stack">'+panel("Metas financeiras","Defina renda, reserva, percentuais e patrimônio.",goalForm)+panel("Conectividade","Informações sobre os serviços do AXORA.",'<div class="notice"><span class="online-dot"></span> Supabase conectado · FastAPI · Hospedagem Hostinger</div><p class="panel-copy">AXORA by Nexon Labs. A versão web não utiliza a interface ou infraestrutura Streamlit.</p>')+'</div></div>';
+  const signaturePanel='<div class="institutional-brand-editor"><div class="institutional-preview"><img data-institutional-logo alt="Prévia da assinatura Nexon Labs" width="220" height="60" hidden><span class="institutional-brand-fallback" data-institutional-fallback>by Nexon Labs</span></div><p id="institutional-logo-status" class="panel-copy"></p>'+
+    (me.is_admin?'<div class="field"><label for="institutional-logo-upload">Enviar logo institucional · PNG, JPG ou WebP (até 5 MB)</label><input id="institutional-logo-upload" type="file" accept="image/png,image/jpeg,image/webp"></div><div class="page-actions"><button class="btn primary" type="button" data-action="upload-institutional-logo">Salvar assinatura</button><button class="btn ghost" type="button" data-action="delete-institutional-logo">Restaurar padrão</button></div>':'<div class="notice">Somente administradores podem alterar a identidade institucional.</div>')+'</div>';
+  return '<div class="settings-grid"><div class="stack">'+panel("Meu perfil","Personalize a identificação associada à sua senha.",profile)+panel("Identidade institucional","Uma única imagem para o login e o rodapé. O símbolo do AXORA permanece inalterado.",signaturePanel)+(me.is_admin?panel("Usuários e permissões","Criação de contas e acesso à base compartilhada.",adminForm):"")+'</div><div class="stack">'+panel("Metas financeiras","Defina renda, reserva, percentuais e patrimônio.",goalForm)+panel("Conectividade","Informações sobre os serviços do AXORA.",'<div class="notice"><span class="online-dot"></span> Supabase conectado · FastAPI · Hospedagem Hostinger</div><p class="panel-copy">AXORA by Nexon Labs. A versão web não utiliza a interface ou infraestrutura Streamlit.</p>')+'</div></div>';
 }
 async function doExport(){try{const res=await api("/api/export");const blob=await res.blob();const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="axora_export.xlsx";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);showToast("Planilha exportada.")}catch(e){showToast(e.message,true)}}
 async function uploadExcel(endpoint){
@@ -270,6 +294,17 @@ function bind(){
   $("#page-content").addEventListener("change",e=>{
     const filter=e.target.closest("[data-filter]");if(filter){filters[filter.dataset.filter]=filter.value;updateFiltered()}
     if(e.target.id==="excel-upload")excelFile=e.target.files?.[0]||null;
+    if(e.target.id==="institutional-logo-upload"){
+      const file=e.target.files?.[0];
+      releaseInstitutionalPreview();
+      if(file && file.size>5*1024*1024){e.target.value="";showToast("A assinatura deve ter até 5 MB.",true);return}
+      if(file && !["image/png","image/jpeg","image/webp"].includes(file.type)){e.target.value="";showToast("Use PNG, JPG ou WebP.",true);return}
+      if(file){
+        institutionalPreviewUrl=URL.createObjectURL(file);
+        const preview=$(".institutional-preview img");
+        if(preview){preview.src=institutionalPreviewUrl;preview.hidden=false;const fallback=$(".institutional-preview [data-institutional-fallback]");if(fallback)fallback.hidden=true}
+      }else applyInstitutionalBrand();
+    }
   });
   $("#page-content").addEventListener("input",e=>{if(e.target.dataset.filter==="search"){filters.search=e.target.value;updateFiltered()}});
   document.addEventListener("click",async e=>{
@@ -285,6 +320,25 @@ function bind(){
       else if(action==="logout"){await api("/api/logout",{method:"POST"});logoutVisual()}
       else if(action==="upload-avatar"){const file=$("#avatar-upload")?.files?.[0];if(!file)throw Error("Selecione uma foto.");const f=new FormData();f.append("file",file);await api("/api/profile/avatar",{method:"POST",body:f});me=await api("/api/me");enterVisual();showToast("Foto atualizada.")}
       else if(action==="delete-avatar"){await api("/api/profile/avatar",{method:"DELETE"});me=await api("/api/me");enterVisual();showToast("Foto removida.")}
+      else if(action==="upload-institutional-logo"){
+        const file=$("#institutional-logo-upload")?.files?.[0];
+        if(!file)throw Error("Selecione uma logo institucional.");
+        if(file.size>5*1024*1024)throw Error("A assinatura precisa ter até 5 MB.");
+        const form=new FormData();form.append("file",file);
+        await api("/api/branding/institutional",{method:"POST",body:form});
+        releaseInstitutionalPreview();
+        await loadInstitutionalBrand();
+        const input=$("#institutional-logo-upload");if(input)input.value="";
+        showToast("Logo institucional aplicada ao login e ao rodapé.");
+      }
+      else if(action==="delete-institutional-logo"){
+        if(!confirm("Restaurar assinatura textual padrão Nexon Labs nas duas telas?"))return;
+        await api("/api/branding/institutional",{method:"DELETE"});
+        releaseInstitutionalPreview();
+        await loadInstitutionalBrand();
+        const input=$("#institutional-logo-upload");if(input)input.value="";
+        showToast("Assinatura institucional restaurada.");
+      }
     }catch(err){showToast(err.message,true)}
   });
   $("#page-content").addEventListener("submit",async e=>{
@@ -298,4 +352,4 @@ function bind(){
     }catch(err){showToast(err.message,true)}
   });
 }
-document.addEventListener("DOMContentLoaded",()=>{bind();start()});
+document.addEventListener("DOMContentLoaded",()=>{bind();loadInstitutionalBrand().catch(()=>applyInstitutionalBrand());start()});
