@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/assets/identity.css?v=institutional-logo-size-v2">
   <link rel="stylesheet" href="/assets/finish.css?v=approved-signature-sidebar-v1">
   <link rel="stylesheet" href="/assets/login-fidelity.css?v=approved-image-1">
+  <link rel="stylesheet" href="/assets/refinement.css?v=design-system-r1">
 </head>
 <body>
   <div id="login" class="login-screen">
@@ -64,19 +65,18 @@
         <button data-page="import" class="nav-link"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></span> Importar / Exportar</button>
         <button data-page="settings" class="nav-link"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3.5h4l.6 2.1 1.7.9 2.2-.6 2 3.5-1.6 1.6v2l1.6 1.6-2 3.5-2.2-.6-1.7.9L14 20.5h-4l-.6-2.1-1.7-.9-2.2.6-2-3.5L5.1 13v-2L3.5 9.4l2-3.5 2.2.6 1.7-.9z"/><circle cx="12" cy="12" r="3"/></svg></span> Configurações</button>
       </nav>
-      <div class="sidebar-bottom"><div class="sidebar-status"><span class="online-dot"></span> Plataforma conectada</div><small>AXORA · Versão web 2.0</small></div>
+      <div class="sidebar-bottom"><div class="sidebar-status" id="sidebar-sync-status" data-state="loading"><span class="online-dot"></span><span id="sidebar-sync-label">Aguardando sincronização</span></div><small id="sidebar-sync-time" class="sync-timestamp">Verificando dados financeiros…</small><small class="sidebar-platform-label">AXORA · Plataforma financeira</small></div>
     </aside>
 
     <div class="app-column">
       <header class="topbar">
         <div class="top-left">
           <button id="menu-toggle" type="button" class="icon-button" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-          <div class="breadcrumbs">NEXON LABS <span>/</span> <b id="crumb-current">VISÃO FINANCEIRA</b></div>
+          <nav class="breadcrumbs" aria-label="Localização atual"><span class="crumb-brand"><span class="crumb-brand-mark" aria-hidden="true"></span>NEXON LABS</span><svg class="crumb-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg><span class="crumb-current" id="crumb-current">VISÃO FINANCEIRA</span></nav>
         </div>
         <div class="top-right">
-          <span class="top-status"><span class="online-dot"></span> Conectado</span>
-          <button id="refresh" class="icon-button" type="button" aria-label="Atualizar informações" title="Atualizar"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 1-2.4-5.7L20 8"/><path d="M20 3v5h-5"/></svg></button>
-          <button id="profile-button" class="profile-pill" type="button" aria-label="Ir para configurações"><span id="avatar" class="avatar">A</span><span id="user-name">Usuário</span><span class="chev">⌄</span></button>
+          <div class="sync-control" aria-label="Sincronização financeira"><span class="top-status" id="top-sync-status" data-state="loading" role="status" aria-live="polite" title="Verificando dados"><span class="online-dot"></span><span id="top-sync-label">Verificando</span></span><span class="sync-control-divider" aria-hidden="true"></span><button id="refresh" class="icon-button refresh-button" type="button" aria-label="Atualizar dados financeiros" title="Atualizar dados financeiros"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5"/><path d="M4.93 9a8 8 0 0 1 13.34-2.83L20 8"/><path d="M4 17v-5h5"/><path d="M19.07 15A8 8 0 0 1 5.73 17.83L4 16"/></svg></button></div>
+          <button id="profile-button" class="profile-pill" type="button" aria-label="Ir para configurações"><span id="avatar" class="avatar">A</span><span id="user-name">Usuário</span><svg class="profile-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         </div>
       </header>
       <main class="main-area">
