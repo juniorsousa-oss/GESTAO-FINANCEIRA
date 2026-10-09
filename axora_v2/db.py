@@ -10,6 +10,7 @@ TABLES = {
     "debts": "finance_debts",
     "settings": "finance_settings",
     "users": "finance_users",
+    "branding": "finance_brand_assets",
 }
 DEFAULT_SETTINGS = {
     "gross_income": 0, "net_income": 0, "emergency_months": 6,
