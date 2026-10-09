@@ -6,7 +6,8 @@ WORKDIR /app
 COPY axora_v2/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt \
  && useradd -m -u 10001 -s /usr/sbin/nologin axora
-COPY services /app/services
+RUN mkdir -p /app/services
+COPY services/__init__.py services/importer.py services/profile.py /app/services/
 COPY axora_v2 /app/axora_v2
 USER axora
 EXPOSE 8000
