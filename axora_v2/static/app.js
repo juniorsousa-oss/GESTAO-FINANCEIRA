@@ -5,6 +5,18 @@ const $$ = (selector, root=document) => [...root.querySelectorAll(selector)];
 const esc = v => String(v ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money = v => Number(v || 0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const num = v => Number(v || 0);
+const metricIcons={
+  trend:'<path d="m3 17 6-6 4 4 8-9"/><path d="M15 6h6v6"/>',
+  wallet:'<rect x="3" y="6" width="18" height="15" rx="2"/><path d="M3 10h18M16 15h2"/>',
+  receive:'<path d="M12 3v14m-5-5 5 5 5-5"/><path d="M4 20h16"/>',
+  pay:'<path d="M12 20V6m-5 5 5-5 5 5"/><path d="M4 3h16"/>',
+  projection:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 16v-4M12 16V8M17 16v-6"/>',
+  debt:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/>'
+};
+function metricIcon(name){
+  return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(metricIcons[name]||metricIcons.wallet)+'</svg>';
+}
+
 const today = () => new Date().toLocaleDateString("en-CA");
 const comp = () => {const d=new Date();return String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear()};
 const dateBR = v => v ? String(v).substring(0,10).split("-").reverse().join("/") : "—";
@@ -89,22 +101,22 @@ function actionButtons(){
 }
 function render(){
   if(!snapshot)return;
-  $("#page-title").textContent=labels[page];$("#page-subtitle").textContent=subtitles[page];$("#page-actions").innerHTML=actionButtons();
-  $$(".nav-link").forEach(x=>x.classList.toggle("active",x.dataset.page===page));
+  $("#page-title").textContent=labels[page];$("#page-subtitle").textContent=subtitles[page];$("#crumb-current").textContent=labels[page].toUpperCase();$("#page-actions").innerHTML=actionButtons();
+  $(".nav-link").forEach(x=>{const active=x.dataset.page===page;x.classList.toggle("active",active);if(active)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current")});
   const body=$("#page-content");
   body.innerHTML=page==="dashboard"?dashboard():meta[page]?modulePage(page):page==="import"?importPage():settingsPage();
 }
-function metric(label,value,hint,icon,tone=""){return '<div class="metric-card '+tone+'"><div class="metric-label">'+esc(label)+'<span class="metric-icon">'+icon+'</span></div><div class="metric-value">'+money(value)+'</div><div class="metric-meta">'+esc(hint)+'</div></div>'}
+function metric(label,value,hint,icon,tone=""){return '<div class="metric-card '+tone+'"><div class="metric-label">'+esc(label)+'<span class="metric-icon">'+metricIcon(icon)+'</span></div><div class="metric-value">'+money(value)+'</div><div class="metric-meta">'+esc(hint)+'</div></div>'}
 function panel(title,desc,content){return '<section class="panel"><div class="panel-heading"><div><h2>'+title+'</h2><p>'+desc+'</p></div></div>'+content+'</section>'}
 function dashboard(){
   const x=snapshot.summary,s=snapshot.settings;
   let cards=[
-    metric("Saldo realizado",x.realized,"Receitas menos despesas","↗"),
-    metric("Saldo localizado",x.located,"Diferença "+money(x.discrepancy),"▤","info"),
-    metric("A receber",x.to_receive,"Previsões pendentes","↓"),
-    metric("A pagar",x.to_pay,"Compromissos futuros","↑","negative"),
-    metric("Saldo projetado",x.projected,"Realizado + previsões","▦","info"),
-    metric("Dívida em aberto",x.debt_open,"Passivo financeiro","▥","negative")
+    metric("Saldo realizado",x.realized,"Receitas menos despesas","trend"),
+    metric("Saldo localizado",x.located,"Diferença "+money(x.discrepancy),"wallet","info"),
+    metric("A receber",x.to_receive,"Previsões pendentes","receive"),
+    metric("A pagar",x.to_pay,"Compromissos futuros","pay","negative"),
+    metric("Saldo projetado",x.projected,"Realizado + previsões","projection","info"),
+    metric("Dívida em aberto",x.debt_open,"Passivo financeiro","debt","negative")
   ].join("");
   let forecasts=table(["Vencimento","Descrição","Tipo","Valor","Status"],x.next_forecasts.map(f=>[
     dateBR(f.due_date),f.description,f.type,money(f.final_value),f.status
@@ -140,9 +152,9 @@ function chartMonthly(months){
 }
 function chartDonut(cats){
   if(!cats?.length)return '<div class="empty-state"><b>Nenhuma despesa cadastrada</b>As categorias aparecerão após as movimentações.</div>';
-  const colors=["#277ac5","#249ebc","#1dbaa6","#7095d9","#9fb6d0","#84cec7","#c4d5e7"],total=cats.reduce((x,y)=>x+num(y.value),0);
-  let offset=0;const arcs=cats.map((c,i)=>{const share=num(c.value)/total*100;const svg='<circle cx="90" cy="90" r="70" fill="none" stroke="'+colors[i]+'" stroke-width="25" stroke-dasharray="'+share+' '+(100-share)+'" stroke-dashoffset="'+(-offset)+'" pathLength="100" transform="rotate(-90 90 90)"><title>'+esc(c.name)+': '+esc(money(c.value))+'</title></circle>';offset+=share;return svg}).join("");
-  return '<div class="donut-container"><svg class="donut-svg" viewBox="0 0 180 180" role="img" aria-label="Distribuição das despesas">'+arcs+'<circle cx="90" cy="90" r="48" fill="#fff"/><text x="90" y="84" text-anchor="middle" fill="#8798a8" font-size="10">DESPESAS</text><text x="90" y="106" text-anchor="middle" font-size="12" font-weight="750" fill="#223853">'+esc(money(total))+'</text></svg><div class="donut-legend">'+cats.map((c,i)=>'<div class="donut-legend-line"><span><i class="swatch-'+i+'"></i>'+esc(c.name)+'</span><b>'+money(c.value)+'</b></div>').join("")+'</div></div>';
+  const colors=["#14B8A6","#1C7EB0","#7DD3FC","#4779B9","#83B8CE","#0E4D6B","#B8DAD7"],total=cats.reduce((x,y)=>x+num(y.value),0);
+  let offset=0;const arcs=cats.map((c,i)=>{const share=num(c.value)/total*100;const svg='<circle cx="90" cy="90" r="70" fill="none" stroke="'+colors[i%colors.length]+'" stroke-width="25" stroke-dasharray="'+share+' '+(100-share)+'" stroke-dashoffset="'+(-offset)+'" pathLength="100" transform="rotate(-90 90 90)"><title>'+esc(c.name)+': '+esc(money(c.value))+'</title></circle>';offset+=share;return svg}).join("");
+  return '<div class="donut-container"><svg class="donut-svg" viewBox="0 0 180 180" role="img" aria-label="Distribuição das despesas">'+arcs+'<circle cx="90" cy="90" r="48" fill="#fff"/><text x="90" y="84" text-anchor="middle" fill="#8798a8" font-size="10">DESPESAS</text><text x="90" y="106" text-anchor="middle" font-size="12" font-weight="750" fill="#223853">'+esc(money(total))+'</text></svg><div class="donut-legend">'+cats.map((c,i)=>'<div class="donut-legend-line"><span><i style="background:'+colors[i%colors.length]+'"></i>'+esc(c.name)+'</span><b>'+money(c.value)+'</b></div>').join("")+'</div></div>';
 }
 function displayTableCell(cell,heading){
   const label=String(cell??"");
@@ -177,7 +189,7 @@ function moduleStats(kind,rows){
   else if(kind==="forecasts"){let p=rows.filter(x=>!["pago","recebido","sim"].includes(String(x.status||"").toLowerCase())),a=p.filter(x=>x.type==="Entrada").reduce((s,x)=>s+num(x.final_value),0),b=p.filter(x=>x.type==="Saída").reduce((s,x)=>s+num(x.final_value),0);values=[["A receber",a],["A pagar",b],["Impacto líquido",a-b]]}
   else if(kind==="accounts"){values=[["Saldo do sistema",snapshot.summary.realized],["Saldo informado",snapshot.summary.located],["Divergência",snapshot.summary.discrepancy]]}
   else {let ren=rows.filter(x=>x.status==="RENEGOCIADO").reduce((s,x)=>s+num(x.open_value),0),other=rows.filter(x=>x.status!=="RENEGOCIADO").reduce((s,x)=>s+num(x.open_value),0);values=[["Total em aberto",ren+other],["Renegociado",ren],["Não renegociado",other]]}
-  return '<div class="metric-grid">'+values.map(([l,v],i)=>metric(l,v,"Valores dos registros",["▦","↗","▤"][i],i===1?"info":"")).join("")+'</div>';
+  return '<div class="metric-grid">'+values.map(([l,v],i)=>metric(l,v,"Valores dos registros",["projection","trend","wallet"][i],i===1?"info":"")).join("")+'</div>';
 }
 function modulePage(kind){
   const rows=filteredRows(kind),data=columns[kind], filtersHtml='<input class="search-box" data-filter="search" placeholder="Pesquisar registros..." aria-label="Pesquisar" value="'+esc(filters.search||"")+'">'+
