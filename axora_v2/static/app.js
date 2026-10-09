@@ -57,8 +57,30 @@ function enterVisual(){ $("#login").classList.add("hidden");$("#workspace").clas
 async function start(){try{me=await api("/api/me");enterVisual();await refresh()}catch{logoutVisual()}}
 async function refresh(){snapshot=await api("/api/snapshot");render();$("#crumb-current").textContent=labels[page].toUpperCase()}
 function go(next){page=next;filters={};hideMenu();render();if(next==="settings"&&me?.is_admin)loadUsers();window.scrollTo({top:0,behavior:"smooth"})}
-function showMenu(){$("#sidebar").classList.add("open");$("#sidebar-overlay").classList.add("open")}
-function hideMenu(){$("#sidebar").classList.remove("open");$("#sidebar-overlay").classList.remove("open")}
+function syncMenuTrigger(){
+  const button=$("#menu-toggle"),mobile=window.matchMedia("(max-width:850px)").matches;
+  const collapsed=$("#workspace").classList.contains("sidebar-collapsed");
+  const open=$("#sidebar").classList.contains("open");
+  button.setAttribute("aria-expanded",String(mobile?open:!collapsed));
+  button.setAttribute("aria-label",mobile?"Abrir menu":collapsed?"Expandir menu":"Recolher menu");
+}
+function showMenu(){
+  if(window.matchMedia("(max-width:850px)").matches){
+    $("#sidebar").classList.add("open");
+    $("#sidebar-overlay").classList.add("open");
+    document.body.classList.add("menu-open");
+    $("#close-menu").focus();
+  }else{
+    $("#workspace").classList.toggle("sidebar-collapsed");
+  }
+  syncMenuTrigger();
+}
+function hideMenu(){
+  $("#sidebar").classList.remove("open");
+  $("#sidebar-overlay").classList.remove("open");
+  document.body.classList.remove("menu-open");
+  syncMenuTrigger();
+}
 function actionButtons(){
   if(meta[page])return '<button class="btn primary" data-action="new">+ Novo registro</button>';
   if(page==="dashboard")return '<button class="btn ghost" data-action="export">⇩ Exportar Excel</button><button class="btn primary" data-action="new-movement">+ Movimentação</button>';
@@ -122,10 +144,18 @@ function chartDonut(cats){
   let offset=0;const arcs=cats.map((c,i)=>{const share=num(c.value)/total*100;const svg='<circle cx="90" cy="90" r="70" fill="none" stroke="'+colors[i]+'" stroke-width="25" stroke-dasharray="'+share+' '+(100-share)+'" stroke-dashoffset="'+(-offset)+'" pathLength="100" transform="rotate(-90 90 90)"><title>'+esc(c.name)+': '+esc(money(c.value))+'</title></circle>';offset+=share;return svg}).join("");
   return '<div class="donut-container"><svg class="donut-svg" viewBox="0 0 180 180" role="img" aria-label="Distribuição das despesas">'+arcs+'<circle cx="90" cy="90" r="48" fill="#fff"/><text x="90" y="84" text-anchor="middle" fill="#8798a8" font-size="10">DESPESAS</text><text x="90" y="106" text-anchor="middle" font-size="12" font-weight="750" fill="#223853">'+esc(money(total))+'</text></svg><div class="donut-legend">'+cats.map((c,i)=>'<div class="donut-legend-line"><span><i class="swatch-'+i+'"></i>'+esc(c.name)+'</span><b>'+money(c.value)+'</b></div>').join("")+'</div></div>';
 }
+function displayTableCell(cell,heading){
+  const label=String(cell??"");
+  if(["Tipo","Status","Situação","Natureza","Simular"].includes(heading)){
+    const negative=/^(saída|não pago|não renegociado|não)$/i.test(label.trim());
+    return '<span class="status-badge'+(negative?' red':'')+'">'+esc(label)+'</span>';
+  }
+  return esc(label);
+}
 function table(headings,rows,actions=false,kind=""){
   if(!rows.length)return '<div class="empty-state"><b>Nenhum registro encontrado</b>Cadastre dados ou ajuste os filtros para continuar.</div>';
-  return '<div class="table-wrap"><table class="data-table"><thead><tr>'+headings.map(h=>'<th>'+esc(h)+'</th>').join("")+(actions?'<th>Ações</th>':'')+'</tr></thead><tbody>'+
-    rows.map((cols,i)=>'<tr>'+cols.map(cell=>'<td title="'+esc(cell)+'">'+esc(cell)+'</td>').join("")+(actions?'<td><div class="table-actions"><button class="mini-btn" data-action="edit" data-kind="'+kind+'" data-id="'+esc(actions[i])+'">Editar</button><button class="mini-btn danger" data-action="delete" data-kind="'+kind+'" data-id="'+esc(actions[i])+'">Excluir</button></div></td>':'')+'</tr>').join("")+'</tbody></table></div>';
+  return '<div class="table-wrap"><table class="data-table"><thead><tr>'+headings.map(h=>'<th scope="col">'+esc(h)+'</th>').join("")+(actions?'<th scope="col">Ações</th>':'')+'</tr></thead><tbody>'+
+    rows.map((cols,i)=>'<tr>'+cols.map((cell,j)=>'<td data-label="'+esc(headings[j])+'" title="'+esc(cell)+'">'+displayTableCell(cell,headings[j])+'</td>').join("")+(actions?'<td data-label="Ações"><div class="table-actions"><button class="mini-btn" data-action="edit" data-kind="'+kind+'" data-id="'+esc(actions[i])+'" aria-label="Editar registro">Editar</button><button class="mini-btn danger" data-action="delete" data-kind="'+kind+'" data-id="'+esc(actions[i])+'" aria-label="Excluir registro">Excluir</button></div></td>':'')+'</tr>').join("")+'</tbody></table></div>';
 }
 function formatCell(row,key,type){
   const v=row[key];if(type==="money")return money(v);if(type==="date")return dateBR(v);if(type==="bool")return v?"Sim":"Não";return String(v??"—");
@@ -216,7 +246,13 @@ async function importAction(action){
 function bind(){
   $("#login-form").addEventListener("submit",async e=>{e.preventDefault();$("#login-error").textContent="";const btn=e.currentTarget.querySelector("button[type=submit]");btn.disabled=true;try{await api("/api/login",{method:"POST",body:JSON.stringify({password:$("#login-password").value})});me=await api("/api/me");enterVisual();await refresh()}catch(err){$("#login-error").textContent=err.message}finally{btn.disabled=false}});
   $("#toggle-password").onclick=()=>{const p=$("#login-password");p.type=p.type==="password"?"text":"password";$("#toggle-password").textContent=p.type==="password"?"Mostrar":"Ocultar"};
-  $("#menu-toggle").onclick=showMenu;$("#close-menu").onclick=hideMenu;$("#sidebar-overlay").onclick=hideMenu;$("#refresh").onclick=()=>refresh().then(()=>showToast("Dados atualizados.")).catch(e=>showToast(e.message,true));$("#profile-button").onclick=()=>go("settings");
+  $("#menu-toggle").onclick=showMenu;
+  $("#close-menu").onclick=()=>{hideMenu();$("#menu-toggle").focus()};
+  $("#sidebar-overlay").onclick=hideMenu;
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("#sidebar").classList.contains("open")){hideMenu();$("#menu-toggle").focus()}});
+  window.addEventListener("resize",()=>{if(window.innerWidth>850&&$("#sidebar").classList.contains("open"))hideMenu();else syncMenuTrigger()});
+  syncMenuTrigger();
+  $("#refresh").onclick=()=>refresh().then(()=>showToast("Dados atualizados.")).catch(e=>showToast(e.message,true));$("#profile-button").onclick=()=>go("settings");
   $("#main-nav").onclick=e=>{const b=e.target.closest("[data-page]");if(b)go(b.dataset.page)};
   $$(".dialog-close").forEach(x=>x.onclick=()=>$("#editor-dialog").close());$("#editor-form").addEventListener("submit",saveEditor);
   $("#page-content").addEventListener("change",e=>{
