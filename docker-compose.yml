@@ -1,28 +1,32 @@
-# Implantação em VPS Hostinger, seguindo o roteamento Traefik do ATRIA.
-# Valores sensíveis devem ser definidos apenas no ambiente da VPS.
+# AXORA 2.0 na VPS Hostinger: substitui apenas o serviço financeiro existente.
+# Mantém o projeto e o nome interno 'financeiro', evitando contêiner órfão.
+# Valores sensíveis devem ser definidos apenas na VPS; NÃO publicar em GitHub.
 services:
   financeiro:
     build:
       context: https://github.com/juniorsousa-oss/GESTAO-FINANCEIRA.git#main
+      dockerfile: axora_v2/Dockerfile
     restart: unless-stopped
     environment:
       SUPABASE_URL: ${SUPABASE_URL:?Configure SUPABASE_URL no servidor}
       SUPABASE_KEY: ${SUPABASE_KEY:?Configure SUPABASE_KEY no servidor}
       APP_ACCESS_PASSWORD: ${APP_ACCESS_PASSWORD:-}
       APP_OWNER_NAME: ${APP_OWNER_NAME:-Júnior}
+      SESSION_SECRET: ${SESSION_SECRET:?Configure SESSION_SECRET com pelo menos 32 caracteres aleatorios na VPS}
+      COOKIE_SECURE: "1"
     expose:
-      - "8501"
+      - "8000"
     labels:
       - traefik.enable=true
       - "traefik.http.routers.axora.rule=Host(`axora.nexonlabs.com.br`)"
       - traefik.http.routers.axora.entrypoints=websecure
       - traefik.http.routers.axora.tls=true
       - traefik.http.routers.axora.tls.certresolver=letsencrypt
-      - traefik.http.services.axora.loadbalancer.server.port=8501
+      - traefik.http.services.axora.loadbalancer.server.port=8000
     healthcheck:
       test:
         - CMD-SHELL
-        - python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=5)"
+        - python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"
       interval: 30s
       timeout: 10s
       retries: 3
