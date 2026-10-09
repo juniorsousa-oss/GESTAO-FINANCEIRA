@@ -337,3 +337,37 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
   .metric-card:hover,.btn:hover,.nav-link:hover{transform:none}
   html{scroll-behavior:auto}
 }
+
+/* AXORA Finanças — assinatura Nexon e atmosfera teal distinta do ATRIA */
+#login.login-screen{
+  background-image:
+    radial-gradient(ellipse at 2% 4%,rgba(28,204,190,.46),transparent 43%),
+    radial-gradient(ellipse at 95% 98%,rgba(101,209,225,.28),transparent 42%),
+    linear-gradient(120deg,rgba(5,39,51,.76),rgba(3,59,68,.68)),
+    url("/assets/axora-network.svg");
+}
+#login .login-art{
+  background:
+    linear-gradient(160deg,rgba(3,27,48,.33),rgba(3,40,57,.64)),
+    url("/assets/axora-network.svg") center/auto 112% no-repeat,
+    radial-gradient(circle at 99% 24%,rgba(44,218,197,.38),transparent 53%),
+    linear-gradient(132deg,#0C2943 3%,#0D4357 56%,#096C73 125%);
+}
+#login .login-art h1 em{color:#70F1DC}
+.nexon-lockup{
+  display:flex!important;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;
+}
+.nexon-lockup small{color:#7f8fa4;font-size:10px}
+.nexon-lockup img{width:148px;height:auto;max-height:32px;object-fit:contain}
+.nexon-app-footer{
+  display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;
+  border-top:1px solid #e2ebf0;padding-top:20px;
+}
+.nexon-app-footer img{width:135px;height:auto;max-height:30px;object-fit:contain}
+.nexon-app-footer span{letter-spacing:.2px}
+@media(max-width:680px){
+  .nexon-lockup{justify-content:center;text-align:center}
+  .nexon-app-footer{gap:9px}
+  .nexon-app-footer img{width:120px}
+}

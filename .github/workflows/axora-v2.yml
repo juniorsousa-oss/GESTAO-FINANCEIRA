@@ -24,6 +24,7 @@ jobs:
       - run: python -m compileall -q axora_v2
       - run: python -m pytest axora_v2/tests -q
       - run: node --check axora_v2/static/app.js
+      - run: node axora_v2/tests/ui_runtime.cjs
       - run: docker build --tag axora-v2-ci .
       - name: Testar inicialização real da imagem
         run: |
