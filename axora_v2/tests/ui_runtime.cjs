@@ -6,7 +6,7 @@ const path=require("node:path");
 const js=fs.readFileSync(path.join(__dirname,"../static/app.js"),"utf8");
 const elements=new Map();
 function element(id){
-  if(!elements.has(id)) elements.set(id,{textContent:"",innerHTML:"",classList:{add(){},remove(){},toggle(){}},setAttribute(){},removeAttribute(){}});
+  if(!elements.has(id)) elements.set(id,{textContent:"",innerHTML:"",dataset:{},disabled:false,classList:{add(){},remove(){},toggle(){}},setAttribute(){},removeAttribute(){}});
   return elements.get(id);
 }
 const navNames=["dashboard","movements","forecasts","accounts","debts","import","settings"];
@@ -37,3 +37,24 @@ for(const name of navNames){
   assert.ok(element("#page-title").textContent.length>0);
 }
 console.log("AXORA: sete paginas renderizadas e navegacao validada");
+
+vm.runInContext('page="dashboard"',ctx);
+const actions=vm.runInContext("actionButtons()",ctx);
+assert.ok(actions.includes('data-action="export"'));
+assert.ok(actions.includes('data-action="new-movement"'));
+assert.ok(actions.includes('class="ui-icon"'),"Botoes devem utilizar iconografia vetorial uniforme");
+vm.runInContext('page="movements"',ctx);
+const newAction=vm.runInContext("actionButtons()",ctx);
+assert.ok(newAction.includes('data-action="new"'));
+assert.ok(newAction.includes('class="ui-icon"'));
+
+for(const [value,expected] of [["loading","Atualizando"],["ready","Conectado"],["error","Falha ao atualizar"]]){
+  vm.runInContext("updateSyncStatus("+JSON.stringify(value)+")",ctx);
+  assert.equal(element("#top-sync-status").dataset.state,value);
+  assert.equal(element("#sidebar-sync-status").dataset.state,value);
+  assert.equal(element("#top-sync-label").textContent,expected);
+}
+vm.runInContext('page="settings";render()',ctx);
+assert.ok(element("#page-content").innerHTML.includes("settings-connection-status"));
+assert.ok(element("#page-content").innerHTML.includes("Falha ao atualizar informações financeiras"));
+console.log("AXORA: iconografia comum e indicadores de sincronização validados");

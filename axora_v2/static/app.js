@@ -16,6 +16,20 @@ const metricIcons={
 function metricIcon(name){
   return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(metricIcons[name]||metricIcons.wallet)+'</svg>';
 }
+// Ícones lineares compartilhados — a mesma linguagem em todas as páginas.
+const interfaceIconPaths={
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  download:'<path d="M12 3v12m-5-5 5 5 5-5"/><path d="M5 18v3h14v-3"/>',
+  edit:'<path d="M12 20h9"/><path d="m16.5 3.5 4 4L9 19H5v-4L16.5 3.5Z"/>',
+  trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 11v6m4-6v6"/>',
+  filter:'<path d="M4 7h16M7 12h10M10 17h4"/>',
+  reset:'<path d="M3 11a9 9 0 1 1 3.2 6.9"/><path d="M3 4v7h7"/>',
+  shield:'<path d="m12 22 8-4V6l-8-4-8 4v12l8 4Z"/><path d="m8.5 12 2.2 2.2 4.7-4.7"/>',
+  check:'<path d="m5 12 4 4L19 6"/>'
+};
+function interfaceIcon(name){
+  return '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">'+(interfaceIconPaths[name]||interfaceIconPaths.plus)+'</svg>';
+}
 
 const today = () => new Date().toLocaleDateString("en-CA");
 const comp = () => {const d=new Date();return String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear()};
@@ -50,6 +64,7 @@ const columns = {
 };
 let me=null,snapshot=null,page="dashboard",filters={},excelFile=null,toastTimeout=0;
 let institutionalBrand={has_logo:false,updated_at:null};
+let syncStatus="loading";
 let institutionalPreviewUrl=null;
 async function api(path,opts={}) {
   const headers={...(opts.headers||{})};
@@ -88,7 +103,37 @@ function showToast(message,error=false){const t=$("#toast");t.textContent=messag
 function logoutVisual(){me=null;snapshot=null;$("#workspace").classList.add("hidden");$("#login").classList.remove("hidden");$("#login-password").value="";$("#login-password").focus()}
 function enterVisual(){ $("#login").classList.add("hidden");$("#workspace").classList.remove("hidden");$("#user-name").textContent=me.display_name;const a=$("#avatar");a.replaceChildren();if(me.avatar_data_uri){const i=document.createElement("img");i.src=me.avatar_data_uri;i.alt="";a.append(i)}else a.textContent=(me.display_name||"A")[0].toUpperCase()}
 async function start(){try{me=await api("/api/me");enterVisual();await refresh()}catch{logoutVisual()}}
-async function refresh(){snapshot=await api("/api/snapshot");render();$("#crumb-current").textContent=labels[page].toUpperCase()}
+function updateSyncStatus(status){
+  syncStatus=status;
+  const timestamp=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  const text=status==="ready"?"Conectado":status==="loading"?"Atualizando":"Falha ao atualizar";
+  const sidebar=status==="ready"?"Dados sincronizados":status==="loading"?"Atualizando dados":"Verifique a conexão";
+  const description=status==="ready"?"Atualizado às "+timestamp:status==="loading"?"Consultando base financeira…":"Última atualização não concluída";
+  const top=$("#top-sync-status"),side=$("#sidebar-sync-status");
+  if(top){top.dataset.state=status;top.title=status==="ready"?description:description}
+  if(side)side.dataset.state=status;
+  if($("#top-sync-label"))$("#top-sync-label").textContent=text;
+  if($("#sidebar-sync-label"))$("#sidebar-sync-label").textContent=sidebar;
+  if($("#sidebar-sync-time"))$("#sidebar-sync-time").textContent=description;
+  const settings=$("#settings-connection-status");
+  if(settings)settings.textContent=status==="ready"?"Dados financeiros sincronizados":status==="loading"?"Atualizando informações financeiras":"Falha ao atualizar informações financeiras";
+}
+async function refresh(){
+  const button=$("#refresh");
+  if(button)button.disabled=true;
+  updateSyncStatus("loading");
+  try{
+    const latest=await api("/api/snapshot");
+    snapshot=latest;
+    render();
+    updateSyncStatus("ready");
+  }catch(error){
+    updateSyncStatus("error");
+    throw error;
+  }finally{
+    if(button)button.disabled=false;
+  }
+}
 function go(next){page=next;filters={};hideMenu();render();if(next==="settings"&&me?.is_admin)loadUsers();window.scrollTo({top:0,behavior:"smooth"})}
 function syncMenuTrigger(){
   const button=$("#menu-toggle"),mobile=window.matchMedia("(max-width:850px)").matches;
@@ -115,9 +160,9 @@ function hideMenu(){
   syncMenuTrigger();
 }
 function actionButtons(){
-  if(meta[page])return '<button class="btn primary" data-action="new">+ Novo registro</button>';
-  if(page==="dashboard")return '<button class="btn ghost" data-action="export">⇩ Exportar Excel</button><button class="btn primary" data-action="new-movement">+ Movimentação</button>';
-  if(page==="import")return '<button class="btn ghost" data-action="export">⇩ Exportar Excel</button>';
+  if(meta[page])return '<button class="btn primary btn-strong" data-action="new">'+interfaceIcon("plus")+'<span>Novo registro</span></button>';
+  if(page==="dashboard")return '<button class="btn ghost btn-secondary" data-action="export">'+interfaceIcon("download")+'<span>Exportar Excel</span></button><button class="btn primary btn-strong" data-action="new-movement">'+interfaceIcon("plus")+'<span>Movimentação</span></button>';
+  if(page==="import")return '<button class="btn ghost btn-secondary" data-action="export">'+interfaceIcon("download")+'<span>Exportar Excel</span></button>';
   return "";
 }
 function render(){
@@ -189,7 +234,7 @@ function displayTableCell(cell,heading){
 function table(headings,rows,actions=false,kind=""){
   if(!rows.length)return '<div class="empty-state"><b>Nenhum registro encontrado</b>Cadastre dados ou ajuste os filtros para continuar.</div>';
   return '<div class="table-wrap"><table class="data-table"><thead><tr>'+headings.map(h=>'<th scope="col">'+esc(h)+'</th>').join("")+(actions?'<th scope="col">Ações</th>':'')+'</tr></thead><tbody>'+
-    rows.map((cols,i)=>'<tr>'+cols.map((cell,j)=>'<td data-label="'+esc(headings[j])+'" title="'+esc(cell)+'">'+displayTableCell(cell,headings[j])+'</td>').join("")+(actions?'<td data-label="Ações"><div class="table-actions"><button class="mini-btn" data-action="edit" data-kind="'+kind+'" data-id="'+esc(actions[i])+'" aria-label="Editar registro">Editar</button><button class="mini-btn danger" data-action="delete" data-kind="'+kind+'" data-id="'+esc(actions[i])+'" aria-label="Excluir registro">Excluir</button></div></td>':'')+'</tr>').join("")+'</tbody></table></div>';
+    rows.map((cols,i)=>'<tr>'+cols.map((cell,j)=>'<td data-label="'+esc(headings[j])+'" title="'+esc(cell)+'">'+displayTableCell(cell,headings[j])+'</td>').join("")+(actions?'<td data-label="Ações"><div class="table-actions"><button class="mini-btn" data-action="edit" data-kind="'+kind+'" data-id="'+esc(actions[i])+'" aria-label="Editar registro">'+interfaceIcon("edit")+'<span>Editar</span></button><button class="mini-btn danger" data-action="delete" data-kind="'+kind+'" data-id="'+esc(actions[i])+'" aria-label="Excluir registro">'+interfaceIcon("trash")+'<span>Excluir</span></button></div></td>':'')+'</tr>').join("")+'</tbody></table></div>';
 }
 function formatCell(row,key,type){
   const v=row[key];if(type==="money")return money(v);if(type==="date")return dateBR(v);if(type==="bool")return v?"Sim":"Não";return String(v??"—");
@@ -219,7 +264,7 @@ function modulePage(kind){
     (kind==="movements"?optionFilter("classification","Todas classificações",["ENTRADA","SAÍDA"]):"")+
     (kind==="forecasts"?optionFilter("classification","Todos os tipos",["Entrada","Saída"])+optionFilter("status","Todos os status",["Não pago","Pago"]):"")+
     (kind==="movements"?optionFilter("category","Todas categorias",uniq(kind,"category")):"");
-  return '<div id="module-stats">'+moduleStats(kind,rows)+'</div><section class="panel table-panel"><div class="table-tools"><div class="filters">'+filtersHtml+'</div><button class="btn ghost small" data-action="clear-filters">Limpar filtros</button></div><div id="table-body">'+moduleTable(kind,rows)+'</div></section>';
+  return '<div id="module-stats">'+moduleStats(kind,rows)+'</div><section class="panel table-panel"><div class="table-tools"><div class="filters">'+filtersHtml+'</div><button class="btn ghost small btn-clear" data-action="clear-filters">'+interfaceIcon("reset")+'<span>Limpar filtros</span></button></div><div id="table-body">'+moduleTable(kind,rows)+'</div></section>';
 }
 function moduleTable(kind,rows){
   const cols=columns[kind],visible=rows.slice(0,150);
@@ -247,8 +292,8 @@ async function saveEditor(e){
   const data={};for(const [key,label,type] of meta[kind]){const element=form.elements.namedItem(key);data[key]=type==="checkbox"?element.checked:type==="number"||type==="integer"?Number(element.value||0):element.value}
   try{await api("/api/rows/"+kind+(id?"/"+id:""),{method:id?"PATCH":"POST",body:JSON.stringify(data)});$("#editor-dialog").close();await refresh();showToast("Registro salvo com sucesso.")}catch(err){showToast(err.message,true)}
 }
-function importPage(){return '<div class="stack">'+panel("Importar planilha","Modelo ACOMPANHAMENTOS.xlsx com as quatro abas financeiras obrigatórias.",'<div class="notice warning"><b>Proteção dos dados:</b> o AXORA não substitui registros existentes. A carga inicial só funciona se todas as quatro tabelas estiverem vazias. Faça backup antes de importar.</div><div class="upload-box"><b>Selecione um arquivo .xlsx</b><p>Movimentações, previsões, dinheiro e demais dívidas.</p><input type="file" id="excel-upload" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div><div id="import-preview"></div><div class="page-actions import-actions"><button class="btn ghost" data-action="preview-import">Conferir planilha</button><button class="btn primary" data-action="commit-import">Importar dados</button></div>')+
-   panel("Exportar dados","Baixe as quatro bases financeiras em um único arquivo Excel.",'<p class="panel-copy">Exportação de movimentações, previsões, contas e dívidas. Recomendado antes de mudanças importantes.</p><button class="btn primary" data-action="export">⇩ Exportar Excel</button>')+'</div>'}
+function importPage(){return '<div class="stack">'+panel("Importar planilha","Modelo ACOMPANHAMENTOS.xlsx com as quatro abas financeiras obrigatórias.",'<div class="notice warning"><b>Proteção dos dados:</b> o AXORA não substitui registros existentes. A carga inicial só funciona se todas as quatro tabelas estiverem vazias. Faça backup antes de importar.</div><div class="upload-box"><b>Selecione um arquivo .xlsx</b><p>Movimentações, previsões, dinheiro e demais dívidas.</p><input type="file" id="excel-upload" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div><div id="import-preview"></div><div class="page-actions import-actions"><button class="btn ghost" data-action="preview-import">'+interfaceIcon("check")+'<span>Conferir planilha</span></button><button class="btn primary" data-action="commit-import">'+interfaceIcon("plus")+'<span>Importar dados</span></button></div>')+
+   panel("Exportar dados","Baixe as quatro bases financeiras em um único arquivo Excel.",'<p class="panel-copy">Exportação de movimentações, previsões, contas e dívidas. Recomendado antes de mudanças importantes.</p><button class="btn primary" data-action="export">'+interfaceIcon("download")+'<span>Exportar Excel</span></button>')+'</div>'}
 async function loadUsers(){try{const users=await api("/api/users");const el=$("#users-table");if(el)el.innerHTML=table(["Nome","Perfil","Situação"],users.map(u=>[u.display_name,u.is_admin?"Administrador":"Usuário",u.is_active?"Ativo":"Inativo"]),false)}catch(e){showToast(e.message,true)}}
 function settingsPage(){
   const s=snapshot.settings;
@@ -258,7 +303,7 @@ function settingsPage(){
   let adminForm='<div class="notice warning">Atenção: novos usuários poderão visualizar e alterar a <b>mesma base financeira</b>. Não há isolamento por usuário nesta versão.</div><form id="new-user-form" class="settings-form"><div class="field"><label>Nome</label><input name="display_name" required maxlength="40"></div><div class="field"><label>Senha exclusiva (mínimo 12 caracteres)</label><input name="password" type="password" minlength="12" required></div><div class="field checkbox full"><input id="share-ack" name="share_ack" type="checkbox" required><label for="share-ack">Confirmo que o usuário terá acesso à base financeira compartilhada</label></div><button type="submit" class="btn primary">Cadastrar usuário</button></form><div id="users-table" class="table-wrap"></div>';
   const signaturePanel='<div class="institutional-brand-editor"><div class="institutional-preview"><img data-institutional-logo alt="Prévia da assinatura Nexon Labs" width="220" height="60" hidden><span class="institutional-brand-fallback" data-institutional-fallback>by Nexon Labs</span></div><p id="institutional-logo-status" class="panel-copy"></p>'+
     (me.is_admin?'<div class="field"><label for="institutional-logo-upload">Enviar logo institucional · PNG, JPG ou WebP (até 5 MB)</label><input id="institutional-logo-upload" type="file" accept="image/png,image/jpeg,image/webp"></div><div class="page-actions"><button class="btn primary" type="button" data-action="upload-institutional-logo">Salvar assinatura</button><button class="btn ghost" type="button" data-action="delete-institutional-logo">Restaurar padrão</button></div>':'<div class="notice">Somente administradores podem alterar a identidade institucional.</div>')+'</div>';
-  return '<div class="settings-grid"><div class="stack">'+panel("Meu perfil","Personalize a identificação associada à sua senha.",profile)+panel("Identidade institucional","Uma única imagem para o login e o rodapé. O símbolo do AXORA permanece inalterado.",signaturePanel)+(me.is_admin?panel("Usuários e permissões","Criação de contas e acesso à base compartilhada.",adminForm):"")+'</div><div class="stack">'+panel("Metas financeiras","Defina renda, reserva, percentuais e patrimônio.",goalForm)+panel("Conectividade","Informações sobre os serviços do AXORA.",'<div class="notice"><span class="online-dot"></span> Supabase conectado · FastAPI · Hospedagem Hostinger</div><p class="panel-copy">AXORA by Nexon Labs. A versão web não utiliza a interface ou infraestrutura Streamlit.</p>')+'</div></div>';
+  return '<div class="settings-grid"><div class="stack">'+panel("Meu perfil","Personalize a identificação associada à sua senha.",profile)+panel("Identidade institucional","Uma única imagem para o login e o rodapé. O símbolo do AXORA permanece inalterado.",signaturePanel)+(me.is_admin?panel("Usuários e permissões","Criação de contas e acesso à base compartilhada.",adminForm):"")+'</div><div class="stack">'+panel("Metas financeiras","Defina renda, reserva, percentuais e patrimônio.",goalForm)+panel("Conectividade","Informações sobre os serviços do AXORA.",'<div class="notice"><span class="online-dot"></span> <span id="settings-connection-status">'+(syncStatus==="ready"?"Dados financeiros sincronizados":syncStatus==="loading"?"Atualizando informações financeiras":"Falha ao atualizar informações financeiras")+'</span> · FastAPI · Hostinger</div><p class="panel-copy">AXORA by Nexon Labs. A versão web não utiliza a interface ou infraestrutura Streamlit.</p>')+'</div></div>';
 }
 async function doExport(){try{const res=await api("/api/export");const blob=await res.blob();const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="axora_export.xlsx";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);showToast("Planilha exportada.")}catch(e){showToast(e.message,true)}}
 async function uploadExcel(endpoint){
