@@ -148,6 +148,7 @@
   font-style:normal;
   color:#20E6E8;
 }
+#login .login-art .login-hero-copy span{display:block}
 #login .login-art p:not(.eyebrow) {
   display:block;
   width:100%;
