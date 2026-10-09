@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 570 680" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Conexões AXORA">
+<defs>
+ <linearGradient id="bg" x1=".12" y1=".95" x2=".88" y2=".10"><stop stop-color="#051C38"/><stop offset=".48" stop-color="#002C51"/><stop offset="1" stop-color="#075779"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#25E8EA" stop-opacity=".5"/><stop offset=".6" stop-color="#08A5CF" stop-opacity=".17"/><stop offset="1" stop-color="#0292A9" stop-opacity="0"/></radialGradient>
+ <radialGradient id="node"><stop stop-color="#4CF5F3"/><stop offset=".53" stop-color="#08CDDC"/><stop offset="1" stop-color="#0589B8"/></radialGradient>
+ <filter id="bokeh"><feGaussianBlur stdDeviation="19"/></filter>
+ <filter id="light"><feGaussianBlur stdDeviation="7"/></filter>
+</defs>
+<rect width="570" height="680" fill="url(#bg)"/>
+<ellipse cx="548" cy="190" rx="310" ry="322" fill="url(#glow)"/>
+<ellipse cx="360" cy="585" rx="270" ry="350" fill="#08152E" opacity=".20"/>
+<circle cx="492" cy="110" r="68" fill="#27E6EA" opacity=".27" filter="url(#bokeh)"/>
+<circle cx="480" cy="496" r="87" fill="#0CC1D6" opacity=".37" filter="url(#bokeh)"/>
+<g fill="none" stroke="#12BED7" stroke-opacity=".57" stroke-width="1.55">
+ <path d="M-40 160 120 185 360 202 480 104 563 261 480 496 362 600 97 675"/>
+ <path d="M-10 450 120 185 292 381 480 496 565 620"/>
+ <path d="M360 202 292 381 563 261M492 110 563 261M480 496 542 690"/>
+ <path d="M395-20 480 104 563 261 620 326M-25 550 180 480 362 600"/>
+</g>
+<g fill="url(#node)" opacity=".83">
+ <circle cx="480" cy="104" r="24"/>
+ <circle cx="360" cy="202" r="18"/>
+ <circle cx="563" cy="261" r="14"/>
+ <circle cx="480" cy="496" r="37"/>
+ <circle cx="362" cy="600" r="15"/>
+</g>
+<g fill="#01669A" opacity=".43">
+ <circle cx="120" cy="185" r="19"/><circle cx="292" cy="381" r="24"/><circle cx="102" cy="675" r="55"/>
+ <circle cx="195" cy="45" r="34"/><circle cx="405" cy="347" r="13"/><circle cx="240" cy="590" r="28"/>
+</g>
+<circle cx="480" cy="496" r="44" fill="#15DDE6" opacity=".28" filter="url(#light)"/>
+<circle cx="480" cy="104" r="33" fill="#15DDE6" opacity=".35" filter="url(#light)"/>
+<g stroke="#36CAEB" opacity=".31" fill="none">
+ <path d="M378-20C392 70 428 84 480 104" stroke-width="2.1"/>
+ <path d="M-10 650C90 560 173 572 195 730"/>
+</g>
+</svg>
