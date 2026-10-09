@@ -2,8 +2,8 @@
 
 ## Escopo e isolamento
 
-- **Aplicativo:** Gestão Financeira (mantém Streamlit como framework, mas sai do Community Cloud).
-- **Domínio planejado:** `https://financeiro.nexonlabs.com.br`.
+- **Aplicativo:** AXORA (Gestão Financeira) (mantém Streamlit como framework, mas sai do Community Cloud).
+- **Domínio planejado:** `https://axora.nexonlabs.com.br`.
 - **Repositório:** `juniorsousa-oss/GESTAO-FINANCEIRA`; aplicativo principal `streamlit_app.py`.
 - **Hospedagem:** VPS Hostinger com Docker Manager, Traefik e certificado Let's Encrypt, seguindo a arquitetura usada no ATRIA.
 - **Banco:** mesmo projeto Supabase já conectado, com as tabelas `finance_*`. **Não recriar tabelas e não executar supabase_schema.sql outra vez.**
@@ -35,7 +35,7 @@ Se houver Cloudflare, usar DNS-only durante a emissão inicial do SSL.
 2. Criar projeto distinto: `gestao-financeira`.
 3. Após integrar este PR à branch `main`, utilizar **Compose from URL** com o link RAW:
    `https://raw.githubusercontent.com/juniorsousa-oss/GESTAO-FINANCEIRA/main/docker-compose.yml`.
-4. O arquivo usa o mesmo Traefik da arquitetura ATRIA, com router exclusivo `financeiro`, HTTPS e serviço na porta **8501**. Não criar publicação pública adicional dessa porta.
+4. O arquivo usa o mesmo Traefik da arquitetura ATRIA, com router exclusivo `axora`, HTTPS e serviço na porta **8501**. Não criar publicação pública adicional dessa porta.
 5. Antes de iniciar, providenciar as variáveis abaixo no ambiente de execução da VPS / do projeto Docker Compose.
    - `SUPABASE_URL` = URL do projeto Supabase já utilizado.
    - `SUPABASE_KEY` = chave privada de serviço do **mesmo** projeto; só no servidor.
@@ -49,9 +49,9 @@ Se houver Cloudflare, usar DNS-only durante a emissão inicial do SSL.
 
 ## 4. HTTPS e acesso
 
-- Conferir resolução de `financeiro.nexonlabs.com.br` para o IP da VPS.
-- Confirmar no Traefik o router `financeiro` e a emissão do certificado Let's Encrypt.
-- Abrir `https://financeiro.nexonlabs.com.br` em janela anônima e na versão mobile.
+- Conferir resolução de `axora.nexonlabs.com.br` para o IP da VPS.
+- Confirmar no Traefik o router `axora` e a emissão do certificado Let's Encrypt.
+- Abrir `https://axora.nexonlabs.com.br` em janela anônima e na versão mobile.
 - Se a interface carregar em branco, inspecionar logs e suporte a WebSocket no proxy. O Streamlit mantém sessão por WebSocket.
 
 ## 5. Checklist de validação
