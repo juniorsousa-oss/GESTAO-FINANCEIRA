@@ -371,3 +371,45 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
   .nexon-app-footer{gap:9px}
   .nexon-app-footer img{width:120px}
 }
+
+/* Assinatura institucional oficial: uma imagem dinâmica para login e rodapé. */
+[data-institutional-logo][hidden],
+[data-institutional-fallback][hidden]{display:none!important}
+.nexon-lockup [data-institutional-logo],
+.nexon-app-footer [data-institutional-logo]{
+  width:auto;max-width:min(230px,60vw);max-height:43px;
+  height:auto;object-fit:contain;object-position:center;
+  flex:0 1 auto;display:block;
+}
+.institutional-brand-fallback{
+  font-family:Manrope,Inter,sans-serif;
+  font-size:12px;letter-spacing:.6px;font-weight:800;color:#526a80
+}
+.nexon-lockup .institutional-brand-fallback{color:#45667c}
+.nexon-app-footer [data-institutional-logo]{max-height:42px}
+.institutional-brand-editor{display:grid;gap:18px}
+.institutional-preview{
+  min-height:119px;border:1px dashed #bcd7dc;border-radius:16px;
+  background:radial-gradient(circle at 85% 10%,#eafaf7,transparent 53%),#f7fbfd;
+  display:flex;justify-content:center;align-items:center;padding:20px;
+  overflow:hidden;
+}
+.institutional-preview img[data-institutional-logo]{
+  display:block;max-width:100%;max-height:83px;width:auto;height:auto;
+  object-fit:contain;filter:drop-shadow(0 2px 3px rgba(10,32,55,.08))
+}
+.institutional-preview .institutional-brand-fallback{font-size:18px}
+.institutional-brand-editor .field input[type=file]{
+  display:block;width:100%;min-height:48px;padding:11px 12px;
+  background:#fff;border:1px solid #dce7ee;border-radius:12px;
+}
+.institutional-brand-editor .page-actions{
+  display:flex;align-items:center;flex-wrap:wrap;gap:9px;
+}
+.institutional-brand-editor .panel-copy{margin:0;line-height:1.6}
+@media(max-width:680px){
+  .nexon-lockup [data-institutional-logo],
+  .nexon-app-footer [data-institutional-logo]{max-width:205px;max-height:41px}
+  .institutional-brand-editor .page-actions{display:grid;grid-template-columns:1fr}
+  .institutional-brand-editor .page-actions .btn{width:100%}
+}
