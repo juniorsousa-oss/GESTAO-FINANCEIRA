@@ -1,4 +1,4 @@
-# Gestão Financeira
+# AXORA — Gestão Financeira
 
 Aplicativo Streamlit criado a partir da lógica do arquivo `ACOMPANHAMENTOS.xlsx`.
 
@@ -107,9 +107,9 @@ A importação substitui essas quatro bases após confirmação do usuário. O a
 
 `REGISTRO DE MOVIMENTAÇÕES` representa o **realizado**. `CONTROLE DE ENTSAÍDAS` representa o **previsto**. As duas bases permanecem separadas para permitir cálculo de saldo real e saldo projetado sem duplicidade.
 
-## Hospedagem Nexon Labs (Hostinger)
+## Hospedagem AXORA na Nexon Labs (Hostinger)
 
-A implantação de produção é planejada para `https://financeiro.nexonlabs.com.br` na VPS Hostinger com Docker e roteamento Traefik, seguindo o padrão do ATRIA. Os arquivos `Dockerfile`, `docker-compose.yml` e `.env.example` preparam essa migração sem alterar o layout ou o projeto Supabase já usado.
+A implantação de produção é planejada para `https://axora.nexonlabs.com.br` na VPS Hostinger com Docker e roteamento Traefik, seguindo o padrão do ATRIA. Os arquivos `Dockerfile`, `docker-compose.yml` e `.env.example` preparam essa migração sem alterar o layout ou o projeto Supabase já usado.
 
 **Confira o roteiro completo e os testes antes de desligar o deploy no Streamlit Cloud:** [DEPLOY_HOSTINGER.md](DEPLOY_HOSTINGER.md).
 
