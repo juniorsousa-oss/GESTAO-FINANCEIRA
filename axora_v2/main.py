@@ -4,6 +4,7 @@ import math
 import os
 import re
 from datetime import date
+from contextlib import asynccontextmanager
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request, Response, UploadFile, File, Depends
@@ -15,7 +16,15 @@ from axora_v2 import db, metrics, security
 from services.importer import parse_excel
 from services.profile import clean_display_name, avatar_data_uri
 
-app = FastAPI(title="AXORA API", docs_url=None, redoc_url=None, openapi_url=None)
+@asynccontextmanager
+async def lifespan(_app):
+    if not db.configured():
+        raise RuntimeError("Configure SUPABASE_URL e SUPABASE_KEY antes de iniciar o AXORA.")
+    security.signer()
+    yield
+
+
+app = FastAPI(title="AXORA API", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
 DATA_KINDS = ("movements", "forecasts", "accounts", "debts")
 COLUMNS = {
     "movements": {"movement_date", "description", "value", "category", "competence", "classification", "allocation_value", "fixed_variable"},
@@ -30,13 +39,6 @@ MONEY_FIELDS = {
 INT_FIELDS = {"total_installments", "paid_installments"}
 SETTINGS_KEYS = set(db.DEFAULT_SETTINGS)
 ORDERS = {"movements": "id.desc", "forecasts": "due_date.asc", "accounts": "name.asc", "debts": "id.asc"}
-
-
-@app.on_event("startup")
-def startup():
-    if not db.configured():
-        raise RuntimeError("Configure SUPABASE_URL e SUPABASE_KEY antes de iniciar o AXORA.")
-    security.signer()
 
 
 @app.middleware("http")
@@ -160,8 +162,9 @@ def login(payload: Login, request: Request, response: Response):
 
 @app.get("/api/me")
 def me(user=Depends(auth)):
+    avatar_rows = db.select("users", fields="avatar_data_uri", params={"id": f"eq.{user['id']}", "limit": 1})
     return {"id": user["id"], "display_name": user["display_name"], "is_admin": user["is_admin"],
-            "avatar_data_uri": user.get("avatar_data_uri"), "csrf": user["csrf"]}
+            "avatar_data_uri": avatar_rows[0].get("avatar_data_uri") if avatar_rows else None, "csrf": user["csrf"]}
 
 
 @app.post("/api/logout")
