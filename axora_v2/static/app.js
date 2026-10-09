@@ -102,7 +102,7 @@ function actionButtons(){
 function render(){
   if(!snapshot)return;
   $("#page-title").textContent=labels[page];$("#page-subtitle").textContent=subtitles[page];$("#crumb-current").textContent=labels[page].toUpperCase();$("#page-actions").innerHTML=actionButtons();
-  $(".nav-link").forEach(x=>{const active=x.dataset.page===page;x.classList.toggle("active",active);if(active)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current")});
+  $$(".nav-link").forEach(x=>{const active=x.dataset.page===page;x.classList.toggle("active",active);if(active)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current")});
   const body=$("#page-content");
   body.innerHTML=page==="dashboard"?dashboard():meta[page]?modulePage(page):page==="import"?importPage():settingsPage();
 }
