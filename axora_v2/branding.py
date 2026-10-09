@@ -3,7 +3,7 @@ import base64
 import io
 
 from fastapi import HTTPException
-from PIL import Image, ImageOps, UnidentifiedImageError
+from PIL import Image, ImageChops, ImageOps, UnidentifiedImageError
 
 MAX_UPLOAD = 5 * 1024 * 1024
 MAX_PIXELS = 12_000_000
@@ -29,6 +29,7 @@ def prepare_logo(raw: bytes, declared_type: str) -> tuple[str, str]:
                 img.mode == "P" and "transparency" in img.info
             )
             img = img.convert("RGBA" if has_alpha else "RGB")
+            img = trim_logo_margins(img)
             img.thumbnail((1600, 1000), Image.Resampling.LANCZOS)
             output = io.BytesIO()
             img.save(output, format="WEBP", lossless=True, method=5)
@@ -54,3 +55,66 @@ def decode_logo(data_uri: str) -> bytes:
         return base64.b64decode(data_uri[len(prefix):], validate=True)
     except (ValueError, base64.binascii.Error):
         raise HTTPException(500, "Assinatura institucional inválida.") from None
+
+
+def trim_logo_margins(image: Image.Image) -> Image.Image:
+    """Remove margens transparentes (ou brancas) em excesso, sem deformar a arte.
+
+    Mantem um pequeno respiro ao redor; logos já ajustadas nao sao alteradas.
+    """
+    image = image.convert("RGBA")
+    alpha = image.getchannel("A")
+    alpha_extent = alpha.getextrema()
+    if alpha_extent[0] < 255:
+        mask = alpha.point(lambda a: 255 if a > 15 else 0)
+        bounds = mask.getbbox()
+    else:
+        # So considera fundo branco uniforme se todos os cantos forem claros.
+        corners = [
+            image.getpixel((0, 0)), image.getpixel((image.width - 1, 0)),
+            image.getpixel((0, image.height - 1)),
+            image.getpixel((image.width - 1, image.height - 1)),
+        ]
+        if all(min(pixel[:3]) >= 245 for pixel in corners):
+            rgb = image.convert("RGB")
+            difference = ImageChops.difference(
+                rgb, Image.new("RGB", rgb.size, (255, 255, 255))
+            )
+            mask = difference.convert("L").point(lambda value: 255 if value > 24 else 0)
+            bounds = mask.getbbox()
+        else:
+            bounds = None
+    if bounds is None:
+        return image
+
+    left, top, right, bottom = bounds
+    content_w, content_h = right - left, bottom - top
+    if content_w < 3 or content_h < 3:
+        return image
+    # Proteger a proporcao, inclusive para logos horizontais.
+    pad_x = max(2, round(content_w * 0.035))
+    pad_y = max(2, round(content_h * 0.16))
+    crop = (
+        max(0, left - pad_x),
+        max(0, top - pad_y),
+        min(image.width, right + pad_x),
+        min(image.height, bottom + pad_y),
+    )
+    if crop == (0, 0, image.width, image.height):
+        return image
+    return image.crop(crop)
+
+
+def render_logo_image(data_uri: str) -> bytes:
+    """Reprocessa inclusive uploads anteriores, sem modificar o dado armazenado."""
+    raw = decode_logo(data_uri)
+    try:
+        with Image.open(io.BytesIO(raw)) as opened:
+            image = trim_logo_margins(opened)
+            if image.size == opened.size:
+                return raw
+            out = io.BytesIO()
+            image.save(out, "WEBP", lossless=True, method=5)
+            return out.getvalue()
+    except (OSError, ValueError, UnidentifiedImageError, Image.DecompressionBombError):
+        raise HTTPException(500, "Assinatura institucional invalida.") from None
