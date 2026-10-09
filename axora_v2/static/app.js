@@ -137,27 +137,47 @@ async function refresh(){
 function go(next){page=next;filters={};hideMenu();render();if(next==="settings"&&me?.is_admin)loadUsers();window.scrollTo({top:0,behavior:"smooth"})}
 function syncMenuTrigger(){
   const button=$("#menu-toggle"),mobile=window.matchMedia("(max-width:850px)").matches;
+  const sidebar=$("#sidebar");
   const collapsed=$("#workspace").classList.contains("sidebar-collapsed");
-  const open=$("#sidebar").classList.contains("open");
+  const open=sidebar.classList.contains("open");
   button.setAttribute("aria-expanded",String(mobile?open:!collapsed));
-  button.setAttribute("aria-label",mobile?"Abrir menu":collapsed?"Expandir menu":"Recolher menu");
+  button.setAttribute("aria-label",mobile?(open?"Menu aberto":"Abrir menu"):collapsed?"Expandir menu":"Recolher menu");
+  // Fora do mobile, a barra lateral permanece navegável.
+  sidebar.inert=mobile&&!open;
+  sidebar.setAttribute("aria-hidden",String(mobile&&!open));
 }
 function showMenu(){
   if(window.matchMedia("(max-width:850px)").matches){
     $("#sidebar").classList.add("open");
     $("#sidebar-overlay").classList.add("open");
     document.body.classList.add("menu-open");
-    $("#close-menu").focus();
+    syncMenuTrigger();
+    $("#close-menu").focus({preventScroll:true});
   }else{
     $("#workspace").classList.toggle("sidebar-collapsed");
+    syncMenuTrigger();
   }
-  syncMenuTrigger();
 }
 function hideMenu(){
+  const wasOpen=$("#sidebar").classList.contains("open");
   $("#sidebar").classList.remove("open");
   $("#sidebar-overlay").classList.remove("open");
   document.body.classList.remove("menu-open");
   syncMenuTrigger();
+  if(wasOpen&&window.matchMedia("(max-width:850px)").matches){
+    $("#menu-toggle").focus({preventScroll:true});
+  }
+}
+function trapMobileMenuFocus(e){
+  if(e.key!=="Tab"||!$("#sidebar").classList.contains("open"))return;
+  const items=$$("#sidebar button:not([disabled]), #sidebar a[href], #sidebar [tabindex]:not([tabindex='-1'])");
+  if(!items.length)return;
+  const first=items[0],last=items[items.length-1],active=document.activeElement;
+  if(e.shiftKey&&(active===first||!$("#sidebar").contains(active))){
+    e.preventDefault();last.focus();
+  }else if(!e.shiftKey&&(active===last||!$("#sidebar").contains(active))){
+    e.preventDefault();first.focus();
+  }
 }
 function actionButtons(){
   if(meta[page])return '<button class="btn primary btn-strong" data-action="new">'+interfaceIcon("plus")+'<span>Novo registro</span></button>';
@@ -328,9 +348,12 @@ function bind(){
   $("#login-form").addEventListener("submit",async e=>{e.preventDefault();$("#login-error").textContent="";const btn=e.currentTarget.querySelector("button[type=submit]");btn.disabled=true;try{await api("/api/login",{method:"POST",body:JSON.stringify({password:$("#login-password").value})});me=await api("/api/me");enterVisual();await refresh()}catch(err){$("#login-error").textContent=err.message}finally{btn.disabled=false}});
   $("#toggle-password").onclick=()=>{const p=$("#login-password");p.type=p.type==="password"?"text":"password";$("#toggle-password").textContent=p.type==="password"?"Mostrar":"Ocultar"};
   $("#menu-toggle").onclick=showMenu;
-  $("#close-menu").onclick=()=>{hideMenu();$("#menu-toggle").focus()};
+  $("#close-menu").onclick=hideMenu;
   $("#sidebar-overlay").onclick=hideMenu;
-  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("#sidebar").classList.contains("open")){hideMenu();$("#menu-toggle").focus()}});
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape"&&$("#sidebar").classList.contains("open")){hideMenu();return}
+    trapMobileMenuFocus(e);
+  });
   window.addEventListener("resize",()=>{if(window.innerWidth>850&&$("#sidebar").classList.contains("open"))hideMenu();else syncMenuTrigger()});
   syncMenuTrigger();
   $("#refresh").onclick=()=>refresh().then(()=>showToast("Dados atualizados.")).catch(e=>showToast(e.message,true));$("#profile-button").onclick=()=>go("settings");
