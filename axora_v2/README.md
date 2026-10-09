@@ -38,11 +38,11 @@ Os usuários cadastrados compartilham as tabelas financeiras. Não disponibiliza
 
 ## Implantação — sem interromper o atual AXORA
 
-1. Revisar e integrar a branch da V2 somente após CI aprovada e revisão do código.
+1. Revisar a branch da V2 e os testes. Para homologar, não é necessário integrar à main: o Compose de staging aponta diretamente para a branch `feat/axora-web-v2-20261009`.
 2. Fazer backup do banco Supabase e garantir plano de restauração.
 3. Criar DNS **A** para `axora-hml.nexonlabs.com.br` apontando à mesma VPS, apenas para homologação.
 4. Na Hostinger Docker Manager, criar um **novo** projeto `axora-web-hml` (não alterar ainda `gestao-financeira`).
-5. Utilizar `axora_v2/docker-compose.stage.yml` do GitHub *após a integração no main*.
+5. Utilizar `axora_v2/docker-compose.stage.yml` da branch de homologação. Ele constrói a imagem diretamente dessa branch, sem tocar na versão principal.
 6. Definir no ambiente do Compose:
    - `SUPABASE_URL`: mesma URL privada atual;
    - `SUPABASE_KEY`: chave de serviço do Supabase, nunca para navegador/GitHub;
@@ -53,7 +53,7 @@ Os usuários cadastrados compartilham as tabelas financeiras. Não disponibiliza
 9. Implantar homologação e validar `https://axora-hml.nexonlabs.com.br/health` e o domínio com HTTPS.
 10. Comparar V1 e V2: realizar acesso com a mesma senha, mesmos valores, foto, gráficos desktop/mobile, filtros, permissões, edição controlada, exportação, logout e retorno de sessão.
 11. **Não usar contas de produção para testes destrutivos**; validar gravação/edição e importação em projeto Supabase isolado ou backup restaurável.
-12. Com tudo validado, copiar **conteúdo do Compose de produção** `axora_v2/docker-compose.production.yml` no projeto `gestao-financeira` da Hostinger, confirmando as variáveis privadas e o roteamento. Isso remove o contêiner antigo Streamlit somente na etapa de corte.
+12. Depois da homologação, integrar a branch `feat/axora-web-v2-20261009` à `main`. Com tudo validado, copiar **conteúdo do Compose de produção** `axora_v2/docker-compose.production.yml` no projeto `gestao-financeira` da Hostinger, confirmando as variáveis privadas e o roteamento. Isso remove o contêiner antigo Streamlit somente na etapa de corte.
 13. Garantir que apenas um router Traefik responda pelo host `axora.nexonlabs.com.br`; parar homologação no final ou deixá-la com um host diferente.
 14. Conferir logs e saúde, comparar os mesmos registros e ter rollback pronto (Compose antigo no histórico do Hostinger e imagem anterior).
 
