@@ -5,7 +5,6 @@ services:
   financeiro:
     build:
       context: https://github.com/juniorsousa-oss/GESTAO-FINANCEIRA.git#main
-      dockerfile: axora_v2/Dockerfile
     restart: unless-stopped
     environment:
       SUPABASE_URL: ${SUPABASE_URL:?Configure SUPABASE_URL no servidor}
