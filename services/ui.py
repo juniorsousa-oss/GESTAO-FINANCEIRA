@@ -1479,10 +1479,10 @@ def render_app_header() -> None:
         f"""
         <div class="gf-app-header" role="banner">
             <div class="gf-header-brand">
-                <div class="gf-header-logo" aria-label="Marca Gestão Financeira"><i></i><i></i><i></i></div>
+                <div class="gf-header-logo" aria-label="Marca AXORA"><i></i><i></i><i></i></div>
                 <div>
-                    <div class="gf-header-name">Gestão Financeira</div>
-                    <div class="gf-header-tagline">Controle, clareza e confiança.</div>
+                    <div class="gf-header-name">AXORA</div>
+                    <div class="gf-header-tagline">by Nexon Labs</div>
                 </div>
             </div>
             <div class="gf-header-user">

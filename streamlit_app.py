@@ -10,7 +10,7 @@ from services.ui import inject_global_css, render_app_header, render_page_header
 
 
 st.set_page_config(
-    page_title="Gestão Financeira",
+    page_title="AXORA | by Nexon Labs",
     page_icon="💰",
     layout="wide",
     initial_sidebar_state="expanded",

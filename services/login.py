@@ -1,4 +1,4 @@
-"""Tela de acesso com identidade visual do Gestão Financeira.
+"""Tela de acesso com identidade visual do AXORA.
 
 Somente a apresentação vive aqui; autenticação e acesso ao banco permanecem
 no ponto de entrada do aplicativo (streamlit_app.py).
@@ -268,12 +268,12 @@ div[data-testid="stElementContainer"]:has(.gf-login-brandbar) {
 _HEADER = """
 <div class="gf-login-brandbar" role="banner">
     <div class="gf-login-brand">
-        <div class="gf-login-brand-logo" role="img" aria-label="Logo Gestão Financeira">
+        <div class="gf-login-brand-logo" role="img" aria-label="Logo AXORA">
             <i></i><i></i><i></i>
         </div>
         <div>
-            <div class="gf-login-brand-name">Gestão Financeira</div>
-            <div class="gf-login-brand-subtitle">Controle, clareza e confiança.</div>
+            <div class="gf-login-brand-name">AXORA</div>
+            <div class="gf-login-brand-subtitle">by Nexon Labs</div>
         </div>
     </div>
 </div>
@@ -291,7 +291,7 @@ _INTRO = """
             <path d="M32 37v3" stroke="#103d61" stroke-width="2"/>
         </svg>
     </div>
-    <h1>Acesso à gestão financeira</h1>
+    <h1>Acesse o AXORA</h1>
     <p>Informe sua senha para acessar o sistema com segurança<br class="gf-login-break"/> e gerenciar suas finanças.</p>
 </div>
 """
