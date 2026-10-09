@@ -68,12 +68,12 @@ async function api(path,opts={}) {
 function applyInstitutionalBrand(){
   const configured=Boolean(institutionalBrand.has_logo);
   const url="/api/branding/institutional/image?v="+encodeURIComponent(institutionalBrand.updated_at||"");
-  $("[data-institutional-logo]").forEach(image=>{
+  document.querySelectorAll("[data-institutional-logo]").forEach(image=>{
     image.hidden=!configured;
     if(configured && image.getAttribute("src")!==url)image.setAttribute("src",url);
     if(!configured)image.removeAttribute("src");
   });
-  $("[data-institutional-fallback]").forEach(label=>{label.hidden=configured});
+  document.querySelectorAll("[data-institutional-fallback]").forEach(label=>{label.hidden=configured});
   const status=$("#institutional-logo-status");
   if(status)status.textContent=configured?"Assinatura institucional personalizada ativa no login e no rodapé.":"Nenhuma imagem enviada. Por enquanto, o aplicativo utiliza apenas a assinatura textual Nexon Labs.";
 }
