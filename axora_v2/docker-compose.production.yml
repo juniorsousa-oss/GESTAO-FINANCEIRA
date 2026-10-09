@@ -1,15 +1,18 @@
-# Substituir o serviço Streamlit somente depois de validar a homologação.
-# O nome do PROJETO da Hostinger pode continuar gestao-financeira.
+# Referência do Compose de produção do AXORA 2.0, equivalente ao docker-compose.yml da raiz.
+# AXORA 2.0 na VPS Hostinger: substitui apenas o serviço financeiro existente.
+# Mantém o projeto e o nome interno 'financeiro', evitando contêiner órfão.
+# Valores sensíveis devem ser definidos apenas na VPS; NÃO publicar em GitHub.
 services:
-  axora-web:
+  financeiro:
     build:
       context: https://github.com/juniorsousa-oss/GESTAO-FINANCEIRA.git#main
-      dockerfile: axora_v2/Dockerfile
     restart: unless-stopped
     environment:
-      SUPABASE_URL: ${SUPABASE_URL:?Configure na VPS}
-      SUPABASE_KEY: ${SUPABASE_KEY:?Configure na VPS}
-      SESSION_SECRET: ${SESSION_SECRET:?Crie um segredo aleatorio com ao menos 32 caracteres}
+      SUPABASE_URL: ${SUPABASE_URL:?Configure SUPABASE_URL no servidor}
+      SUPABASE_KEY: ${SUPABASE_KEY:?Configure SUPABASE_KEY no servidor}
+      APP_ACCESS_PASSWORD: ${APP_ACCESS_PASSWORD:-}
+      APP_OWNER_NAME: ${APP_OWNER_NAME:-Júnior}
+      SESSION_SECRET: ${SESSION_SECRET:?Configure SESSION_SECRET com pelo menos 32 caracteres aleatorios na VPS}
       COOKIE_SECURE: "1"
     expose:
       - "8000"
