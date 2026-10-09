@@ -14,11 +14,11 @@ services:
       - "8501"
     labels:
       - traefik.enable=true
-      - "traefik.http.routers.financeiro.rule=Host(`financeiro.nexonlabs.com.br`)"
-      - traefik.http.routers.financeiro.entrypoints=websecure
-      - traefik.http.routers.financeiro.tls=true
-      - traefik.http.routers.financeiro.tls.certresolver=letsencrypt
-      - traefik.http.services.financeiro.loadbalancer.server.port=8501
+      - "traefik.http.routers.axora.rule=Host(`axora.nexonlabs.com.br`)"
+      - traefik.http.routers.axora.entrypoints=websecure
+      - traefik.http.routers.axora.tls=true
+      - traefik.http.routers.axora.tls.certresolver=letsencrypt
+      - traefik.http.services.axora.loadbalancer.server.port=8501
     healthcheck:
       test:
         - CMD-SHELL
