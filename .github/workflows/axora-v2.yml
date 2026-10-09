@@ -25,6 +25,22 @@ jobs:
       - run: python -m pytest axora_v2/tests -q
       - run: node --check axora_v2/static/app.js
       - run: docker build --tag axora-v2-ci .
+      - name: Testar inicialização real da imagem
+        run: |
+          docker run -d --name axora-v2-smoke -p 127.0.0.1:18080:8000 \
+            -e SUPABASE_URL=https://example.supabase.co \
+            -e SUPABASE_KEY=chave-de-testes-sem-acesso \
+            -e SESSION_SECRET=teste-aleatorio-de-mais-de-trinta-e-dois-caracteres \
+            axora-v2-ci
+          trap 'docker logs axora-v2-smoke; docker rm -f axora-v2-smoke' EXIT
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:18080/health >/dev/null; then
+              curl -fsS http://127.0.0.1:18080/ | grep -q 'AXORA'
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
       - run: |
           if grep -R -E '^import streamlit|^from streamlit' axora_v2 --include='*.py'; then
             echo "O AXORA v2 não pode importar Streamlit."
