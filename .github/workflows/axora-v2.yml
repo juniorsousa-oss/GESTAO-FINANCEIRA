@@ -1,0 +1,31 @@
+name: AXORA web v2 checks
+on:
+  pull_request:
+    paths:
+      - 'axora_v2/**'
+      - '.github/workflows/axora-v2.yml'
+  push:
+    branches:
+      - feat/axora-web-v2-20261009
+    paths:
+      - 'axora_v2/**'
+      - '.github/workflows/axora-v2.yml'
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: axora_v2/requirements.txt
+      - run: pip install -r axora_v2/requirements.txt pytest httpx
+      - run: python -m compileall -q axora_v2
+      - run: python -m pytest axora_v2/tests -q
+      - run: node --check axora_v2/static/app.js
+      - run: |
+          if grep -R -E '^import streamlit|^from streamlit' axora_v2 --include='*.py'; then
+            echo "O AXORA v2 não pode importar Streamlit."
+            exit 1
+          fi
