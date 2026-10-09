@@ -293,7 +293,7 @@ def get_institutional_image():
     row = institutional_row(fields="content_type,image_data_uri")
     if not row:
         raise HTTPException(404, "Assinatura ainda não configurada.")
-    raw = branding.decode_logo(row["image_data_uri"])
+    raw = branding.render_logo_image(row["image_data_uri"])
     return Response(
         raw, media_type=row["content_type"],
         headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},

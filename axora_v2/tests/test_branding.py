@@ -1,9 +1,10 @@
 """Assinatura institucional AXORA: upload admin, leitura pública e persistência simulada."""
 import io
+import base64
 
 from fastapi.testclient import TestClient
 from PIL import Image
-from axora_v2 import db, security
+from axora_v2 import db, security, branding
 from axora_v2.main import app
 
 
@@ -82,7 +83,20 @@ def test_institutional_image_is_persistent_and_admin_only(monkeypatch):
         assert public_image.content[:4]==b"RIFF"
         with Image.open(io.BytesIO(public_image.content)) as img:
             assert img.mode=="RGBA"
-            assert img.size==(650,200)
+            assert img.width < 650
+            assert img.height < 200
+            assert img.width >= 485
+            assert img.height >= 100
+
+        # Leitura de uma imagem LEGADA que foi salva antes do recorte de margens.
+        image = Image.open(io.BytesIO(sample_image()))
+        old_file = io.BytesIO()
+        image.save(old_file, format="WEBP", lossless=True)
+        asset["image_data_uri"] = "data:image/webp;base64," + base64.b64encode(old_file.getvalue()).decode()
+        old_public = client.get("/api/branding/institutional/image")
+        assert old_public.status_code == 200
+        with Image.open(io.BytesIO(old_public.content)) as legacy:
+            assert legacy.width < 650 and legacy.height < 200
 
         assert client.delete("/api/branding/institutional",headers=csrf).status_code==200
         assert client.get("/api/branding/institutional").json()["has_logo"] is False
@@ -100,3 +114,34 @@ def test_only_one_source_serves_login_and_footer():
     assert "data-action=\"delete-institutional-logo\"" in js
     assert "applyInstitutionalBrand()" in js
     assert "/api/branding/institutional/image?v=" in js
+
+def test_white_margin_background_is_cropped_without_distorting_logo():
+    # Alguns PNGs tem bordas brancas opacas em vez de transparencia.
+    opaque = Image.new("RGB", (1200, 600), "white")
+    for x in range(300, 905):
+        for y in range(240, 351):
+            opaque.putpixel((x, y), (22, 45, 72))
+    cleaned = branding.trim_logo_margins(opaque)
+    assert cleaned.width < 760
+    assert cleaned.height < 170
+    assert cleaned.width > 600
+    assert cleaned.height > 110
+
+
+def test_existing_compact_brand_image_does_not_expand_or_distort():
+    original = Image.new("RGBA", (200, 40), (40, 100, 120, 255))
+    cleaned = branding.trim_logo_margins(original)
+    assert cleaned.size == original.size
+    assert cleaned.getpixel((0, 0)) == original.getpixel((0, 0))
+
+
+def test_institutional_size_css_covers_desktop_and_mobile():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1] / "static"
+    html = (root / "index.html").read_text(encoding="utf-8")
+    css = (root / "identity.css").read_text(encoding="utf-8")
+    assert "institutional-logo-size-v2" in html
+    assert "#login .nexon-lockup img[data-institutional-logo]" in css
+    assert ".nexon-app-footer img[data-institutional-logo]" in css
+    assert "width:min(265px,100%)" in css
+    assert "height:76px" in css
