@@ -239,6 +239,30 @@
   #login .login-foot.nexon-lockup {margin-top:17px;padding-top:12px;}
 }
 
+/* Rodapé do painel esquerdo no padrão ATRIA: texto curto, linha ciano
+   e alinhamento inferior sem interferir no formulário nem no mobile. */
+@media (min-width:901px) {
+  #login .login-art-content {
+    height:100%;
+  }
+  #login .login-pill {
+    flex:0 0 auto;
+    margin:auto 0 0;
+    padding:18px 0 0;
+    color:#D7F0F4;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.01em;
+    line-height:1.35;
+  }
+  #login .login-pill::before {
+    width:50px;
+    height:2px;
+    margin:0 0 16px;
+    background:linear-gradient(90deg,#34E0CF,#28B8D6);
+  }
+}
+
 /* Em tablet/celular conserva-se o drawer fixo, acima da moldura, para
    não reeditar o problema do menu inacessível observado no ATRIA. */
 @media(max-width:850px){
