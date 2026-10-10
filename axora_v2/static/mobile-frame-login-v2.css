@@ -1,0 +1,276 @@
+/* AXORA · Nexon Labs — Revisão mobile validada por comparação
+   com o cartão único do ATRIA / Opera Hub.
+   Camada exclusivamente responsiva; desktop AXORA permanece intacto. */
+
+/* Mesmo desenho geométrico do login no espaço EXTERNO à moldura móvel,
+   nunca atrás de números, cartões e gráficos da área financeira. */
+@media (max-width:850px) {
+  :root{
+    --ax-mobile-gutter:12px;
+    --ax-mobile-radius:24px;
+  }
+  body:has(#workspace:not(.hidden)){
+    background-color:#062C45;
+    background-image:url("/assets/login-atmosphere.svg");
+    background-position:center top;
+    background-size:cover;
+    background-repeat:no-repeat;
+    background-attachment:scroll;
+  }
+  #workspace.workspace:not(.hidden){
+    padding:var(--ax-mobile-gutter);
+    background:transparent;
+    overflow:visible;
+  }
+  #workspace.workspace:not(.hidden) .app-column{
+    min-height:calc(100dvh - 2 * var(--ax-mobile-gutter));
+    background:linear-gradient(156deg,#F9FCFE 0%,#F1F7FA 58%,#F6FAFC 100%);
+    border-radius:var(--ax-mobile-radius);
+    border:1px solid rgba(202,221,232,.9);
+    box-shadow:0 16px 44px rgba(0,14,37,.26),0 2px 9px rgba(0,25,47,.13);
+  }
+  #workspace .topbar{
+    top:var(--ax-mobile-gutter);
+    border-radius:calc(var(--ax-mobile-radius) - 1px) calc(var(--ax-mobile-radius) - 1px) 0 0;
+  }
+}
+
+/* LOGIN RESPONSIVO: uma única superfície, painel azul superior unido
+   à área branca, sem o card branco sobreposto da versão anterior. */
+@media (max-width:900px) {
+  #login.login-screen{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    min-height:100dvh;
+    height:auto;
+    margin:0;
+    padding:clamp(18px,3.5svh,32px) 14px calc(clamp(18px,3.5svh,32px) + env(safe-area-inset-bottom,0px));
+    overflow-x:clip;
+    overflow-y:visible;
+    border:0;
+    border-radius:0;
+    background:#052E49 url("/assets/login-atmosphere.svg") center center / cover no-repeat;
+  }
+  #login .login-card{
+    display:flex;
+    flex-direction:column;
+    width:min(476px,100%);
+    max-width:100%;
+    height:auto;
+    min-height:0;
+    margin:0 auto;
+    padding:0;
+    overflow:hidden;
+    border:1px solid rgba(215,250,253,.78);
+    border-radius:27px;
+    background:#FFF;
+    box-shadow:0 26px 76px rgba(0,15,34,.34),0 3px 16px rgba(0,16,35,.12);
+  }
+  #login .login-art{
+    display:flex;
+    flex:0 0 auto;
+    align-items:stretch;
+    width:100%;
+    height:auto;
+    min-height:0;
+    padding:23px 27px 24px;
+    margin:0;
+    border:0;
+    border-radius:0;
+    background-color:#092D4D;
+    background-image:linear-gradient(105deg,rgba(0,20,45,.34),rgba(0,45,70,.12)),url("/assets/login-hero-network.svg");
+    background-position:center,center center;
+    background-size:cover,cover;
+    background-repeat:no-repeat;
+  }
+  #login .login-art-content{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    width:100%;
+    max-width:100%;
+    height:auto;
+    min-height:0;
+    margin:0;
+  }
+  #login .login-brand{gap:12px;flex-shrink:0;}
+  #login .login-brand img{
+    width:50px;
+    height:50px;
+    flex:0 0 50px;
+    border-radius:13px;
+  }
+  #login .login-brand strong{font-size:20px;letter-spacing:2.2px;}
+  #login .login-brand small{margin-top:4px;font-size:8px;letter-spacing:1.9px;}
+  #login .custom-login-logo{
+    width:auto;
+    max-width:min(100%,255px);
+    max-height:67px;
+    height:auto;
+    margin:0;
+    object-fit:contain;
+    object-position:left center;
+  }
+  #login .login-art h1{
+    display:block;
+    max-width:100%;
+    margin:22px 0 0;
+    font-size:clamp(23px,4.4vw,29px);
+    font-weight:800;
+    line-height:1.22;
+    letter-spacing:-.85px;
+  }
+  #login .login-art h1 .hero-line{display:inline;white-space:normal;}
+  #login .login-art h1 .hero-line:not(:last-child)::after{content:" ";}
+  #login .login-art p:not(.eyebrow),
+  #login .login-pill{display:none;}
+
+  #login .login-panel{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 auto;
+    width:100%;
+    max-width:100%;
+    height:auto;
+    min-height:0;
+    margin:0;
+    padding:27px 29px 24px;
+    overflow:visible;
+    z-index:1;
+    border:0;
+    border-radius:0;
+    background:linear-gradient(165deg,#FFFFFF,#FEFEFF);
+    box-shadow:none;
+  }
+  #login .login-form-wrap{
+    width:100%;
+    max-width:100%;
+    height:auto;
+    min-height:0;
+    margin:0 auto;
+  }
+  #login .login-panel .overline{
+    font-size:9px;
+    letter-spacing:1.8px;
+    line-height:1.35;
+  }
+  #login .login-panel h2{
+    max-width:100%;
+    margin:11px 0 8px;
+    font-size:clamp(25px,4.7vw,30px);
+    line-height:1.2;
+    letter-spacing:-.85px;
+    white-space:normal;
+  }
+  #login .login-panel p.muted{
+    max-width:100%;
+    font-size:12px;
+    line-height:1.55;
+  }
+  #login .login-form{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:9px;
+    width:100%;
+    margin:21px 0 0;
+  }
+  #login .login-form label{font-size:11px;margin-bottom:1px;}
+  #login .password-wrap{
+    width:100%;
+    height:51px;
+    min-height:51px;
+    border-radius:11px;
+  }
+  #login .password-icon{margin-left:15px;flex-basis:20px;}
+  #login .password-wrap input{
+    min-width:0;
+    min-height:49px;
+    height:49px;
+    padding:0 11px;
+    font-size:16px; /* Sem zoom automático ao focar no Safari iOS */
+  }
+  #login .password-wrap .text-button{
+    flex:0 0 auto;
+    padding:11px 13px 11px 6px;
+    font-size:12px;
+  }
+  #login .login-form .btn{
+    display:flex;
+    width:100%;
+    min-height:51px;
+    height:51px;
+    margin:5px 0 0;
+    padding:0 13px;
+    border-radius:11px;
+    font-size:13px;
+  }
+  #login .login-foot.nexon-lockup{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
+    width:100%;
+    margin:21px 0 0;
+    padding:14px 0 0;
+    border-top:1px solid #E1EAF1;
+  }
+  #login .nexon-lockup small{font-size:10px;line-height:1.35;}
+  #login .nexon-lockup img[data-institutional-logo]{
+    width:118px;
+    height:32px;
+    max-height:32px;
+    max-width:60%;
+    object-fit:contain;
+  }
+  #login .form-error:not(:empty){margin:8px 0 0;font-size:12px;}
+}
+
+/* Proporções de um celular comum: mais ar ao redor do card
+   e menos comprimento interno que o login anterior. */
+@media (max-width:600px){
+  :root{
+    --ax-mobile-gutter:11px;
+    --ax-mobile-radius:24px;
+  }
+  #login.login-screen{
+    padding:clamp(15px,3.6svh,28px) 13px calc(clamp(15px,3.6svh,28px) + env(safe-area-inset-bottom,0px));
+  }
+  #login .login-card{width:min(430px,100%);border-radius:25px;}
+  #login .login-art{padding:22px 25px 22px;}
+  #login .login-art h1{margin:20px 0 0;font-size:clamp(22px,5.6vw,25px);}
+  #login .login-panel{padding:25px 24px 23px;}
+  #login .login-panel h2{font-size:clamp(24px,6vw,27px);}
+  #login .login-form{margin-top:19px;}
+  #login .login-foot.nexon-lockup{margin-top:19px;}
+}
+@media(max-width:390px){
+  :root{--ax-mobile-gutter:10px;}
+  #login.login-screen{
+    padding:14px 11px calc(16px + env(safe-area-inset-bottom,0px));
+  }
+  #login .login-art{padding:19px 21px 20px;}
+  #login .login-brand img{width:45px;height:45px;flex-basis:45px;}
+  #login .login-brand strong{font-size:18px;}
+  #login .login-art h1{margin:18px 0 0;font-size:21px;}
+  #login .login-panel{padding:23px 19px 22px;}
+  #login .login-panel h2{font-size:25px;}
+  #login .login-form{margin-top:17px;}
+  #login .nexon-lockup img[data-institutional-logo]{width:110px;height:29px;max-height:29px;}
+}
+/* Em telas baixas e em paisagem o cartão flui e pode ser rolado;
+   jamais encobrir senha ou botão sob teclado/rodapé do navegador. */
+@media(max-width:900px) and (max-height:660px){
+  #login.login-screen{
+    justify-content:flex-start;
+    padding-top:12px;
+    padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #login .login-card{transition:none!important;}
+}
