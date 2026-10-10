@@ -100,8 +100,8 @@ function releaseInstitutionalPreview(){
   if(institutionalPreviewUrl){URL.revokeObjectURL(institutionalPreviewUrl);institutionalPreviewUrl=null}
 }
 function showToast(message,error=false){const t=$("#toast");t.textContent=message;t.className="toast show"+(error?" error":"");clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>t.className="toast",4300)}
-function logoutVisual(){me=null;snapshot=null;$("#workspace").classList.add("hidden");$("#login").classList.remove("hidden");$("#login-password").value="";$("#login-password").focus()}
-function enterVisual(){ $("#login").classList.add("hidden");$("#workspace").classList.remove("hidden");$("#user-name").textContent=me.display_name;const a=$("#avatar");a.replaceChildren();if(me.avatar_data_uri){const i=document.createElement("img");i.src=me.avatar_data_uri;i.alt="";a.append(i)}else a.textContent=(me.display_name||"A")[0].toUpperCase()}
+function logoutVisual(){document.title="AXORA | Acesso";me=null;snapshot=null;$("#workspace").classList.add("hidden");$("#login").classList.remove("hidden");$("#login-password").value="";$("#login-password").focus()}
+function enterVisual(){document.title="AXORA | Gestão Financeira"; $("#login").classList.add("hidden");$("#workspace").classList.remove("hidden");$("#user-name").textContent=me.display_name;const a=$("#avatar");a.replaceChildren();if(me.avatar_data_uri){const i=document.createElement("img");i.src=me.avatar_data_uri;i.alt="";a.append(i)}else a.textContent=(me.display_name||"A")[0].toUpperCase()}
 async function start(){try{me=await api("/api/me");enterVisual();await refresh()}catch{logoutVisual()}}
 function updateSyncStatus(status){
   syncStatus=status;

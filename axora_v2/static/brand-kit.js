@@ -79,8 +79,8 @@ function applyBrandKit(){
   // wordmark horizontal diretamente na aba ou no menu recolhido.
   const favicon=$("#axora-favicon"),apple=$('link[rel="apple-touch-icon"]');
   const stamp=[brandKit.favicon?.updated_at||"",brandKit.icon?.updated_at||""].join("-");
-  const faviconHref="/api/brand-kit/square-icon?prefer=favicon&v="+encodeURIComponent(stamp);
-  const appHref="/api/brand-kit/square-icon?prefer=icon&v="+encodeURIComponent(stamp);
+  const faviconHref="/api/brand-kit/square-icon?prefer=favicon&style=optical93-v1&v="+encodeURIComponent(stamp);
+  const appHref="/api/brand-kit/square-icon?prefer=icon&style=optical93-v1&v="+encodeURIComponent(stamp);
   if(favicon&&favicon.getAttribute("href")!==faviconHref){
     favicon.removeAttribute("type");
     favicon.href=faviconHref;

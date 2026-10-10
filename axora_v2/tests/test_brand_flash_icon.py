@@ -32,8 +32,8 @@ def test_square_icon_keeps_content_and_exact_dimensions():
         assert im.getpixel((0,0))[3]==0
         assert im.getpixel((128,128))[3]>0
         bbox=im.getchannel("A").getbbox()
-        assert bbox is not None and bbox[2]-bbox[0]>=248
-        assert bbox[3]-bbox[1]>=248
+        assert bbox is not None and 233<=bbox[2]-bbox[0]<=240
+        assert 233<=bbox[3]-bbox[1]<=240
 
 
 def test_reject_new_horizontal_logos_as_icons():
@@ -84,7 +84,13 @@ def test_no_fallback_flash_and_atmosphere_is_reused():
     assert "container.classList.remove(\"brand-pending\")" in kit
     assert "#login .login-art-content.brand-pending>.login-brand" in css
     assert "#sidebar .side-brand.brand-pending" in css
-    assert 'href="/api/brand-kit/square-icon?prefer=favicon&rev=brandframe-v2"' in html
+    assert 'href="/api/brand-kit/square-icon?prefer=favicon&rev=optical93-v1"' in html
+    assert "<title>AXORA | Acesso</title>" in html
+    script=(ROOT/"app.js").read_text()
+    assert 'document.title="AXORA | Acesso"' in script
+    assert 'document.title="AXORA | Gestão Financeira"' in script
+    brand_script=(ROOT/"brand-kit.js").read_text()
+    assert "style=optical93-v1" in brand_script
     assert 'id="axora-collapsed-icon"' in html
     assert "/assets/login-atmosphere.svg" in css
     assert "body:has(#workspace:not(.hidden))" in css
