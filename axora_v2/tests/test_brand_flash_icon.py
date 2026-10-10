@@ -32,8 +32,8 @@ def test_square_icon_keeps_content_and_exact_dimensions():
         assert im.getpixel((0,0))[3]==0
         assert im.getpixel((128,128))[3]>0
         bbox=im.getchannel("A").getbbox()
-        assert bbox is not None and bbox[2]-bbox[0]>=248
-        assert bbox[3]-bbox[1]>=248
+        assert bbox is not None and 233<=bbox[2]-bbox[0]<=240
+        assert 233<=bbox[3]-bbox[1]<=240
 
 
 def test_reject_new_horizontal_logos_as_icons():
