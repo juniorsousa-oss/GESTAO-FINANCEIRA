@@ -7,7 +7,7 @@ BASE=Path(__file__).resolve().parents[1]/"static"
 def test_cascade_last_and_old_login_still_present():
     html=(BASE/"index.html").read_text(encoding="utf-8")
     assert html.index("brand-kit.css") < html.index("shell-finish.css")
-    assert "frame-login-brand-20261010" in html
+    assert "brand-icon-atmosphere-r1" in html
     for id_ in ('id="login-password"','id="login-form"','id="toggle-password"','id="sidebar-overlay"'):
         assert id_ in html
 
@@ -34,14 +34,14 @@ def test_collapsed_sidebar_uses_square_icon():
     css=(BASE/"shell-finish.css").read_text(encoding="utf-8")
     js=(BASE/"brand-kit.js").read_text(encoding="utf-8")
     assert 'id="axora-collapsed-icon"' in html
-    assert "src=\"/assets/axora-mark.svg\"" in html
+    assert "src=\"/api/brand-kit/square-icon?prefer=icon\"" in html
     assert "#workspace.sidebar-collapsed #sidebar #axora-collapsed-icon" in css
     assert "#workspace.sidebar-collapsed #sidebar .side-brand>#axora-sidebar-logo" in css
     assert "display:none!important" in css
     assert "object-fit:contain" in css
-    assert "brandKit.icon?.configured" in js
-    assert "brandKit.favicon?.configured" in js
-    assert 'collapsed.src="/assets/axora-mark.svg"' in js
+    assert "/api/brand-kit/square-icon?prefer=icon" in js
+    assert "/api/brand-kit/square-icon?prefer=favicon" in js
+    assert 'collapsed.src=appHref' in js
     assert 'id="axora-sidebar-logo"' in html
 
 

@@ -244,3 +244,36 @@
 @media(max-width:850px){
   #sidebar #axora-collapsed-icon {display:none!important;}
 }
+
+/* Antes do primeiro carregamento do kit, não piscar a marca antiga.
+   O próprio controlador retira brand-pending quando a imagem personalizada
+   carrega ou quando confirma que o padrão original deve ser usado. */
+#login .login-art-content.brand-pending>.login-brand{
+  visibility:hidden!important;
+}
+#sidebar .side-brand.brand-pending>.sidebar-brand-mark,
+#sidebar .side-brand.brand-pending>div{
+  visibility:hidden!important;
+}
+
+/* Mesma atmosfera gráfica da tela de acesso, clareada para o ambiente
+   operacional: as cartas, tabelas e números continuam legíveis. */
+#workspace.workspace:not(.hidden) .app-column{
+  background-color:#EFF7FA;
+  background-image:
+    linear-gradient(155deg,rgba(250,253,254,.90),rgba(244,250,252,.91)),
+    url("/assets/login-atmosphere.svg");
+  background-position:center,center;
+  background-size:cover,cover;
+  background-repeat:no-repeat,no-repeat;
+}
+
+/* Evita interferir no overlay do menu, cujo stacking fica externo
+   à área de trabalho no mobile. */
+@media(max-width:850px){
+  #workspace.workspace:not(.hidden) .app-column{
+    background-image:
+      linear-gradient(155deg,rgba(250,253,254,.92),rgba(244,250,252,.93)),
+      url("/assets/login-atmosphere.svg");
+  }
+}

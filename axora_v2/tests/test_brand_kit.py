@@ -7,9 +7,9 @@ from axora_v2 import db, security
 from axora_v2.main import app, BRAND_KIT_SLOTS
 
 
-def make_png():
+def make_png(square=False):
     buffer=io.BytesIO()
-    Image.new("RGBA",(180,90),(0,0,0,0)).save(buffer,format="PNG")
+    Image.new("RGBA",(180,180) if square else (180,90),(0,0,0,0)).save(buffer,format="PNG")
     return buffer.getvalue()
 
 
@@ -69,7 +69,7 @@ def test_kit_admin_permissions_data_persistence_and_public_assets(monkeypatch):
       assert client.post("/api/brand-kit/primary",files={"file":("logo.png",make_png(),"image/png")}).status_code==403
       assert client.post("/api/brand-kit/other",headers=admin,files={"file":("logo.png",make_png(),"image/png")}).status_code==404
       for slot in BRAND_KIT_SLOTS:
-        saved=client.post("/api/brand-kit/"+slot,headers=admin,files={"file":("logo.png",make_png(),"image/png")})
+        saved=client.post("/api/brand-kit/"+slot,headers=admin,files={"file":("logo.png",make_png(square=slot in ("icon","favicon")),"image/png")})
         assert saved.status_code==200,saved.text
         result=client.get("/api/brand-kit/"+slot+"/image")
         assert result.status_code==200

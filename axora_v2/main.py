@@ -369,6 +369,35 @@ def get_brand_kit():
     }
 
 
+@app.get("/api/brand-kit/square-icon")
+def get_square_brand_icon(prefer: str = "favicon"):
+    """Fonte única para favicon e menu compacto; nunca distorce a marca."""
+    if prefer not in ("favicon", "icon"):
+        raise HTTPException(422, "Tipo de ícone inválido.")
+    keys = ("axora_favicon", "axora_icon") if prefer == "favicon" else ("axora_icon", "axora_favicon")
+    rows = db.select(
+        "branding",
+        fields="key,image_data_uri",
+        params={"key": "in.(axora_favicon,axora_icon)"},
+    )
+    by_key = {r["key"]: r["image_data_uri"] for r in rows}
+    for key in keys:
+        if key not in by_key:
+            continue
+        try:
+            icon_data = branding.render_square_icon(by_key[key])
+            return Response(
+                icon_data, media_type="image/png",
+                headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
+            )
+        except HTTPException as error:
+            if error.status_code != 422:
+                raise
+    # Fallback oficial, sem tentar reduzir a logo horizontal a um favicon.
+    static_path = os.path.join(os.path.dirname(__file__), "static", "axora-mark.svg")
+    return FileResponse(static_path, media_type="image/svg+xml")
+
+
 @app.get("/api/brand-kit/{slot}/image")
 def get_brand_kit_image(slot: str):
     key = brand_slot(slot)
@@ -391,6 +420,8 @@ async def update_brand_kit(slot: str, file: UploadFile = File(...), user=Depends
     admin(user)
     key = brand_slot(slot)
     raw = await file.read(branding.MAX_UPLOAD + 1)
+    if slot in ("icon", "favicon"):
+        branding.validate_square_upload(raw)
     mime, uri = branding.prepare_logo(raw, file.content_type or "")
     timestamp = datetime.now(timezone.utc).isoformat()
     db.call(

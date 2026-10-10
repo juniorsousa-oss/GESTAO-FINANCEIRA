@@ -105,6 +105,47 @@ def trim_logo_margins(image: Image.Image) -> Image.Image:
     return image.crop(crop)
 
 
+def render_square_icon(data_uri: str, size: int = 256) -> bytes:
+    """Entrega o ícone real em PNG quadrado, sem esticar logos horizontais.
+
+    Ícones antigos que receberam uma logo horizontal são ignorados para
+    favicon/atalho, mantendo um fallback seguro no chamador.
+    """
+    raw = decode_logo(data_uri)
+    try:
+        with Image.open(io.BytesIO(raw)) as opened:
+            image = trim_logo_margins(opened.convert("RGBA"))
+            width, height = image.size
+            if width < 16 or height < 16 or not .76 <= width / height <= 1.32:
+                raise HTTPException(422, "Esta imagem não é um ícone quadrado.")
+            bound = round(size * .91)
+            image.thumbnail((bound, bound), Image.Resampling.LANCZOS)
+            output = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+            output.alpha_composite(image, ((size - image.width)//2, (size - image.height)//2))
+            buffer = io.BytesIO()
+            output.save(buffer, "PNG", optimize=True)
+            return buffer.getvalue()
+    except HTTPException:
+        raise
+    except (OSError, ValueError, UnidentifiedImageError, Image.DecompressionBombError):
+        raise HTTPException(422, "Ícone inválido ou corrompido.") from None
+
+
+def validate_square_upload(raw: bytes) -> None:
+    """Impede novos uploads de wordmarks nos slots destinados a favicon/app."""
+    try:
+        with Image.open(io.BytesIO(raw)) as opened:
+            if opened.width * opened.height > MAX_PIXELS:
+                raise HTTPException(422, "Imagem muito grande. Limite de 12 megapixels.")
+            width, height = trim_logo_margins(ImageOps.exif_transpose(opened).convert("RGBA")).size
+            if not .76 <= width / height <= 1.32:
+                raise HTTPException(422, "O favicon e o ícone do aplicativo exigem uma imagem quadrada. Não envie a logo horizontal.")
+    except HTTPException:
+        raise
+    except (OSError, ValueError, UnidentifiedImageError, Image.DecompressionBombError, ZeroDivisionError):
+        raise HTTPException(422, "Imagem inválida.") from None
+
+
 def render_logo_image(data_uri: str) -> bytes:
     """Reprocessa inclusive uploads anteriores, sem modificar o dado armazenado."""
     raw = decode_logo(data_uri)

@@ -32,18 +32,28 @@ function swapKitImage(image,container,item,slot){
     image.onload=null;image.onerror=null;
     image.removeAttribute("src");
     container.classList.remove("brand-custom");
+    container.classList.remove("brand-pending");
     return;
   }
   const src=kitImageUrl(slot,item);
-  if(image.getAttribute("src")===src)return;
+  if(image.getAttribute("src")===src){
+    if(image.complete&&image.naturalWidth){
+      image.hidden=false;
+      container.classList.add("brand-custom");
+      container.classList.remove("brand-pending");
+    }
+    return;
+  }
   image.onload=()=>{
     if(image.getAttribute("src")!==src)return;
     image.hidden=false;
     container.classList.add("brand-custom");
+    container.classList.remove("brand-pending");
   };
   image.onerror=()=>{
     image.hidden=true;
     container.classList.remove("brand-custom");
+    container.classList.remove("brand-pending");
   };
   image.src=src;
 }
@@ -64,27 +74,20 @@ function applyBrandKit(){
   const login=$("#axora-login-logo"),sidebar=$("#axora-sidebar-logo");
   swapKitImage(login,login?.parentElement,brandKit.primary,"primary");
   swapKitImage(sidebar,sidebar?.parentElement,brandKit.secondary,"secondary");
+  // O servidor devolve SEMPRE um PNG 256×256, mesmo para arquivos antigos
+  // retangulares (rejeitados) ou com margens desiguais. Nunca colocar o
+  // wordmark horizontal diretamente na aba ou no menu recolhido.
   const favicon=$("#axora-favicon"),apple=$('link[rel="apple-touch-icon"]');
-  const icon=brandKit.favicon?.configured?"favicon":brandKit.icon?.configured?"icon":null;
-  const href=icon?kitImageUrl(icon,brandKit[icon]):"/assets/axora-mark.svg";
-  if(favicon&&favicon.getAttribute("href")!==href){
-    favicon.href=href;favicon.type=icon?"image/webp":"image/svg+xml";
+  const stamp=[brandKit.favicon?.updated_at||"",brandKit.icon?.updated_at||""].join("-");
+  const faviconHref="/api/brand-kit/square-icon?prefer=favicon&v="+encodeURIComponent(stamp);
+  const appHref="/api/brand-kit/square-icon?prefer=icon&v="+encodeURIComponent(stamp);
+  if(favicon&&favicon.getAttribute("href")!==faviconHref){
+    favicon.removeAttribute("type");
+    favicon.href=faviconHref;
   }
-  if(apple&&apple.getAttribute("href")!==href)apple.href=href;
-  // O menu compacto usa exclusivamente o ícone quadrado; a marca
-  // horizontal nunca é reduzida ao tamanho de um favicon.
+  if(apple&&apple.getAttribute("href")!==appHref)apple.href=appHref;
   const collapsed=$("#axora-collapsed-icon");
-  if(collapsed){
-    const preferred=brandKit.icon?.configured?"icon":brandKit.favicon?.configured?"favicon":null;
-    const target=preferred?kitImageUrl(preferred,brandKit[preferred]):"/assets/axora-mark.svg";
-    if(collapsed.getAttribute("src")!==target){
-      collapsed.onerror=()=>{
-        collapsed.onerror=null;
-        collapsed.src="/assets/axora-mark.svg";
-      };
-      collapsed.src=target;
-    }
-  }
+  if(collapsed&&collapsed.getAttribute("src")!==appHref)collapsed.src=appHref;
 }
 async function loadBrandKit(){
   brandKit=await api("/api/brand-kit");
