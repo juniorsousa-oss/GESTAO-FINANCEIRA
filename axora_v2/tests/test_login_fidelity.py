@@ -21,8 +21,9 @@ def test_login_has_approved_headline_and_copy_without_altering_actions():
     assert '<em class="hero-line">clareza.</em>' in html
     assert '<span>Transforme números em decisões.</span>' in html
     assert '<span>Organize, acompanhe e evolua</span>' in html
-    assert "Organize o presente." in html
-    assert "Decida o futuro." in html
+    assert '<div class="login-pill">Da informação à decisão.</div>' in html
+    # A frase institucional longa fica no rodapé interno, não na tela de login.
+    assert 'AXORA · Organize o presente. Decida o futuro.' in html
     assert 'id="login-form"' in html
     assert 'id="login-password"' in html
     assert 'id="toggle-password"' in html
@@ -68,3 +69,16 @@ def test_mobile_and_compact_desktop_remain_accessible():
     assert "min-height:66px" in css
     assert "min-height:53px" in css
     assert "#login [hidden] {display:none!important;}" in css
+
+
+def test_login_footer_matches_atria_desktop_and_preserves_mobile():
+    html = (BASE / "index.html").read_text(encoding="utf-8")
+    css = (BASE / "shell-finish.css").read_text(encoding="utf-8")
+    mobile = (BASE / "mobile-frame-login-v2.css").read_text(encoding="utf-8")
+    assert "exterior-network-wallpaper-r2-login-foot-v1" in html
+    assert "Rodapé do painel esquerdo no padrão ATRIA" in css
+    assert "#login .login-art-content {\n    height:100%;" in css
+    assert "margin:auto 0 0" in css
+    assert "width:50px;" in css
+    assert "linear-gradient(90deg,#34E0CF,#28B8D6)" in css
+    assert "#login .login-pill{display:none;}" in mobile
