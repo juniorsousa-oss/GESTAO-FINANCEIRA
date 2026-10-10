@@ -84,7 +84,7 @@ def test_no_fallback_flash_and_atmosphere_is_reused():
     assert "container.classList.remove(\"brand-pending\")" in kit
     assert "#login .login-art-content.brand-pending>.login-brand" in css
     assert "#sidebar .side-brand.brand-pending" in css
-    assert 'href="/api/brand-kit/square-icon?prefer=favicon&rev=brandframe-v2"' in html
+    assert 'href="/api/brand-kit/square-icon?prefer=favicon&rev=optical93-v1"' in html
     assert 'id="axora-collapsed-icon"' in html
     assert "/assets/login-atmosphere.svg" in css
     assert "body:has(#workspace:not(.hidden))" in css
