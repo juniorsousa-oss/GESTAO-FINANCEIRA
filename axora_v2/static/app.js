@@ -134,7 +134,7 @@ async function refresh(){
     if(button)button.disabled=false;
   }
 }
-function go(next){page=next;filters={};hideMenu();render();if(next==="settings"&&me?.is_admin)loadUsers();window.scrollTo({top:0,behavior:"smooth"})}
+function go(next){page=next;filters={};hideMenu();render();if(next==="settings"&&me?.is_admin)loadUsers();const scroller=$("#workspace .main-area");if(scroller)scroller.scrollTop=0;}
 function syncMenuTrigger(){
   const button=$("#menu-toggle"),mobile=window.matchMedia("(max-width:850px)").matches;
   const sidebar=$("#sidebar");
