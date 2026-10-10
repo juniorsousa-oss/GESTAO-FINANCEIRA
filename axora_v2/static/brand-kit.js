@@ -71,6 +71,20 @@ function applyBrandKit(){
     favicon.href=href;favicon.type=icon?"image/webp":"image/svg+xml";
   }
   if(apple&&apple.getAttribute("href")!==href)apple.href=href;
+  // O menu compacto usa exclusivamente o ícone quadrado; a marca
+  // horizontal nunca é reduzida ao tamanho de um favicon.
+  const collapsed=$("#axora-collapsed-icon");
+  if(collapsed){
+    const preferred=brandKit.icon?.configured?"icon":brandKit.favicon?.configured?"favicon":null;
+    const target=preferred?kitImageUrl(preferred,brandKit[preferred]):"/assets/axora-mark.svg";
+    if(collapsed.getAttribute("src")!==target){
+      collapsed.onerror=()=>{
+        collapsed.onerror=null;
+        collapsed.src="/assets/axora-mark.svg";
+      };
+      collapsed.src=target;
+    }
+  }
 }
 async function loadBrandKit(){
   brandKit=await api("/api/brand-kit");
