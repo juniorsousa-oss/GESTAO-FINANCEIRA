@@ -105,20 +105,37 @@ def trim_logo_margins(image: Image.Image) -> Image.Image:
     return image.crop(crop)
 
 
-def render_square_icon(data_uri: str, size: int = 256) -> bytes:
-    """Entrega o ícone real em PNG quadrado, sem esticar logos horizontais.
+def trim_icon_margins(image: Image.Image) -> Image.Image:
+    """Corta a área transparente externa ao ícone, inclusive sombras difusas.
 
-    Ícones antigos que receberam uma logo horizontal são ignorados para
-    favicon/atalho, mantendo um fallback seguro no chamador.
+    Para ícones pequenos, uma borda de 20% torna o símbolo quase ilegível.
+    Usa o desenho visível (opacidade >= 64), sem fazer qualquer alongamento.
     """
+    image = image.convert("RGBA")
+    alpha = image.getchannel("A")
+    if alpha.getextrema()[0] == 255:
+        return image  # Sem transparência: não inventar recortes em arte opaca.
+    bounds = alpha.point(lambda a: 255 if a >= 64 else 0).getbbox()
+    if bounds is None:
+        raise HTTPException(422, "Imagem sem conteúdo visível.")
+    left, top, right, bottom = bounds
+    if right - left < 16 or bottom - top < 16:
+        raise HTTPException(422, "Ícone muito pequeno.")
+    return image.crop(bounds)
+
+
+def render_square_icon(data_uri: str, size: int = 256) -> bytes:
+    """Produz um favicon PNG quadrado de arte ampliada e proporção preservada."""
     raw = decode_logo(data_uri)
     try:
         with Image.open(io.BytesIO(raw)) as opened:
-            image = trim_logo_margins(opened.convert("RGBA"))
+            image = trim_icon_margins(ImageOps.exif_transpose(opened))
             width, height = image.size
             if width < 16 or height < 16 or not .76 <= width / height <= 1.32:
                 raise HTTPException(422, "Esta imagem não é um ícone quadrado.")
-            bound = round(size * .91)
+            # O símbolo ocupa até 98% do canvas; antes usava 91% mais
+            # as margens internas da imagem enviada.
+            bound = max(1, round(size * .98))
             image.thumbnail((bound, bound), Image.Resampling.LANCZOS)
             output = Image.new("RGBA", (size, size), (0, 0, 0, 0))
             output.alpha_composite(image, ((size - image.width)//2, (size - image.height)//2))
@@ -132,12 +149,12 @@ def render_square_icon(data_uri: str, size: int = 256) -> bytes:
 
 
 def validate_square_upload(raw: bytes) -> None:
-    """Impede novos uploads de wordmarks nos slots destinados a favicon/app."""
+    """Proíbe logos horizontais nos slots quadrados (app icon e favicon)."""
     try:
         with Image.open(io.BytesIO(raw)) as opened:
             if opened.width * opened.height > MAX_PIXELS:
                 raise HTTPException(422, "Imagem muito grande. Limite de 12 megapixels.")
-            width, height = trim_logo_margins(ImageOps.exif_transpose(opened).convert("RGBA")).size
+            width, height = trim_icon_margins(ImageOps.exif_transpose(opened)).size
             if not .76 <= width / height <= 1.32:
                 raise HTTPException(422, "O favicon e o ícone do aplicativo exigem uma imagem quadrada. Não envie a logo horizontal.")
     except HTTPException:

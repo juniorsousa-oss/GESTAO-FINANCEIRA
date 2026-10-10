@@ -22,7 +22,7 @@ def test_approved_login_card_and_branding_are_present():
     assert 'class="login-brand"' in page
     assert "Organize o presente." in page
     assert "Decida o futuro." in page
-    assert 'rel="icon" href="/api/brand-kit/square-icon?prefer=favicon"' in page
+    assert 'rel="icon" href="/api/brand-kit/square-icon?prefer=favicon&rev=brandframe-v2"' in page
     assert "/assets/axora-mark.svg" in page
     assert "/assets/axora-network.svg" in (STATIC / "identity.css").read_text(encoding="utf-8")
     assert 'id="login-form"' in page
