@@ -1,0 +1,47 @@
+/* AXORA — estabilidade da navegação no smartphone.
+   O cabeçalho fica preso à moldura, e apenas o conteúdo financeiro rola.
+   Não altera desktop, autenticação ou o posicionamento do drawer. */
+@media (max-width:850px){
+  html:has(#workspace:not(.hidden)),
+  body:has(#workspace:not(.hidden)){
+    height:100%;
+    overflow:hidden;
+    overscroll-behavior:none;
+  }
+  #workspace.workspace:not(.hidden){
+    height:100dvh;
+    min-height:0;
+    max-height:100dvh;
+    overflow:visible; /* overlay e sidebar fixos precisam ficar acessíveis */
+  }
+  #workspace.workspace:not(.hidden) .app-column{
+    display:flex;
+    flex-direction:column;
+    height:calc(100dvh - 2 * var(--ax-mobile-gutter,12px));
+    min-height:0;
+    max-height:calc(100dvh - 2 * var(--ax-mobile-gutter,12px));
+    overflow:hidden;
+  }
+  #workspace.workspace:not(.hidden) .topbar{
+    position:relative;
+    top:auto;
+    left:auto;
+    right:auto;
+    flex-shrink:0;
+    width:100%;
+    background:rgba(255,255,255,.98);
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+  }
+  #workspace.workspace:not(.hidden) .main-area{
+    flex:1 1 auto;
+    height:auto;
+    min-height:0;
+    max-height:none;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior-y:contain;
+    -webkit-overflow-scrolling:touch;
+    scroll-behavior:auto;
+  }
+}
