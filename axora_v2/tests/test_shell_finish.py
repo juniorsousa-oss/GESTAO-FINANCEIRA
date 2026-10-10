@@ -7,7 +7,7 @@ BASE=Path(__file__).resolve().parents[1]/"static"
 def test_cascade_last_and_old_login_still_present():
     html=(BASE/"index.html").read_text(encoding="utf-8")
     assert html.index("brand-kit.css") < html.index("shell-finish.css")
-    assert "brand-icon-atmosphere-r1" in html
+    assert "exterior-network-wallpaper-r2" in html
     for id_ in ('id="login-password"','id="login-form"','id="toggle-password"','id="sidebar-overlay"'):
         assert id_ in html
 
@@ -34,7 +34,7 @@ def test_collapsed_sidebar_uses_square_icon():
     css=(BASE/"shell-finish.css").read_text(encoding="utf-8")
     js=(BASE/"brand-kit.js").read_text(encoding="utf-8")
     assert 'id="axora-collapsed-icon"' in html
-    assert "src=\"/api/brand-kit/square-icon?prefer=icon\"" in html
+    assert "src=\"/api/brand-kit/square-icon?prefer=icon&rev=brandframe-v2\"" in html
     assert "#workspace.sidebar-collapsed #sidebar #axora-collapsed-icon" in css
     assert "#workspace.sidebar-collapsed #sidebar .side-brand>#axora-sidebar-logo" in css
     assert "display:none!important" in css
