@@ -9,7 +9,9 @@ from axora_v2.main import app, BRAND_KIT_SLOTS
 
 def make_png(square=False):
     buffer=io.BytesIO()
-    Image.new("RGBA",(180,180) if square else (180,90),(0,0,0,0)).save(buffer,format="PNG")
+    im=Image.new("RGBA",(180,180) if square else (180,90),(0,0,0,0))
+    if square: im.paste((7,128,156,255),(9,9,171,171))
+    im.save(buffer,format="PNG")
     return buffer.getvalue()
 
 
