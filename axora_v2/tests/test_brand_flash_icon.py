@@ -85,6 +85,12 @@ def test_no_fallback_flash_and_atmosphere_is_reused():
     assert "#login .login-art-content.brand-pending>.login-brand" in css
     assert "#sidebar .side-brand.brand-pending" in css
     assert 'href="/api/brand-kit/square-icon?prefer=favicon&rev=optical93-v1"' in html
+    assert "<title>AXORA | Acesso</title>" in html
+    script=(ROOT/"app.js").read_text()
+    assert 'document.title="AXORA | Acesso"' in script
+    assert 'document.title="AXORA | Gestão Financeira"' in script
+    brand_script=(ROOT/"brand-kit.js").read_text()
+    assert "style=optical93-v1" in brand_script
     assert 'id="axora-collapsed-icon"' in html
     assert "/assets/login-atmosphere.svg" in css
     assert "body:has(#workspace:not(.hidden))" in css
