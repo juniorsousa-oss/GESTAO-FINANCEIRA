@@ -133,9 +133,9 @@ def render_square_icon(data_uri: str, size: int = 256) -> bytes:
             width, height = image.size
             if width < 16 or height < 16 or not .76 <= width / height <= 1.32:
                 raise HTTPException(422, "Esta imagem não é um ícone quadrado.")
-            # O símbolo ocupa até 98% do canvas; antes usava 91% mais
+            # O símbolo ocupa 93% do canvas, alinhado ao ATRIA,
             # as margens internas da imagem enviada.
-            bound = max(1, round(size * .98))
+            bound = max(1, round(size * .93))
             image.thumbnail((bound, bound), Image.Resampling.LANCZOS)
             output = Image.new("RGBA", (size, size), (0, 0, 0, 0))
             output.alpha_composite(image, ((size - image.width)//2, (size - image.height)//2))
