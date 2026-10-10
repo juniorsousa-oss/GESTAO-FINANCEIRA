@@ -46,6 +46,9 @@ def test_reject_new_horizontal_logos_as_icons():
 
 
 def test_browser_favicon_route_fallback_and_priority(monkeypatch):
+    monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
+    monkeypatch.setenv("SUPABASE_KEY", "ci-only")
+    monkeypatch.setenv("SESSION_SECRET", "long-ci-secret-just-for-fastapi-tests-20261010")
     correct=branding.prepare_logo(png(300,300),"image/png")[1]
     wrong=branding.prepare_logo(png(900,230),"image/png")[1]
     def fake_select(kind,*,fields="*",order=None,params=None):
