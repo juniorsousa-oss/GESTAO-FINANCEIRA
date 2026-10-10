@@ -333,6 +333,96 @@ def remove_institutional_brand(user=Depends(authorized)):
     return {"ok": True, "has_logo": False, "updated_at": None}
 
 
+# Kit visual AXORA: quatro aplicações independentes de uma mesma identidade.
+# Os arquivos são privados para escrita, públicos para exibição no login/favicon.
+BRAND_KIT_SLOTS = {
+    "primary": ("axora_primary", "Principal · login e apresentações", (1400, 420)),
+    "secondary": ("axora_secondary", "Horizontal compacta · menu lateral", (1100, 340)),
+    "icon": ("axora_icon", "Ícone do aplicativo · 1024 px", (1024, 1024)),
+    "favicon": ("axora_favicon", "Favicon · 256 px", (256, 256)),
+}
+
+
+def brand_slot(slot: str):
+    if slot not in BRAND_KIT_SLOTS:
+        raise HTTPException(404, "Layout de logo não encontrado.")
+    return BRAND_KIT_SLOTS[slot][0]
+
+
+@app.get("/api/brand-kit")
+def get_brand_kit():
+    rows = db.select(
+        "branding",
+        fields="key,updated_at",
+        params={"key": "in.(" + ",".join(s[0] for s in BRAND_KIT_SLOTS.values()) + ")"},
+    )
+    modified = {row["key"]: row.get("updated_at") for row in rows}
+    return {
+        slot: {
+            "label": data[1],
+            "width": data[2][0],
+            "height": data[2][1],
+            "configured": data[0] in modified,
+            "updated_at": modified.get(data[0]),
+        }
+        for slot, data in BRAND_KIT_SLOTS.items()
+    }
+
+
+@app.get("/api/brand-kit/{slot}/image")
+def get_brand_kit_image(slot: str):
+    key = brand_slot(slot)
+    rows = db.select(
+        "branding",
+        fields="content_type,image_data_uri",
+        params={"key": "eq." + key, "limit": 1},
+    )
+    if not rows:
+        raise HTTPException(404, "A logo deste layout ainda não foi enviada.")
+    return Response(
+        branding.render_logo_image(rows[0]["image_data_uri"]),
+        media_type=rows[0]["content_type"],
+        headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
+    )
+
+
+@app.post("/api/brand-kit/{slot}")
+async def update_brand_kit(slot: str, file: UploadFile = File(...), user=Depends(authorized)):
+    admin(user)
+    key = brand_slot(slot)
+    raw = await file.read(branding.MAX_UPLOAD + 1)
+    mime, uri = branding.prepare_logo(raw, file.content_type or "")
+    timestamp = datetime.now(timezone.utc).isoformat()
+    db.call(
+        "POST", db.TABLES["branding"],
+        params={"on_conflict": "key"},
+        data={"key": key, "content_type": mime, "image_data_uri": uri, "updated_at": timestamp},
+        prefer="resolution=merge-duplicates,return=representation",
+    )
+    return {"ok": True, "updated_at": timestamp}
+
+
+@app.delete("/api/brand-kit/{slot}")
+def remove_brand_kit(slot: str, user=Depends(authorized)):
+    admin(user)
+    key = brand_slot(slot)
+    db.call("DELETE", db.TABLES["branding"],
+            params={"key": "eq." + key}, prefer="return=minimal")
+    return {"ok": True}
+
+
+@app.get("/api/multiuser/status")
+def multiuser_status(user=Depends(auth)):
+    # Não anunciar isolamento enquanto todas as rotas financeiras não forem protegidas.
+    return {
+        "phase": "foundation",
+        "isolation_enabled": False,
+        "legacy_shared_data": True,
+        "workspace_roles": ["owner", "admin", "editor", "viewer"],
+        "next_step": "Vincular todas as movimentações, contas, previsões, dívidas, metas e exportações a workspaces com autorização no servidor.",
+    }
+
+
 @app.get("/api/users")
 def users(user=Depends(auth)):
     admin(user)

@@ -1,0 +1,111 @@
+/* AXORA — Padrão visual de logos e prévia institucional
+   Superfícies responsivas, preservam a identidade premium validada. */
+.brand-kit-intro{
+  margin-bottom:18px;
+  padding:16px 18px;
+  border:1px solid #CEE5E9;
+  background:linear-gradient(135deg,#F6FDFC,#F4FAFD);
+  border-radius:15px;
+  color:#41627B;
+  font:500 12px/1.65 Inter,sans-serif;
+}
+.brand-kit-intro p{margin:0 0 8px}
+.brand-kit-intro p:last-child{margin-bottom:0}
+.brand-kit-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.brand-kit-card{
+  display:grid;grid-template-columns:minmax(110px,.6fr) minmax(0,1fr);
+  gap:17px;padding:14px;
+  border:1px solid #E0EDF2;
+  background:linear-gradient(140deg,#FFF,#FAFDFE);
+  border-radius:17px;
+  box-shadow:0 4px 16px rgba(18,49,77,.038);
+  min-width:0;
+}
+.brand-kit-preview{
+  display:grid;place-items:center;
+  align-self:stretch;
+  min-width:0;min-height:139px;
+  padding:13px;
+  overflow:hidden;
+  border:1px solid #DCEAF0;
+  border-radius:13px;
+  background:
+    linear-gradient(45deg,#EDF3F7 25%,transparent 25%,transparent 75%,#EDF3F7 75%),
+    linear-gradient(45deg,#EDF3F7 25%,transparent 25%,transparent 75%,#EDF3F7 75%),
+    #FFF;
+  background-size:20px 20px;background-position:0 0,10px 10px;
+}
+.brand-kit-preview img{width:100%;max-width:250px;max-height:125px;height:auto;object-fit:contain}
+.brand-kit-preview .brand-kit-placeholder{width:64px;max-height:64px;opacity:.69}
+.brand-kit-preview img[hidden],.brand-kit-preview .brand-kit-placeholder[hidden]{display:none!important}
+.brand-kit-card-content{display:flex;flex-direction:column;min-width:0;gap:9px}
+.brand-kit-card-title{
+  display:flex;flex-wrap:wrap;gap:7px;justify-content:space-between;
+  align-items:center;color:#0D2F49;
+  font:800 13px/1.3 Manrope,Inter,sans-serif;
+}
+.brand-kit-dimensions{
+  color:#4D8291;background:#EDF8F9;
+  border:1px solid #CEE9E9;border-radius:7px;
+  padding:4px 7px;
+  font:750 9px/1.3 Inter,sans-serif;
+  white-space:nowrap;
+}
+.brand-kit-card p{color:#6C849A;font:500 11px/1.5 Inter,sans-serif;margin:0}
+.brand-kit-card small{
+  display:inline-flex;align-self:flex-start;align-items:center;gap:6px;
+  color:#448079;background:#EAF9F6;border-radius:7px;
+  padding:5px 9px;font:700 10px/1.3 Inter,sans-serif;
+}
+.brand-kit-card .field{margin-top:4px;gap:6px}
+.brand-kit-card .field label{font:700 10px/1.3 Inter,sans-serif}
+.brand-kit-card .field input[type=file]{width:100%;min-width:0;min-height:44px;font-size:11px;padding:9px}
+.brand-kit-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:3px}
+.brand-kit-actions .btn{font-size:10.5px;min-height:36px;padding:8px 10px;border-radius:9px}
+.workspace-roles{display:flex;flex-wrap:wrap;gap:8px;margin:17px 0}
+.workspace-roles span{
+  display:inline-block;padding:8px 12px;
+  border:1px solid #D3E7EA;
+  border-radius:10px;
+  background:#F3FBFA;
+  color:#23606A;
+  font:750 11px/1.25 Inter,sans-serif;
+}
+/* O logo customizado é ativado apenas após a imagem carregar com sucesso.
+   Mantém fallback original intacto caso falhe a rede. */
+#login .login-art-content.brand-custom>.login-brand{display:none!important}
+#login .custom-login-logo{
+  display:block;width:auto;max-width:min(100%,330px);
+  height:auto;max-height:90px;object-fit:contain;
+  object-position:left center;margin:0;
+  filter:drop-shadow(0 3px 9px rgba(0,10,26,.15));
+}
+#login .custom-login-logo[hidden]{display:none!important}
+#sidebar .side-brand.brand-custom>.sidebar-brand-mark,
+#sidebar .side-brand.brand-custom>div{display:none!important}
+#sidebar .custom-side-logo{
+  display:block;max-width:calc(100% - 32px);
+  width:auto;height:auto;max-height:67px;
+  object-fit:contain;object-position:left center;
+}
+#sidebar .custom-side-logo[hidden]{display:none!important}
+@media(max-width:850px){
+  .brand-kit-card{grid-template-columns:145px minmax(0,1fr)}
+  #login .custom-login-logo{max-height:63px;max-width:min(100%,235px)}
+  #sidebar .custom-side-logo{max-height:61px}
+}
+@media(max-width:650px){
+  .brand-kit-card{grid-template-columns:minmax(0,1fr);gap:12px}
+  .brand-kit-preview{min-height:126px;max-height:170px}
+  .brand-kit-preview img{max-width:100%;max-height:118px}
+  .brand-kit-card-content{gap:11px}
+  .brand-kit-card-title{font-size:13px}
+  .brand-kit-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .brand-kit-actions .btn{min-height:41px;font-size:10px;padding:8px 5px}
+  .workspace-roles span{font-size:10px;padding:7px 10px}
+}
+@media(max-width:390px){
+  .brand-kit-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .brand-kit-actions .btn:first-child{grid-column:1/-1}
+  #login .custom-login-logo{max-width:min(100%,210px);max-height:54px}
+}
