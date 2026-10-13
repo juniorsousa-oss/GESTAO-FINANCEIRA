@@ -92,6 +92,27 @@ BEGIN
 END;
 $$;
 
+-- Cadastro de recorrência + geração inicial em uma única transação.
+CREATE OR REPLACE FUNCTION public.axora_create_provision(
+  p_description text,p_category text,p_responsible text,
+  p_start_due_date date,p_planned_value numeric,p_value_mode text,
+  p_recurrence text,p_frequency text,p_end_date date DEFAULT NULL,
+  p_installment_count integer DEFAULT NULL
+) RETURNS bigint LANGUAGE plpgsql SECURITY INVOKER SET search_path=public AS $
+DECLARE v_id bigint;
+BEGIN
+  INSERT INTO public.finance_provision_rules(
+    description,category,responsible,start_due_date,planned_value,
+    value_mode,recurrence,frequency,end_date,installment_count
+  ) VALUES (
+    p_description,p_category,p_responsible,p_start_due_date,p_planned_value,
+    p_value_mode,p_recurrence,p_frequency,p_end_date,p_installment_count
+  ) RETURNING id INTO v_id;
+  PERFORM public.axora_ensure_provisions();
+  RETURN v_id;
+END;
+$;
+
 -- Uma operação atômica: apenas um pagamento completo e um Registro.
 -- Tentativas duplicadas falham antes de inserir uma nova movimentação.
 CREATE OR REPLACE FUNCTION public.axora_pay_provision(
@@ -130,6 +151,8 @@ ALTER TABLE public.finance_provision_occurrences ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.finance_provision_rules,public.finance_provision_occurrences FROM PUBLIC,anon,authenticated;
 GRANT SELECT,INSERT,UPDATE,DELETE ON public.finance_provision_rules,public.finance_provision_occurrences TO service_role;
 GRANT USAGE,SELECT ON SEQUENCE public.finance_provision_rules_id_seq,public.finance_provision_occurrences_id_seq TO service_role;
+REVOKE ALL ON FUNCTION public.axora_create_provision(text,text,text,date,numeric,text,text,text,date,integer) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.axora_create_provision(text,text,text,date,numeric,text,text,text,date,integer) TO service_role;
 REVOKE ALL ON FUNCTION public.axora_ensure_provisions(date) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.axora_pay_provision(bigint,date,numeric) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.axora_ensure_provisions(date) TO service_role;
