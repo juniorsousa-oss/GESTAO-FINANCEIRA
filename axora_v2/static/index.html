@@ -125,12 +125,13 @@
         <div class="field"><label for="pv-paid-amount">Valor pago (R$) *</label><input id="pv-paid-amount" name="amount" type="number" min="0.01" step="0.01" required></div>
       </div>
       <p class="provision-warning">A confirmação gera uma despesa em Registros e quita este vencimento. Pagamento parcial e estorno estarão disponíveis em uma próxima etapa.</p>
+      <label class="provision-full-settlement"><input type="checkbox" name="full_settlement" required> Confirmo que este valor representa a quitação integral do vencimento.</label>
       <div class="dialog-actions"><button type="button" class="btn ghost" data-dismiss-payment>Cancelar</button><button type="submit" class="btn primary">Confirmar pagamento</button></div>
     </form>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/assets/app.js?v=provisoes-mvp-r1" defer></script>
-  <script src="/assets/provisions.js?v=provisoes-mvp-r1" defer></script>
+  <script src="/assets/provisions.js?v=provisoes-mvp-r2" defer></script>
   <script src="/assets/brand-kit.js?v=brand-icon-flash-r1" defer></script>
 </body>
 </html>
