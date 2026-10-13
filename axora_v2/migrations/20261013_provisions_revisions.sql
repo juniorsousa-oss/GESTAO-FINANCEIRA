@@ -237,7 +237,7 @@ CREATE OR REPLACE FUNCTION public.axora_cancel_provision(
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public AS $$
 DECLARE o record; r record; v_changed integer;
 BEGIN
-  IF p_scope NOT IN ('single','future') THEN RAISE EXCEPTION 'Escopo inválido'; END IF;
+  IF p_scope IS NULL OR p_scope NOT IN ('single','future') THEN RAISE EXCEPTION 'Escopo inválido'; END IF;
   SELECT x.* INTO r FROM public.finance_provision_rules x
   WHERE x.id=(SELECT i.rule_id FROM public.finance_provision_occurrences i
               WHERE i.id=p_occurrence_id AND i.workspace_id=p_workspace_id)
