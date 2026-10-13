@@ -48,8 +48,8 @@ function financialCatalogPanel(){
     '<div class="catalog-export-area"><p class="panel-copy">Baixe a relação com nomes padronizados, situação e instruções. O CSV abre no Excel e pode ser compartilhado como referência com a equipe.</p>'+
     '<button class="btn ghost" type="button" data-action="catalog-export">'+interfaceIcon("download")+' Exportar listas (CSV)</button></div></div>';
 }
-function hydrateProvisionCatalogs(){
-  const form=document.querySelector("#provision-form");
+function hydrateProvisionCatalogs(selector="#provision-form"){
+  const form=document.querySelector(selector);
   if(!form||!Array.isArray(financeCatalogItems))return;
   for(const [field,kind,title] of [
     ["category","category","Selecione uma categoria"],
