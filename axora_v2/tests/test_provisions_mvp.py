@@ -82,6 +82,11 @@ def test_provision_endpoints_and_csrf_without_real_database(monkeypatch):
         calls.append((method, table, data))
         if table == "rpc/axora_user_workspace":
             return WORKSPACE
+        if table == "rpc/axora_ensure_catalog":
+            return 0
+        if table == "finance_catalog_options":
+            return [{"id": 1, "kind": "category", "name": "Moradia", "active": True},
+                    {"id": 2, "kind": "responsible", "name": "Próprio", "active": True}]
         if table == "rpc/axora_ensure_provisions":
             return 1
         if table == "finance_provision_occurrences":
