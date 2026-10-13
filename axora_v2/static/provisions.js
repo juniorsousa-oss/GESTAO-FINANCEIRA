@@ -38,11 +38,19 @@ function provisionsPage(){
     const rule=item.rule||{},late=item.due_date<todayISO;
     const type=provisionRecurrence[rule.recurrence]||"Recorrência";
     const frequency=rule.recurrence==="once"?"":(" · "+(provisionFrequency[rule.frequency]||""));
+    const sequence=(rule.recurrence==="installments"||rule.recurrence==="until_date")?
+      (" · Vencimento "+item.sequence_no+(rule.installment_count?"/"+rule.installment_count:"")):"";
+    const id=Number(item.id),description=item.description_override||rule.description||"";
+    const category=item.category_override||rule.category||"";
+    const responsible=item.responsible_override||rule.responsible||"";
+    const mode=item.value_mode_override||rule.value_mode;
     return '<tr><td data-label="Vencimento"><strong>'+dateBR(item.due_date)+'</strong>'+(late?'<span class="status-badge red">Vencida</span>':'')+'</td>'+
-      '<td data-label="Descrição"><strong>'+esc(rule.description||"")+'</strong><small>'+esc(type+frequency+(rule.recurrence==="installments"?" · Parcela "+item.sequence_no:""))+'</small></td>'+
-      '<td data-label="Categoria / Responsável">'+esc(rule.category||"")+'<small>'+esc(rule.responsible||"")+'</small></td>'+
-      '<td data-label="Previsto"><strong>'+money(item.planned_value)+'</strong><small>'+(rule.value_mode==="fixed"?"Valor fixo":"Valor estimado")+'</small></td>'+
-      '<td data-label="Ação"><button type="button" class="btn primary small" data-action="pay-provision" data-id="'+Number(item.id)+'">Registrar pagamento</button></td></tr>';
+      '<td data-label="Descrição"><strong>'+esc(description)+'</strong><small>'+esc(type+frequency+sequence)+'</small></td>'+
+      '<td data-label="Categoria / Responsável">'+esc(category)+'<small>'+esc(responsible)+'</small></td>'+
+      '<td data-label="Previsto"><strong>'+money(item.planned_value)+'</strong><small>'+(mode==="fixed"?"Valor fixo":"Valor estimado")+'</small></td>'+
+      '<td data-label="Ação"><div class="provision-row-actions"><button type="button" class="btn primary small" data-action="pay-provision" data-id="'+id+'">Registrar pagamento</button>'+
+      '<button type="button" class="btn ghost small" data-action="edit-provision" data-id="'+id+'">Editar</button>'+
+      '<button type="button" class="btn ghost small provision-delete" data-action="cancel-provision" data-id="'+id+'">Excluir</button></div></td></tr>';
   }).join("");
   const listing=lines?'<div class="provision-scroll"><table class="provision-table"><thead><tr><th>Vencimento</th><th>Descrição</th><th>Categoria / Responsável</th><th>Previsto</th><th>Ação</th></tr></thead><tbody>'+lines+'</tbody></table></div>':'<div class="empty-state"><b>Nenhuma provisão pendente neste filtro.</b>Cadastre o primeiro compromisso ou altere o filtro.</div>';
   return '<div class="stack provision-module">'+cards+info+
@@ -77,10 +85,9 @@ async function openProvisionDialog(){
 function provisionOptions(){
   const f=$("#provision-form"),mode=f.elements.recurrence.value;
   $("#provision-frequency-wrap").hidden=mode==="once";
-  $("#provision-end-wrap").hidden=mode!=="until_date";
-  $("#provision-installments-wrap").hidden=mode!=="installments";
-  f.elements.end_date.required=mode==="until_date";
-  f.elements.installment_count.required=mode==="installments";
+  $("#provision-installments-wrap").hidden=!["until_date","installments"].includes(mode);
+  $("#pv-count-label").textContent=mode==="until_date"?"Quantidade de vencimentos *":"Quantidade de parcelas *";
+  f.elements.installment_count.required=["until_date","installments"].includes(mode);
 }
 function openPaymentDialog(id){
   const item=(provisionItems||[]).find(x=>Number(x.id)===Number(id));
@@ -91,14 +98,59 @@ function openPaymentDialog(id){
   $("#provision-payment-detail").textContent=(item.rule?.description||"Conta")+" · vencimento "+dateBR(item.due_date);
   $("#provision-payment-dialog").showModal();
 }
+function findOpenProvision(id){
+  const item=(provisionItems||[]).find(entry=>Number(entry.id)===Number(id));
+  if(!item)throw Error("Vencimento não localizado. Recarregue a lista.");
+  return item;
+}
+function provisionEffective(item,field){
+  const rule=item.rule||{};
+  return item[field+"_override"]||rule[field]||"";
+}
+async function openEditProvisionDialog(id){
+  const item=findOpenProvision(id);
+  await loadFinanceCatalogs(true);
+  const dialog=$("#provision-edit-dialog"),form=$("#provision-edit-form");
+  form.reset();
+  hydrateProvisionCatalogs("#provision-edit-form");
+  form.elements.occurrence_id.value=item.id;
+  form.elements.description.value=provisionEffective(item,"description");
+  form.elements.category.value=provisionEffective(item,"category");
+  form.elements.responsible.value=provisionEffective(item,"responsible");
+  form.elements.due_date.value=item.due_date;
+  form.elements.planned_value.value=Number(item.planned_value).toFixed(2);
+  form.elements.value_mode.value=provisionEffective(item,"value_mode");
+  const once=item.rule?.recurrence==="once";
+  for(const input of form.querySelectorAll('input[name="scope"]')){
+    input.closest("label").hidden=once&&input.value==="future";
+  }
+  $("#provision-edit-detail").textContent="Vencimento "+dateBR(item.due_date)+" · "+provisionEffective(item,"description");
+  dialog.showModal();
+  form.elements.description.focus();
+}
+function openCancelProvisionDialog(id){
+  const item=findOpenProvision(id),dialog=$("#provision-cancel-dialog"),form=$("#provision-cancel-form");
+  form.reset();
+  form.elements.occurrence_id.value=item.id;
+  const once=item.rule?.recurrence==="once";
+  for(const input of form.querySelectorAll('input[name="scope"]')){
+    input.closest("label").hidden=once&&input.value==="future";
+  }
+  $("#provision-cancel-detail").textContent=provisionEffective(item,"description")+" · vencimento "+dateBR(item.due_date);
+  dialog.showModal();
+}
 document.addEventListener("DOMContentLoaded",()=>{
   document.addEventListener("click",async e=>{
     const action=e.target.closest("[data-action]")?.dataset.action;
     if(action==="new-provision")openProvisionDialog().catch(err=>showToast(err.message,true));
     if(action==="pay-provision")openPaymentDialog(e.target.closest("[data-id]").dataset.id);
+    if(action==="edit-provision")openEditProvisionDialog(e.target.closest("[data-id]").dataset.id).catch(err=>showToast(err.message,true));
+    if(action==="cancel-provision")openCancelProvisionDialog(e.target.closest("[data-id]").dataset.id);
   });
   $("#provision-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-provision]"))$("#provision-dialog").close()});
   $("#provision-payment-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-payment]"))$("#provision-payment-dialog").close()});
+  $("#provision-edit-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-edit]"))$("#provision-edit-dialog").close()});
+  $("#provision-cancel-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-cancel]"))$("#provision-cancel-dialog").close()});
   $("#provision-form").elements.recurrence.addEventListener("change",provisionOptions);
   $("#page-content").addEventListener("change",e=>{
     if(e.target.id==="provision-filter"){provisionView=e.target.value;render();}
@@ -106,9 +158,10 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#provision-form").addEventListener("submit",async e=>{
     e.preventDefault();const form=e.currentTarget,btn=form.querySelector('button[type="submit"]');
     const values=Object.fromEntries(new FormData(form).entries());
-    delete values.end_date;delete values.installment_count;
-    if(form.elements.recurrence.value==="until_date")values.end_date=form.elements.end_date.value;
-    if(form.elements.recurrence.value==="installments")values.installment_count=Number(form.elements.installment_count.value);
+    delete values.installment_count;
+    if(["until_date","installments"].includes(form.elements.recurrence.value)){
+      values.installment_count=Number(form.elements.installment_count.value);
+    }
     values.planned_value=Number(values.planned_value);
     btn.disabled=true;
     try{
@@ -116,6 +169,39 @@ document.addEventListener("DOMContentLoaded",()=>{
       $("#provision-dialog").close();await loadProvisions();showToast("Provisão cadastrada com sucesso.");
     }catch(err){showToast(err.message,true)}
     finally{btn.disabled=false}
+  });
+  $("#provision-edit-form").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const form=e.currentTarget,button=form.querySelector('button[type="submit"]');
+    const id=Number(form.elements.occurrence_id.value);
+    const values=Object.fromEntries(new FormData(form).entries());
+    delete values.occurrence_id;
+    values.planned_value=Number(values.planned_value);
+    button.disabled=true;
+    try{
+      const result=await api("/api/provisions/"+id,{
+        method:"PATCH",body:JSON.stringify(values)
+      });
+      $("#provision-edit-dialog").close();
+      await refresh();await loadProvisions();
+      showToast(result.updated+" vencimento(s) atualizado(s).");
+    }catch(err){showToast(err.message,true)}
+    finally{button.disabled=false}
+  });
+  $("#provision-cancel-form").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const form=e.currentTarget,button=form.querySelector('button[type="submit"]');
+    if(!form.elements.confirm_cancel.checked)return;
+    button.disabled=true;
+    try{
+      const result=await api("/api/provisions/"+Number(form.elements.occurrence_id.value)+"/cancel",{
+        method:"POST",body:JSON.stringify({scope:form.elements.scope.value})
+      });
+      $("#provision-cancel-dialog").close();
+      await refresh();await loadProvisions();
+      showToast(result.cancelled+" vencimento(s) excluído(s) das pendências.");
+    }catch(err){showToast(err.message,true)}
+    finally{button.disabled=false}
   });
   $("#provision-payment-form").addEventListener("submit",async e=>{
     e.preventDefault();const form=e.currentTarget,btn=form.querySelector('button[type="submit"]');
