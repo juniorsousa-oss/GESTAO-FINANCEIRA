@@ -10,6 +10,7 @@ from axora_v2.main import app
 
 
 ROOT = Path(__file__).resolve().parents[1]
+WORKSPACE = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 
 
 def valid_rule(**overrides):
@@ -79,6 +80,8 @@ def test_provision_endpoints_and_csrf_without_real_database(monkeypatch):
 
     def fake_call(method, table, *, params=None, data=None, prefer=None):
         calls.append((method, table, data))
+        if table == "rpc/axora_user_workspace":
+            return WORKSPACE
         if table == "rpc/axora_ensure_provisions":
             return 1
         if table == "finance_provision_occurrences":
@@ -106,7 +109,7 @@ def test_provision_endpoints_and_csrf_without_real_database(monkeypatch):
         assert paid.status_code == 200
         assert paid.json()["movement_id"] == 100
     assert ("POST", "rpc/axora_pay_provision",
-            {"p_occurrence_id": 5, "p_payment_date": "2026-10-13", "p_amount": 128.0}) in calls
+            {"p_workspace_id": WORKSPACE, "p_occurrence_id": 5, "p_payment_date": "2026-10-13", "p_amount": 128.0}) in calls
 
 
 def test_paid_movement_cannot_be_edited_separately(monkeypatch):
@@ -118,8 +121,9 @@ def test_paid_movement_cannot_be_edited_separately(monkeypatch):
         "id": 1, "is_admin": True, "csrf": "test-csrf"
     })
     monkeypatch.setattr(security, "require_csrf", lambda request, user: None)
+    monkeypatch.setattr(db, "call", lambda *args, **kwargs: WORKSPACE)
     monkeypatch.setattr(db, "select", lambda *args, **kwargs:
-                        [{"id": 100, "provision_occurrence_id": 5}])
+                        [{"id": 100, "provision_occurrence_id": 5, "workspace_id": WORKSPACE}])
     monkeypatch.setattr(db, "update", lambda *args, **kwargs:
                         pytest.fail("Never update a payment-linked movement directly"))
     monkeypatch.setattr(db, "delete", lambda *args, **kwargs:
@@ -140,6 +144,12 @@ def test_migration_has_atomic_payment_and_no_data_erasure():
     assert "REVOKE ALL ON FUNCTION public.axora_pay_provision" in sql
     assert "TRUNCATE" not in sql.upper()
     assert "DROP TABLE" not in sql.upper()
+    isolation = (ROOT / "migrations/20261013_finance_workspace_isolation.sql").read_text(encoding="utf-8")
+    assert "axora_user_workspace" in isolation
+    assert "finance_movements ADD COLUMN IF NOT EXISTS workspace_id" in isolation
+    assert "p_workspace_id uuid" in isolation
+    assert "AND i.workspace_id=p_workspace_id" in isolation
+    assert "DROP FUNCTION IF EXISTS public.axora_pay_provision(bigint,date,numeric)" in isolation
 
 
 def test_ui_exposes_provisions_and_keeps_existing_data():
