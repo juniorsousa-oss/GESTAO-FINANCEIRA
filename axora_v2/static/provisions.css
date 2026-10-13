@@ -72,3 +72,21 @@
 .catalog-settings-link{border:0;padding:0;color:#0f8d99;background:transparent;text-decoration:underline;cursor:pointer;font:inherit;font-weight:750}
 @media(max-width:1050px){.catalog-grid{grid-template-columns:1fr}}
 @media(max-width:600px){.catalog-group{padding:13px}.catalog-create-row{flex-wrap:wrap}.catalog-create-row input{flex-basis:100%}.catalog-export-area button{width:100%;white-space:normal}}
+
+/* Ações e escopo de alteração de Provisões. */
+.provision-row-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
+.provision-row-actions .btn{white-space:nowrap;min-height:36px;padding:7px 11px;font-size:11px}
+.provision-row-actions .provision-delete{color:#bd5261;border-color:#ead5db}
+.provision-row-actions .provision-delete:hover{background:#fff1f3}
+.provision-scope{margin:22px 0 0;border:1px solid #dce9ef;border-radius:15px;padding:16px;display:grid;gap:10px;min-width:0}
+.provision-scope legend{padding:0 8px;color:#244968;font-weight:780;font-size:13px}
+.provision-scope label{display:flex;align-items:flex-start;gap:10px;padding:11px;border-radius:10px;border:1px solid #edf1f5;cursor:pointer;min-width:0}
+.provision-scope label[hidden]{display:none}
+.provision-scope label:has(input:checked){border-color:#40b1b2;background:#eefaf9}
+.provision-scope input{width:17px;height:17px;margin:1px 0 0;flex:0 0 17px;accent-color:#12a9a5}
+.provision-scope label span{display:grid;gap:4px;min-width:0}
+.provision-scope label b{color:#1d3e5a;font-size:13px}
+.provision-scope label small{color:#73899d;line-height:1.45;font-size:11px}
+.provision-cancel-confirm{display:flex;align-items:flex-start;gap:9px;margin-top:18px;color:#6a5060;font-size:12px;line-height:1.5;font-weight:650}
+.provision-cancel-confirm input{width:17px;height:17px;flex:0 0 17px;accent-color:#ba4e66}
+@media(max-width:850px){.provision-row-actions{gap:8px}.provision-row-actions .btn{flex:1 1 auto}}
