@@ -153,7 +153,7 @@ def test_frontend_uses_catalog_selects_and_settings_panel():
 
     assert 'select id="pv-category" name="category"' in html
     assert 'select id="pv-responsible" name="responsible"' in html
-    assert 'catalogs.js?v=axora-catalogs-r1' in html
+    assert 'catalogs.js?v=axora-revisions-r1' in html
     assert "financialCatalogPanel()" in main
     assert "loadFinanceCatalogs(true)" in provisions
     assert "Exportar listas (CSV)" in client
