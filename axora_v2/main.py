@@ -77,7 +77,17 @@ def admin(user):
         raise HTTPException(403, "Esta ação exige permissão de administrador.")
 
 
+def user_workspace(user):
+    """Acesso financeiro por workspace derivado exclusivamente da sessão."""
+    result = db.call("POST", "rpc/axora_user_workspace", data={"p_user_id": int(user["id"])})
+    if not isinstance(result, str) or len(result) != 36:
+        raise HTTPException(503, "Espaço financeiro indisponível.")
+    return result
+
+
 def kind_or_404(kind):
+    if kind == "forecasts":
+        raise HTTPException(410, "Previsões do Excel desativadas; utilize Provisões.")
     if kind not in DATA_KINDS:
         raise HTTPException(404, "Módulo não encontrado.")
 
@@ -176,9 +186,24 @@ def logout(response: Response, user=Depends(authorized)):
 
 @app.get("/api/snapshot")
 def snapshot(user=Depends(auth)):
-    rows = {k: db.select(k, order=ORDERS[k]) for k in DATA_KINDS}
-    settings = db.get_settings()
-    summary = metrics.compute(rows["movements"], rows["forecasts"], rows["accounts"], rows["debts"], settings)
+    workspace = user_workspace(user)
+    scope = {"workspace_id": "eq." + workspace}
+    rows = {kind: db.select(kind, order=ORDERS[kind], params=scope)
+            for kind in ("movements", "accounts", "debts")}
+    db.call("POST", "rpc/axora_ensure_provisions", data={"p_workspace_id": workspace})
+    pending = db.call("GET", "finance_provision_occurrences", params={
+        "select": "due_date,planned_value,rule:finance_provision_rules(description,category)",
+        "workspace_id": "eq." + workspace, "status": "eq.open",
+        "order": "due_date.asc", "limit": 4000,
+    })
+    future = [{"due_date": item.get("due_date"),
+               "description": (item.get("rule") or {}).get("description", ""),
+               "type": "Saída", "status": "Não pago",
+               "final_value": item.get("planned_value", 0)}
+              for item in pending]
+    rows["forecasts"] = []
+    settings = db.get_settings(workspace)
+    summary = metrics.compute(rows["movements"], future, rows["accounts"], rows["debts"], settings)
     return {**rows, "settings": settings, "summary": summary}
 
 
@@ -186,8 +211,7 @@ def snapshot(user=Depends(auth)):
 def add_row(kind: str, payload: dict, user=Depends(authorized)):
     kind_or_404(kind)
     row = sanitize(kind, payload, creating=True)
-    if kind == "forecasts":
-        row["final_value"] = round(row["value"] + row.get("adjustment", 0), 2)
+    row["workspace_id"] = user_workspace(user)
     return db.insert(kind, row)
 
 
@@ -195,36 +219,39 @@ def add_row(kind: str, payload: dict, user=Depends(authorized)):
 def change_row(kind: str, pk: int, payload: dict, user=Depends(authorized)):
     kind_or_404(kind)
     positive_id(pk)
-    current = db.select(kind, params={"id": f"eq.{pk}", "limit": 1})
+    workspace = user_workspace(user)
+    current = db.select(kind, params={
+        "id": f"eq.{pk}", "workspace_id": "eq." + workspace, "limit": 1})
     if not current:
         raise HTTPException(404, "Registro não localizado.")
     row = sanitize(kind, payload)
     if kind == "movements" and current[0].get("provision_occurrence_id"):
-        raise HTTPException(409, "Este Registro veio de uma provisão quitada e não pode ser editado isoladamente.")
-    if kind == "forecasts" and ("value" in row or "adjustment" in row):
-        row["final_value"] = round(float(row.get("value", current[0].get("value") or 0)) + float(row.get("adjustment", current[0].get("adjustment") or 0)), 2)
-    return db.update(kind, pk, row)
+        raise HTTPException(409, "Registro de quitação vinculado à provisão; edição isolada bloqueada.")
+    return db.update(kind, pk, row, workspace_id=workspace)
 
 
 @app.delete("/api/rows/{kind}/{pk}")
 def remove_row(kind: str, pk: int, user=Depends(authorized)):
     kind_or_404(kind)
     positive_id(pk)
-    if kind == "movements":
-        current = db.select(kind, params={"id": f"eq.{pk}", "limit": 1})
-        if current and current[0].get("provision_occurrence_id"):
-            raise HTTPException(409, "Registro vinculado a provisão. Reversão controlada ficará para a próxima etapa.")
-    db.delete(kind, pk)
+    workspace = user_workspace(user)
+    current = db.select(kind, params={
+        "id": f"eq.{pk}", "workspace_id": "eq." + workspace, "limit": 1})
+    if not current:
+        raise HTTPException(404, "Registro não localizado.")
+    if kind == "movements" and current[0].get("provision_occurrence_id"):
+        raise HTTPException(409, "Registro vinculado à provisão; estorno controlado virá na próxima etapa.")
+    db.delete(kind, pk, workspace_id=workspace)
     return {"ok": True}
 
 
-# Provisões são independentes das previsões antigas e não afetam o dashboard
-# até haver quitação. RPC SQL registra pagamento + movimentação numa transação.
 @app.get("/api/provisions")
 def list_provisions(user=Depends(auth)):
-    db.call("POST", "rpc/axora_ensure_provisions", data={})
+    workspace = user_workspace(user)
+    db.call("POST", "rpc/axora_ensure_provisions", data={"p_workspace_id": workspace})
     rows = db.call("GET", "finance_provision_occurrences", params={
         "select": "id,rule_id,sequence_no,due_date,planned_value,status,rule:finance_provision_rules(description,category,responsible,value_mode,recurrence,frequency,planned_value)",
+        "workspace_id": "eq." + workspace,
         "status": "eq.open", "order": "due_date.asc,id.asc"
     })
     return {"items": rows}
@@ -233,6 +260,7 @@ def list_provisions(user=Depends(auth)):
 @app.post("/api/provisions")
 def add_provision(payload: dict, user=Depends(authorized)):
     values = provisions.clean_provision(payload)
+    values["p_workspace_id"] = user_workspace(user)
     new_id = db.call("POST", "rpc/axora_create_provision", data=values)
     return {"id": new_id, "ok": True}
 
@@ -242,7 +270,7 @@ def pay_provision(pk: int, payload: dict, user=Depends(authorized)):
     positive_id(pk)
     values = provisions.clean_payment(payload)
     return db.call("POST", "rpc/axora_pay_provision",
-                   data={"p_occurrence_id": pk, **values})
+                   data={"p_workspace_id": user_workspace(user), "p_occurrence_id": pk, **values})
 
 
 @app.post("/api/settings")
@@ -262,7 +290,7 @@ def settings(payload: dict, user=Depends(authorized)):
         if key == "emergency_months" and v < 1:
             raise HTTPException(422, "Informe pelo menos um mês.")
         parsed[key] = v
-    db.save_settings(parsed)
+    db.save_settings(parsed, user_workspace(user))
     return {"ok": True}
 
 
@@ -496,8 +524,6 @@ def users(user=Depends(auth)):
 @app.post("/api/users")
 def create_user(payload: UserCreate, user=Depends(authorized)):
     admin(user)
-    if not payload.share_ack:
-        raise HTTPException(422, "Confirme que os usuários compartilharão a base financeira.")
     name = clean_display_name(payload.display_name)
     if not name:
         raise HTTPException(422, "Nome obrigatório.")
@@ -510,50 +536,24 @@ def create_user(payload: UserCreate, user=Depends(authorized)):
         raise HTTPException(422, "Esta senha já pertence a outra pessoa.")
     new_user = db.insert("users", {"display_name": name, "password_hash": security.hash_password(payload.password),
                                    "is_active": True, "is_admin": False})
-    return {"id": new_user["id"], "display_name": name}
+    return {"id": new_user["id"], "display_name": name, "financial_isolation": True}
 
 
-async def read_excel(file):
-    if not file.filename or not file.filename.lower().endswith(".xlsx"):
-        raise HTTPException(422, "Envie um arquivo .xlsx válido.")
-    content = await file.read(10 * 1024 * 1024 + 1)
-    if not content or len(content) > 10 * 1024 * 1024:
-        raise HTTPException(413, "Arquivo Excel deve ter até 10 MB.")
-    try:
-        return parse_excel(io.BytesIO(content))
-    except (ValueError, OSError, KeyError, IndexError, TypeError) as exc:
-        raise HTTPException(422, "A planilha não segue o modelo das quatro abas: " + str(exc)[:240]) from None
-
-
+# Não aceitar a antiga planilha de quatro abas: dados financeiros agora são nativos.
 @app.post("/api/import/preview")
-async def preview(file: UploadFile = File(...), user=Depends(authorized)):
-    parsed = await read_excel(file)
-    return {"counts": {name: len(parsed[name]) for name in DATA_KINDS},
-            "warning": "A importação só será permitida se todas as quatro tabelas estiverem vazias."}
+async def preview(user=Depends(authorized)):
+    raise HTTPException(410, "Importação do Excel legado desativada. Use Provisões e Registros.")
 
 
 @app.post("/api/import/commit")
-async def import_commit(file: UploadFile = File(...), user=Depends(authorized)):
-    parsed = await read_excel(file)
-    # Nunca substituir dados persistentes na V1/V2.
-    existing = [name for name in DATA_KINDS if db.select(name, fields="id", params={"limit": 1})]
-    if existing:
-        raise HTTPException(409, "Importação bloqueada: já existem registros em " + ", ".join(existing) + ".")
-    written = []
-    try:
-        for name in DATA_KINDS:
-            rows = parsed[name]
-            if rows:
-                db.insert(name, rows)
-            written.append(name)
-    except HTTPException:
-        raise HTTPException(502, "Importação interrompida. Confira o banco e faça backup antes de nova tentativa.") from None
-    return {"ok": True, "counts": {k: len(parsed[k]) for k in DATA_KINDS}}
+async def import_commit(user=Depends(authorized)):
+    raise HTTPException(410, "Importação do Excel legado desativada. Use Provisões e Registros.")
 
 
 @app.get("/api/export")
 def export_excel(user=Depends(auth)):
-    data = {kind: db.select(kind, order=ORDERS[kind]) for kind in DATA_KINDS}
+    scope = {"workspace_id": "eq." + user_workspace(user)}
+    data = {kind: db.select(kind, order=ORDERS[kind], params=scope) for kind in DATA_KINDS}
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
         for kind, rows in data.items():
