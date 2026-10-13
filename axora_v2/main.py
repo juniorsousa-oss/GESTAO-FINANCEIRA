@@ -88,6 +88,8 @@ def user_workspace(user):
 def kind_or_404(kind):
     if kind == "forecasts":
         raise HTTPException(410, "Previsões do Excel desativadas; utilize Provisões.")
+    if kind in ("accounts", "debts"):
+        raise HTTPException(410, "Este módulo será reconstruído na nova lógica financeira.")
     if kind not in DATA_KINDS:
         raise HTTPException(404, "Módulo não encontrado.")
 
@@ -505,13 +507,13 @@ def remove_brand_kit(slot: str, user=Depends(authorized)):
 
 @app.get("/api/multiuser/status")
 def multiuser_status(user=Depends(auth)):
-    # Não anunciar isolamento enquanto todas as rotas financeiras não forem protegidas.
     return {
-        "phase": "foundation",
-        "isolation_enabled": False,
-        "legacy_shared_data": True,
+        "phase": "native_finance",
+        "isolation_enabled": True,
+        "legacy_shared_data": False,
+        "workspace_id": user_workspace(user),
         "workspace_roles": ["owner", "admin", "editor", "viewer"],
-        "next_step": "Vincular todas as movimentações, contas, previsões, dívidas, metas e exportações a workspaces com autorização no servidor.",
+        "next_step": "Compartilhamento entre usuarios e equipes somente com autorizacao explicita.",
     }
 
 
