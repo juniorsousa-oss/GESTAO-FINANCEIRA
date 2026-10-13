@@ -57,7 +57,7 @@ const meta = {
   ]
 };
 const columns = {
-  movements:[["movement_date","Data","date"],["description","Descrição"],["value","Valor","money"],["classification","Tipo","status"],["category","Categoria"],["competence","Competência"],["fixed_variable","Natureza"],["allocation_value","Rateio","money"]],
+  movements:[["movement_date","Data","date"],["description","Descrição"],["value","Valor","money"],["classification","Tipo","status"],["category","Categoria"],["competence","Competência"],["fixed_variable","Natureza"],["allocation_value","Rateio","money"],["provision_occurrence_id","Origem","source"]],
   forecasts:[["due_date","Vencimento","date"],["description","Descrição"],["final_value","Valor final","money"],["type","Tipo","status"],["status","Status","status"],["category","Categoria"],["competence","Competência"],["simulate_payment","Simular","bool"]],
   accounts:[["name","Conta / local"],["balance","Saldo","money"]],
   debts:[["description","Descrição"],["status","Situação","status"],["total_value","Original","money"],["total_installments","Parcelas"],["paid_installments","Pagas"],["installment_value","Parcela","money"],["open_value","Em aberto","money"]]
@@ -256,10 +256,10 @@ function displayTableCell(cell,heading){
 function table(headings,rows,actions=false,kind=""){
   if(!rows.length)return '<div class="empty-state"><b>Nenhum registro encontrado</b>Cadastre dados ou ajuste os filtros para continuar.</div>';
   return '<div class="table-wrap"><table class="data-table"><thead><tr>'+headings.map(h=>'<th scope="col">'+esc(h)+'</th>').join("")+(actions?'<th scope="col">Ações</th>':'')+'</tr></thead><tbody>'+
-    rows.map((cols,i)=>'<tr>'+cols.map((cell,j)=>'<td data-label="'+esc(headings[j])+'" title="'+esc(cell)+'">'+displayTableCell(cell,headings[j])+'</td>').join("")+(actions?'<td data-label="Ações"><div class="table-actions"><button class="mini-btn" data-action="edit" data-kind="'+kind+'" data-id="'+esc(actions[i])+'" aria-label="Editar registro">'+interfaceIcon("edit")+'<span>Editar</span></button><button class="mini-btn danger" data-action="delete" data-kind="'+kind+'" data-id="'+esc(actions[i])+'" aria-label="Excluir registro">'+interfaceIcon("trash")+'<span>Excluir</span></button></div></td>':'')+'</tr>').join("")+'</tbody></table></div>';
+    rows.map((cols,i)=>'<tr>'+cols.map((cell,j)=>'<td data-label="'+esc(headings[j])+'" title="'+esc(cell)+'">'+displayTableCell(cell,headings[j])+'</td>').join("")+(actions?'<td data-label="Ações">'+(typeof actions[i]==="object"&&actions[i].locked?'<span class="status-badge" title="Registro protegido: originado por provisão quitada">Vinculado à provisão</span>':'<div class="table-actions"><button class="mini-btn" data-action="edit" data-kind="'+kind+'" data-id="'+esc(actions[i])+'" aria-label="Editar registro">'+interfaceIcon("edit")+'<span>Editar</span></button><button class="mini-btn danger" data-action="delete" data-kind="'+kind+'" data-id="'+esc(actions[i])+'" aria-label="Excluir registro">'+interfaceIcon("trash")+'<span>Excluir</span></button></div>')+'</td>':'')+'</tr>').join("")+'</tbody></table></div>';
 }
 function formatCell(row,key,type){
-  const v=row[key];if(type==="money")return money(v);if(type==="date")return dateBR(v);if(type==="bool")return v?"Sim":"Não";return String(v??"—");
+  const v=row[key];if(type==="money")return money(v);if(type==="date")return dateBR(v);if(type==="bool")return v?"Sim":"Não";if(type==="source")return v?"Provisão":"Manual";return String(v??"—");
 }
 function filteredRows(kind){
   let rows=[...(snapshot[kind]||[])],f=filters;
@@ -291,7 +291,7 @@ function modulePage(kind){
 function moduleTable(kind,rows){
   const cols=columns[kind],visible=rows.slice(0,150);
   const rendered=visible.map(row=>cols.map(([key,label,type])=>formatCell(row,key,type)));
-  return table(cols.map(x=>x[1]),rendered,visible.map(x=>x.id),kind)+'<div class="table-count">'+rows.length+' registro(s) encontrados'+(rows.length>150?" · exibindo os 150 primeiros; refine sua pesquisa":"")+'</div>';
+  return table(cols.map(x=>x[1]),rendered,visible.map(x=>kind==="movements"&&x.provision_occurrence_id?{id:x.id,locked:true}:x.id),kind)+'<div class="table-count">'+rows.length+' registro(s) encontrados'+(rows.length>150?" · exibindo os 150 primeiros; refine sua pesquisa":"")+'</div>';
 }
 function updateFiltered(){if(!meta[page])return;let rows=filteredRows(page);$("#module-stats").innerHTML=moduleStats(page,rows);$("#table-body").innerHTML=moduleTable(page,rows)}
 function defaultValue(kind,key){if(key==="competence")return comp();if(key==="due_date"||key==="movement_date")return today();if(key==="classification")return "SAÍDA";if(key==="type")return "Saída";if(key==="status")return kind==="forecasts"?"Não pago":"NÃO RENEGOCIADO";if(key==="fixed_variable")return "FIXO";if(key==="category"&&kind==="movements")return "CONTAS FIXAS";return ""}
