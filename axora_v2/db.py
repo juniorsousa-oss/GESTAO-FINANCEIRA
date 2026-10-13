@@ -67,29 +67,35 @@ def insert(kind, payload):
     return rows[0] if isinstance(payload, dict) and rows else rows
 
 
-def update(kind, pk, payload):
-    return call("PATCH", TABLES[kind], params={"id": "eq." + str(pk)}, data=payload, prefer="return=representation")
+def update(kind, pk, payload, *, workspace_id=None):
+    params = {"id": "eq." + str(pk)}
+    if workspace_id is not None:
+        params["workspace_id"] = "eq." + str(workspace_id)
+    return call("PATCH", TABLES[kind], params=params, data=payload, prefer="return=representation")
 
 
-def delete(kind, pk):
-    return call("DELETE", TABLES[kind], params={"id": "eq." + str(pk)}, prefer="return=minimal")
+def delete(kind, pk, *, workspace_id=None):
+    params = {"id": "eq." + str(pk)}
+    if workspace_id is not None:
+        params["workspace_id"] = "eq." + str(workspace_id)
+    return call("DELETE", TABLES[kind], params=params, prefer="return=minimal")
 
 
-def get_settings():
+def get_settings(workspace_id):
     settings = dict(DEFAULT_SETTINGS)
-    for item in select("settings"):
+    for item in select("settings", params={"workspace_id": "eq." + str(workspace_id)}):
         if item.get("key") in settings:
             settings[item["key"]] = float(item.get("value") or 0)
     return settings
 
 
-def save_settings(changes):
-    current = {r["key"]: r for r in select("settings")}
+def save_settings(changes, workspace_id):
+    current = {r["key"]: r for r in select("settings", params={"workspace_id": "eq." + str(workspace_id)})}
     for key, value in changes.items():
         if key in current:
-            update("settings", int(current[key]["id"]), {"value": value})
+            update("settings", int(current[key]["id"]), {"value": value}, workspace_id=workspace_id)
         else:
-            insert("settings", {"key": key, "value": value})
+            insert("settings", {"key": key, "value": value, "workspace_id": str(workspace_id)})
 
 
 def verify():
