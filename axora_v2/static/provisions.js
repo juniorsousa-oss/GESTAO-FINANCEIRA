@@ -60,9 +60,16 @@ async function loadProvisions(){
   }
   if(page==="provisions")render();
 }
-function openProvisionDialog(){
-  const d=$("#provision-dialog");const f=$("#provision-form");
-  f.reset();f.elements.start_due_date.value=provisionToday();
+async function openProvisionDialog(){
+  await loadFinanceCatalogs(true);
+  const d=$("#provision-dialog"),f=$("#provision-form");
+  f.reset();
+  hydrateProvisionCatalogs();
+  if(!f.elements.category.options.length || f.elements.category.options.length===1 ||
+     !f.elements.responsible.options.length || f.elements.responsible.options.length===1){
+    throw Error("Cadastre ao menos uma categoria e um responsável em Configurações.");
+  }
+  f.elements.start_due_date.value=provisionToday();
   f.elements.recurrence.value="unlimited";f.elements.frequency.value="monthly";
   f.elements.value_mode.value="fixed";provisionOptions();
   d.showModal();f.elements.description.focus();
@@ -87,7 +94,7 @@ function openPaymentDialog(id){
 document.addEventListener("DOMContentLoaded",()=>{
   document.addEventListener("click",async e=>{
     const action=e.target.closest("[data-action]")?.dataset.action;
-    if(action==="new-provision")openProvisionDialog();
+    if(action==="new-provision")openProvisionDialog().catch(err=>showToast(err.message,true));
     if(action==="pay-provision")openPaymentDialog(e.target.closest("[data-id]").dataset.id);
   });
   $("#provision-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-provision]"))$("#provision-dialog").close()});
