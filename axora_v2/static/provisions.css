@@ -44,3 +44,31 @@
   .provision-form-grid{grid-template-columns:1fr}
   .provision-form-grid .field.full{grid-column:1}
 }
+
+/* Catálogos financeiros em Configurações: cartões internos e exportação. */
+.financial-catalogs{display:grid;gap:18px;min-width:0}
+.catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.catalog-group{background:linear-gradient(150deg,#f8fbff,#fff);border:1px solid #dce7f0;border-radius:16px;padding:17px;min-width:0}
+.catalog-group-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.catalog-group-head h3{margin:0;font-size:15px;color:#173754}
+.catalog-group-head span{color:#6f8aa1;font-size:11px;font-weight:750}
+.catalog-option-list{max-height:290px;overflow:auto;overscroll-behavior:contain;border-top:1px solid #e4edf3;border-bottom:1px solid #e4edf3}
+.catalog-option{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #ebf0f5}
+.catalog-option:last-child{border-bottom:0}
+.catalog-option-label{display:flex;flex-direction:column;gap:4px;min-width:0;overflow-wrap:anywhere}
+.catalog-option-label b{font-size:12px;color:#1b3f59}
+.catalog-option-label span{font-size:10px;color:#158680}
+.catalog-inactive .catalog-option-label b{opacity:.5}
+.catalog-inactive .catalog-option-label span{color:#9b6e67}
+.catalog-create-form{padding-top:15px;display:grid;gap:8px}
+.catalog-create-form label{color:#526e86;font-size:11px;font-weight:760}
+.catalog-create-row{display:flex;gap:8px;min-width:0}
+.catalog-create-row input{flex:1;min-width:0;min-height:42px;background:#fff;border:1px solid #d4e1ec;border-radius:10px;color:#234560;padding:9px 11px;font:inherit;font-size:12px}
+.catalog-create-row input:focus{outline:2px solid #13aaa5;outline-offset:1px}
+.catalog-create-row button{flex-shrink:0}
+.catalog-export-area{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:4px;flex-wrap:wrap}
+.catalog-export-area p{flex:1;min-width:190px}
+.catalog-export-area button{white-space:nowrap}
+.catalog-settings-link{border:0;padding:0;color:#0f8d99;background:transparent;text-decoration:underline;cursor:pointer;font:inherit;font-weight:750}
+@media(max-width:1050px){.catalog-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.catalog-group{padding:13px}.catalog-create-row{flex-wrap:wrap}.catalog-create-row input{flex-basis:100%}.catalog-export-area button{width:100%;white-space:normal}}
