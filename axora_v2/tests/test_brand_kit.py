@@ -41,6 +41,9 @@ def test_kit_admin_permissions_data_persistence_and_public_assets(monkeypatch):
       else: rows=[]
       return [{k:v for k,v in row.items() if fields=="*" or k in fields.split(",")} for row in rows]
     def call(method,table,*,params=None,data=None,prefer=None):
+      if table=="rpc/axora_user_workspace":
+        assert data["p_user_id"] == 1
+        return "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
       assert table=="finance_brand_assets"
       if method=="POST":
         assets[data["key"]]=dict(data)
@@ -78,7 +81,7 @@ def test_kit_admin_permissions_data_persistence_and_public_assets(monkeypatch):
         assert result.headers["content-type"].startswith("image/webp")
         assert result.content[:4]==b"RIFF"
       assert all(v["configured"] for v in client.get("/api/brand-kit").json().values())
-      assert client.get("/api/multiuser/status").json()["isolation_enabled"] is False
+      assert client.get("/api/multiuser/status").json()["isolation_enabled"] is True
       assert client.delete("/api/brand-kit/favicon",headers=admin).status_code==200
       assert client.get("/api/brand-kit/favicon/image").status_code==404
       assert client.get("/api/brand-kit/icon/image").status_code==200
