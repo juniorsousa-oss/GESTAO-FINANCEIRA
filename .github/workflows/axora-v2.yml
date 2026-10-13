@@ -25,6 +25,8 @@ jobs:
       - run: python -m compileall -q axora_v2
       - run: python -m pytest axora_v2/tests -q
       - run: node --check axora_v2/static/app.js
+      - run: node --check axora_v2/static/provisions.js
+      - run: node --check axora_v2/static/catalogs.js
       - run: node --check axora_v2/static/brand-kit.js
       - run: node axora_v2/tests/ui_runtime.cjs
       - run: node axora_v2/tests/mobile_drawer_runtime.cjs
