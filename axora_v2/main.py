@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from axora_v2 import db, metrics, security, branding, provisions
+from axora_v2 import db, metrics, security, branding, provisions, catalogs
 from services.importer import parse_excel
 from services.profile import clean_display_name, avatar_data_uri
 
@@ -247,6 +247,67 @@ def remove_row(kind: str, pk: int, user=Depends(authorized)):
     return {"ok": True}
 
 
+def finance_catalog_items(workspace):
+    db.call("POST", "rpc/axora_ensure_catalog", data={"p_workspace_id": workspace})
+    return db.call("GET", "finance_catalog_options", params={
+        "select": "id,kind,name,active", "workspace_id": "eq." + workspace,
+        "order": "kind.asc,name.asc",
+    })
+
+
+@app.get("/api/catalogs")
+def list_finance_catalogs(user=Depends(auth)):
+    return {"items": finance_catalog_items(user_workspace(user))}
+
+
+@app.get("/api/catalogs/export")
+def export_finance_catalogs(user=Depends(auth)):
+    records = finance_catalog_items(user_workspace(user))
+    return Response(
+        content=catalogs.export_csv(records).encode("utf-8"),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="axora_categorias_responsaveis.csv"'},
+    )
+
+
+@app.post("/api/catalogs")
+def add_finance_catalog(payload: dict, user=Depends(authorized)):
+    workspace = user_workspace(user)
+    option = catalogs.clean_option(payload)
+    options = finance_catalog_items(workspace)
+    if any(it["kind"] == option["kind"] and
+           it["name"].casefold() == option["name"].casefold() for it in options):
+        raise HTTPException(409, "Essa opção já existe. Reative-a se estiver inativa.")
+    inserted = db.call("POST", "finance_catalog_options",
+        data={"workspace_id": workspace, **option, "active": True},
+        prefer="return=representation",
+    )
+    return {"item": inserted[0]}
+
+
+@app.patch("/api/catalogs/{pk}")
+def change_finance_catalog(pk: int, payload: dict, user=Depends(authorized)):
+    positive_id(pk)
+    if not isinstance(payload, dict) or set(payload) != {"active"} or not isinstance(payload["active"], bool):
+        raise HTTPException(422, "Informe se a opção está ativa.")
+    workspace = user_workspace(user)
+    rows = finance_catalog_items(workspace)
+    selected = next((it for it in rows if int(it["id"]) == pk), None)
+    if selected is None:
+        raise HTTPException(404, "Opção não localizada neste espaço financeiro.")
+    if not payload["active"] and selected["active"]:
+        remaining = [it for it in rows if it["kind"] == selected["kind"] and
+                     it["active"] and int(it["id"]) != pk]
+        if not remaining:
+            raise HTTPException(409, "Mantenha pelo menos uma opção ativa desse tipo.")
+    changed = db.call("PATCH", "finance_catalog_options", params={
+        "id": "eq." + str(pk), "workspace_id": "eq." + workspace,
+    }, data={"active": payload["active"]}, prefer="return=representation")
+    if not changed:
+        raise HTTPException(404, "Opção não localizada.")
+    return {"item": changed[0]}
+
+
 @app.get("/api/provisions")
 def list_provisions(user=Depends(auth)):
     workspace = user_workspace(user)
@@ -261,8 +322,10 @@ def list_provisions(user=Depends(auth)):
 
 @app.post("/api/provisions")
 def add_provision(payload: dict, user=Depends(authorized)):
+    workspace = user_workspace(user)
     values = provisions.clean_provision(payload)
-    values["p_workspace_id"] = user_workspace(user)
+    catalogs.canonicalize_provision(values, finance_catalog_items(workspace))
+    values["p_workspace_id"] = workspace
     new_id = db.call("POST", "rpc/axora_create_provision", data=values)
     return {"id": new_id, "ok": True}
 
