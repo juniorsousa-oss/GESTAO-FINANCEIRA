@@ -1,0 +1,44 @@
+/* AXORA · Provisões: acompanha a linguagem visual premium existente. */
+.provision-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.provision-toolbar h2{margin:0 0 5px;font-size:20px;color:#173653}
+.provision-toolbar p{margin:0;color:#718399;font-size:12px}
+.provision-filter-label{display:grid;gap:5px;font-size:11px;font-weight:750;color:#63788e}
+.provision-filter-label select{min-height:42px;border-radius:11px;border:1px solid #d8e3ee;background:#fff;padding:0 14px;color:#1b3855;max-width:100%}
+.provision-scroll{overflow-x:auto;min-width:0;border:1px solid #e5edf5;border-radius:14px}
+.provision-table{width:100%;border-collapse:collapse;min-width:760px;font-size:13px}
+.provision-table th{text-align:left;background:#f4f8fc;font-size:11px;letter-spacing:.03em;color:#61748a;padding:15px}
+.provision-table td{padding:15px;border-top:1px solid #e7eff5;vertical-align:middle;color:#234260}
+.provision-table strong{display:block;font-weight:750;color:#153553}
+.provision-table small{display:block;margin-top:6px;color:#8696a9;font-size:11px}
+.provision-table .status-badge{display:inline-flex;margin-top:6px}
+.provision-table .btn{white-space:nowrap}
+.provision-dialog{width:min(710px,calc(100vw - 28px));max-height:min(92dvh,840px);border:1px solid #dce6f1;border-radius:23px;padding:0;background:#fff;color:#153553;box-shadow:0 35px 90px rgba(9,32,56,.3);overflow:auto}
+.provision-dialog::backdrop{background:rgba(5,18,32,.63);backdrop-filter:blur(4px)}
+.provision-dialog form{padding:28px}
+.provision-dialog .dialog-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.provision-dialog .dialog-heading h2{margin:4px 0 0;font-size:23px}
+.provision-dialog .dialog-heading .overline{font-size:10px;letter-spacing:.15em;color:#2c9699;font-weight:800}
+.provision-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.provision-form-grid .field{min-width:0;display:flex;flex-direction:column;gap:6px}
+.provision-form-grid .field.full{grid-column:1/-1}
+.provision-form-grid .field[hidden]{display:none!important}
+.provision-form-grid label{font-size:12px;color:#3e5771;font-weight:750}
+.provision-form-grid input,.provision-form-grid select{border:1px solid #d8e3ee;border-radius:11px;background:#f9fbfe;padding:12px;min-height:43px;width:100%;font:inherit;color:#193853;box-sizing:border-box}
+.provision-form-grid input:focus,.provision-form-grid select:focus{outline:2px solid #37bcb5;outline-offset:1px}
+.provision-dialog .dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}
+.provision-dialog .dialog-actions .btn{min-width:132px}
+.provision-payment-description{margin:0 0 20px;color:#627b94;font-size:13px}
+.provision-warning{margin-top:15px;font-size:12px;line-height:1.6;color:#607992}
+@media(max-width:850px){
+  .provision-toolbar{align-items:stretch;flex-direction:column}
+  .provision-table{min-width:0}
+  .provision-table thead{display:none}
+  .provision-table,.provision-table tbody,.provision-table tr,.provision-table td{display:block;width:100%}
+  .provision-table tr{padding:12px;border-top:1px solid #e7eff5}
+  .provision-table tr:first-child{border-top:0}
+  .provision-table td{border:0;padding:8px 6px;display:flex;flex-direction:column;align-items:flex-start}
+  .provision-table td::before{content:attr(data-label);text-transform:uppercase;letter-spacing:.06em;font-size:10px;color:#8ea1af;margin-bottom:4px}
+  .provision-dialog form{padding:20px}
+  .provision-form-grid{grid-template-columns:1fr}
+  .provision-form-grid .field.full{grid-column:1}
+}
