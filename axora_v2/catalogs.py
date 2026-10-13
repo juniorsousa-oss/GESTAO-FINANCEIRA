@@ -4,7 +4,6 @@ Preserva descrições históricas; a lista determina apenas novos lançamentos.
 """
 import csv
 import io
-import re
 from fastapi import HTTPException
 
 KIND_NAMES = {"category": "Categoria", "responsible": "Responsável"}
@@ -18,7 +17,7 @@ def clean_option(payload):
     if kind not in KIND_NAMES or not isinstance(name, str):
         raise HTTPException(422, "Categoria ou responsável inválido.")
     name = " ".join(name.strip().split())
-    if not (1 <= len(name) <= 120) or re.search(r"[\\x00-\\x1f\\x7f]", name):
+    if not (1 <= len(name) <= 120) or any(ord(ch) < 32 or ord(ch) == 127 for ch in name):
         raise HTTPException(422, "O nome precisa ter de 1 a 120 caracteres válidos.")
     return {"kind": kind, "name": name}
 
