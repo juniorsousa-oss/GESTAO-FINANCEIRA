@@ -34,8 +34,8 @@ function interfaceIcon(name){
 const today = () => new Date().toLocaleDateString("en-CA");
 const comp = () => {const d=new Date();return String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear()};
 const dateBR = v => v ? String(v).substring(0,10).split("-").reverse().join("/") : "—";
-const labels = {dashboard:"Visão financeira",movements:"Movimentações",forecasts:"Contas e previsões",accounts:"Contas e saldos",debts:"Dívidas",import:"Importar / Exportar",settings:"Configurações"};
-const subtitles = {dashboard:"Controle o seu presente. Planeje o seu próximo passo.",movements:"Receitas e despesas realizadas, sem misturar previsões.",forecasts:"Acompanhe os compromissos e recebimentos futuros.",accounts:"Saiba exatamente onde está o seu dinheiro.",debts:"Organize pagamentos, renegociações e saldos em aberto.",import:"Leve sua planilha para o AXORA com segurança.",settings:"Personalize seu perfil e defina suas metas financeiras."};
+const labels = {dashboard:"Visão financeira",movements:"Registros",provisions:"Provisões",forecasts:"Previsões antigas",accounts:"Contas e saldos",debts:"Dívidas",import:"Importar / Exportar",settings:"Configurações"};
+const subtitles = {dashboard:"Controle o seu presente. Planeje o seu próximo passo.",movements:"Receitas e despesas realizadas, sem misturar previsões.",provisions:"Somente compromissos pendentes; quitados vão para Registros.",forecasts:"Base antiga: ainda não migrada para a nova lógica de provisões.",accounts:"Saiba exatamente onde está o seu dinheiro.",debts:"Organize pagamentos, renegociações e saldos em aberto.",import:"Leve sua planilha para o AXORA com segurança.",settings:"Personalize seu perfil e defina suas metas financeiras."};
 const meta = {
   movements: [
     ["description","Descrição","text",true],["value","Valor (R$)","number",true],
@@ -134,7 +134,7 @@ async function refresh(){
     if(button)button.disabled=false;
   }
 }
-function go(next){page=next;filters={};hideMenu();render();if(next==="settings"&&me?.is_admin)loadUsers();const scroller=$("#workspace .main-area");if(scroller)scroller.scrollTop=0;}
+function go(next){page=next;filters={};hideMenu();render();if(next==="settings"&&me?.is_admin)loadUsers();if(next==="provisions")loadProvisions().catch(e=>showToast(e.message,true));const scroller=$("#workspace .main-area");if(scroller)scroller.scrollTop=0;}
 function syncMenuTrigger(){
   const button=$("#menu-toggle"),mobile=window.matchMedia("(max-width:850px)").matches;
   const sidebar=$("#sidebar");
@@ -180,6 +180,7 @@ function trapMobileMenuFocus(e){
   }
 }
 function actionButtons(){
+  if(page==="provisions")return '<button class="btn primary btn-strong" data-action="new-provision">'+interfaceIcon("plus")+'<span>Adicionar provisão</span></button>';
   if(meta[page])return '<button class="btn primary btn-strong" data-action="new">'+interfaceIcon("plus")+'<span>Novo registro</span></button>';
   if(page==="dashboard")return '<button class="btn ghost btn-secondary" data-action="export">'+interfaceIcon("download")+'<span>Exportar Excel</span></button><button class="btn primary btn-strong" data-action="new-movement">'+interfaceIcon("plus")+'<span>Movimentação</span></button>';
   if(page==="import")return '<button class="btn ghost btn-secondary" data-action="export">'+interfaceIcon("download")+'<span>Exportar Excel</span></button>';
@@ -190,7 +191,7 @@ function render(){
   $("#page-title").textContent=labels[page];$("#page-subtitle").textContent=subtitles[page];$("#crumb-current").textContent=labels[page].toUpperCase();$("#page-actions").innerHTML=actionButtons();
   $$(".nav-link").forEach(x=>{const active=x.dataset.page===page;x.classList.toggle("active",active);if(active)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current")});
   const body=$("#page-content");
-  body.innerHTML=page==="dashboard"?dashboard():meta[page]?modulePage(page):page==="import"?importPage():settingsPage();
+  body.innerHTML=page==="dashboard"?dashboard():page==="provisions"?provisionsPage():meta[page]?modulePage(page):page==="import"?importPage():settingsPage();
   applyInstitutionalBrand();
   if(typeof applyBrandKit==="function")applyBrandKit();
 }
