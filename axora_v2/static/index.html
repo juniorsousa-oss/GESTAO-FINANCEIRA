@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="/assets/shell-finish.css?v=exterior-network-wallpaper-r2-login-foot-v1">
   <link rel="stylesheet" href="/assets/mobile-frame-login-v2.css?v=opera-atria-card-mobile-r1">
   <link rel="stylesheet" href="/assets/mobile-scroll-stability.css?v=axora-mobile-scroll-r1">
+  <link rel="stylesheet" href="/assets/provisions.css?v=provisoes-mvp-r1">
 </head>
 <body>
   <div id="login" class="login-screen">
@@ -62,8 +63,9 @@
       <nav id="main-nav" class="nav" aria-label="Seções do AXORA">
         <button data-page="dashboard" class="nav-link active"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.4"/><rect x="14" y="3" width="7" height="7" rx="1.4"/><rect x="3" y="14" width="7" height="7" rx="1.4"/><rect x="14" y="14" width="7" height="7" rx="1.4"/></svg></span> Visão financeira</button>
         <div class="nav-label nav-separator">GERENCIAMENTO</div>
-        <button data-page="movements" class="nav-link"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16m-4-3 4 3-4 3M20 17H4m4-3-4 3 4 3"/></svg></span> Movimentações</button>
-        <button data-page="forecasts" class="nav-link"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span> Contas e previsões</button>
+        <button data-page="movements" class="nav-link"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16m-4-3 4 3-4 3M20 17H4m4-3-4 3 4 3"/></svg></span> Registros</button>
+        <button data-page="provisions" class="nav-link"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/></svg></span> Provisões</button>
+        <button data-page="forecasts" class="nav-link"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span> Previsões antigas</button>
         <button data-page="accounts" class="nav-link"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span> Contas e saldos</button>
         <button data-page="debts" class="nav-link"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span> Dívidas</button>
         <div class="nav-label nav-separator">FERRAMENTAS</div>
@@ -94,8 +96,41 @@
   <dialog id="editor-dialog" class="editor-dialog">
     <form id="editor-form"><div class="dialog-heading"><div><span class="overline">AXORA</span><h2 id="editor-title">Novo registro</h2></div><button type="button" class="icon-button dialog-close" aria-label="Fechar">×</button></div><div id="editor-fields" class="form-grid"></div><div class="dialog-actions"><button type="button" class="btn ghost dialog-close">Cancelar</button><button class="btn primary" type="submit">Salvar registro</button></div></form>
   </dialog>
+  <dialog id="provision-dialog" class="provision-dialog">
+    <form id="provision-form">
+      <div class="dialog-heading"><div><span class="overline">AXORA · PLANEJAMENTO</span><h2>Adicionar provisão</h2></div><button type="button" class="icon-button" data-dismiss-provision aria-label="Fechar">×</button></div>
+      <div class="provision-form-grid">
+        <div class="field full"><label for="pv-description">Descrição *</label><input id="pv-description" name="description" type="text" maxlength="240" placeholder="Ex.: Energia, Aluguel, Seguro" required></div>
+        <div class="field"><label for="pv-category">Categoria *</label><input id="pv-category" name="category" type="text" maxlength="120" placeholder="Ex.: Moradia" required></div>
+        <div class="field"><label for="pv-responsible">Responsável *</label><input id="pv-responsible" name="responsible" type="text" maxlength="120" placeholder="Ex.: Próprio ou Compartilhado" required></div>
+        <div class="field"><label for="pv-due">Primeiro vencimento *</label><input id="pv-due" name="start_due_date" type="date" required></div>
+        <div class="field"><label for="pv-value">Valor previsto (R$) *</label><input id="pv-value" name="planned_value" type="number" min="0.01" step="0.01" placeholder="0,00" required></div>
+        <div class="field"><label for="pv-recurrence">Tipo de compromisso *</label><select id="pv-recurrence" name="recurrence"><option value="once">Pagamento único</option><option value="unlimited" selected>Fixo/recorrente sem prazo final</option><option value="until_date">Recorrente com prazo final</option><option value="installments">Parcelado por quantidade</option></select></div>
+        <div class="field" id="provision-frequency-wrap"><label for="pv-frequency">Periodicidade</label><select id="pv-frequency" name="frequency"><option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="monthly" selected>Mensal</option><option value="bimonthly">Bimestral</option><option value="quarterly">Trimestral</option><option value="semiannual">Semestral</option><option value="yearly">Anual</option></select></div>
+        <div class="field" id="provision-end-wrap" hidden><label for="pv-end">Último vencimento *</label><input id="pv-end" name="end_date" type="date"></div>
+        <div class="field" id="provision-installments-wrap" hidden><label for="pv-count">Quantidade de parcelas *</label><input id="pv-count" name="installment_count" type="number" min="1" max="360" step="1"></div>
+        <div class="field full"><label for="pv-mode">Natureza do valor</label><select id="pv-mode" name="value_mode"><option value="fixed">Fixo — valor igual a cada vencimento</option><option value="variable">Variável — valor estimado, ajustável no pagamento</option></select></div>
+      </div>
+      <p class="provision-warning">Cada vencimento será acompanhado separadamente. Pagamentos confirmados deixam a lista de pendências e vão para Registros.</p>
+      <div class="dialog-actions"><button type="button" class="btn ghost" data-dismiss-provision>Cancelar</button><button type="submit" class="btn primary">Salvar provisão</button></div>
+    </form>
+  </dialog>
+  <dialog id="provision-payment-dialog" class="provision-dialog">
+    <form id="provision-payment-form">
+      <div class="dialog-heading"><div><span class="overline">AXORA · QUITAÇÃO</span><h2>Registrar pagamento</h2></div><button type="button" class="icon-button" data-dismiss-payment aria-label="Fechar">×</button></div>
+      <p class="provision-payment-description" id="provision-payment-detail"></p>
+      <input type="hidden" name="occurrence_id">
+      <div class="provision-form-grid">
+        <div class="field"><label for="pv-paid-date">Data efetiva do pagamento *</label><input id="pv-paid-date" name="payment_date" type="date" required></div>
+        <div class="field"><label for="pv-paid-amount">Valor pago (R$) *</label><input id="pv-paid-amount" name="amount" type="number" min="0.01" step="0.01" required></div>
+      </div>
+      <p class="provision-warning">A confirmação gera uma despesa em Registros e quita este vencimento. Pagamento parcial e estorno estarão disponíveis em uma próxima etapa.</p>
+      <div class="dialog-actions"><button type="button" class="btn ghost" data-dismiss-payment>Cancelar</button><button type="submit" class="btn primary">Confirmar pagamento</button></div>
+    </form>
+  </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="/assets/app.js?v=brand-kit-20261010" defer></script>
+  <script src="/assets/app.js?v=provisoes-mvp-r1" defer></script>
+  <script src="/assets/provisions.js?v=provisoes-mvp-r1" defer></script>
   <script src="/assets/brand-kit.js?v=brand-icon-flash-r1" defer></script>
 </body>
 </html>
