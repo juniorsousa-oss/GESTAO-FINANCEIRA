@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from axora_v2 import db, metrics, security, branding
+from axora_v2 import db, metrics, security, branding, provisions
 from services.importer import parse_excel
 from services.profile import clean_display_name, avatar_data_uri
 
@@ -199,6 +199,8 @@ def change_row(kind: str, pk: int, payload: dict, user=Depends(authorized)):
     if not current:
         raise HTTPException(404, "Registro não localizado.")
     row = sanitize(kind, payload)
+    if kind == "movements" and current[0].get("provision_occurrence_id"):
+        raise HTTPException(409, "Este Registro veio de uma provisão quitada e não pode ser editado isoladamente.")
     if kind == "forecasts" and ("value" in row or "adjustment" in row):
         row["final_value"] = round(float(row.get("value", current[0].get("value") or 0)) + float(row.get("adjustment", current[0].get("adjustment") or 0)), 2)
     return db.update(kind, pk, row)
@@ -208,8 +210,39 @@ def change_row(kind: str, pk: int, payload: dict, user=Depends(authorized)):
 def remove_row(kind: str, pk: int, user=Depends(authorized)):
     kind_or_404(kind)
     positive_id(pk)
+    if kind == "movements":
+        current = db.select(kind, params={"id": f"eq.{pk}", "limit": 1})
+        if current and current[0].get("provision_occurrence_id"):
+            raise HTTPException(409, "Registro vinculado a provisão. Reversão controlada ficará para a próxima etapa.")
     db.delete(kind, pk)
     return {"ok": True}
+
+
+# Provisões são independentes das previsões antigas e não afetam o dashboard
+# até haver quitação. RPC SQL registra pagamento + movimentação numa transação.
+@app.get("/api/provisions")
+def list_provisions(user=Depends(auth)):
+    db.call("POST", "rpc/axora_ensure_provisions", data={})
+    rows = db.call("GET", "finance_provision_occurrences", params={
+        "select": "id,rule_id,sequence_no,due_date,planned_value,status,rule:finance_provision_rules(description,category,responsible,value_mode,recurrence,frequency,planned_value)",
+        "status": "eq.open", "order": "due_date.asc,id.asc"
+    })
+    return {"items": rows}
+
+
+@app.post("/api/provisions")
+def add_provision(payload: dict, user=Depends(authorized)):
+    values = provisions.clean_provision(payload)
+    new_id = db.call("POST", "rpc/axora_create_provision", data=values)
+    return {"id": new_id, "ok": True}
+
+
+@app.post("/api/provisions/{pk}/pay")
+def pay_provision(pk: int, payload: dict, user=Depends(authorized)):
+    positive_id(pk)
+    values = provisions.clean_payment(payload)
+    return db.call("POST", "rpc/axora_pay_provision",
+                   data={"p_occurrence_id": pk, **values})
 
 
 @app.post("/api/settings")
