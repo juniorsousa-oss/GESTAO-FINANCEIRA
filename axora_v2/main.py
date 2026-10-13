@@ -313,7 +313,7 @@ def list_provisions(user=Depends(auth)):
     workspace = user_workspace(user)
     db.call("POST", "rpc/axora_ensure_provisions", data={"p_workspace_id": workspace})
     rows = db.call("GET", "finance_provision_occurrences", params={
-        "select": "id,rule_id,sequence_no,due_date,planned_value,status,rule:finance_provision_rules(description,category,responsible,value_mode,recurrence,frequency,planned_value)",
+        "select": "id,rule_id,sequence_no,due_date,planned_value,status,description_override,category_override,responsible_override,value_mode_override,rule:finance_provision_rules(description,category,responsible,value_mode,recurrence,frequency,planned_value,end_date,installment_count)",
         "workspace_id": "eq." + workspace,
         "status": "eq.open", "order": "due_date.asc,id.asc"
     })
@@ -328,6 +328,27 @@ def add_provision(payload: dict, user=Depends(authorized)):
     values["p_workspace_id"] = workspace
     new_id = db.call("POST", "rpc/axora_create_provision", data=values)
     return {"id": new_id, "ok": True}
+
+
+@app.patch("/api/provisions/{pk}")
+def edit_provision(pk: int, payload: dict, user=Depends(authorized)):
+    positive_id(pk)
+    workspace = user_workspace(user)
+    values = provisions.clean_edit_provision(payload)
+    catalogs.canonicalize_provision(values, finance_catalog_items(workspace))
+    return db.call("POST", "rpc/axora_edit_provision",
+                   data={"p_workspace_id": workspace, "p_occurrence_id": pk, **values})
+
+
+@app.post("/api/provisions/{pk}/cancel")
+def cancel_provision(pk: int, payload: dict, user=Depends(authorized)):
+    positive_id(pk)
+    if not isinstance(payload, dict) or set(payload) != {"scope"}:
+        raise HTTPException(422, "Selecione como excluir a provisão.")
+    scope = provisions.clean_scope(payload["scope"])
+    return db.call("POST", "rpc/axora_cancel_provision",
+                   data={"p_workspace_id": user_workspace(user),
+                         "p_occurrence_id": pk, "p_scope": scope})
 
 
 @app.post("/api/provisions/{pk}/pay")
