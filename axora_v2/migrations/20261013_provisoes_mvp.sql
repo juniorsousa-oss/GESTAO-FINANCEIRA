@@ -98,7 +98,7 @@ CREATE OR REPLACE FUNCTION public.axora_create_provision(
   p_start_due_date date,p_planned_value numeric,p_value_mode text,
   p_recurrence text,p_frequency text,p_end_date date DEFAULT NULL,
   p_installment_count integer DEFAULT NULL
-) RETURNS bigint LANGUAGE plpgsql SECURITY INVOKER SET search_path=public AS $
+) RETURNS bigint LANGUAGE plpgsql SECURITY INVOKER SET search_path=public AS $$
 DECLARE v_id bigint;
 BEGIN
   INSERT INTO public.finance_provision_rules(
@@ -111,7 +111,7 @@ BEGIN
   PERFORM public.axora_ensure_provisions();
   RETURN v_id;
 END;
-$;
+$$;
 
 -- Uma operação atômica: apenas um pagamento completo e um Registro.
 -- Tentativas duplicadas falham antes de inserir uma nova movimentação.
