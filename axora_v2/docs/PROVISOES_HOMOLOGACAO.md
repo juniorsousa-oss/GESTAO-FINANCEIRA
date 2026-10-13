@@ -20,7 +20,7 @@
 ## Passos de implantação SEGURA (ambiente de homologação)
 1. Escolher Supabase de **teste isolado**, não a base financeira real. Confirmar que as tabelas do schema financeiro de teste estão instaladas e fazer backup.
 2. No **SQL Editor do projeto de teste**, executar uma vez `axora_v2/migrations/20261013_provisoes_mvp.sql`. É SQL para o banco, **não** comando para o terminal Linux.
-3. Revisar chaves `SUPABASE_URL`, `SUPABASE_KEY`, `SESSION_SECRET` e os domínios para uma instância AXORA de teste separada. Nunca divulgar chaves.
+3. Utilizar `axora_v2/docker-compose.stage.yml` com `AXORA_HML_SUPABASE_URL`, `AXORA_HML_SUPABASE_KEY` e `AXORA_HML_SESSION_SECRET` **próprios do ambiente de homologação**. Esse Compose já constrói a branch `main` atualizada. Nunca reutilizar o banco ou segredos financeiros de produção e nunca divulgá-los.
 4. Reconstruir somente o contêiner AXORA de teste a partir do GitHub atualizado; não trocar configuração da instalação financeira de produção.
 5. Acessar o novo menu **Provisões** e cadastrar os exemplos abaixo.
 6. Se a migração ainda não estiver instalada, a tela mostrará aviso; não será possível gravar contas. As áreas antigas continuam funcionando.
