@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="/assets/shell-finish.css?v=exterior-network-wallpaper-r2-login-foot-v1">
   <link rel="stylesheet" href="/assets/mobile-frame-login-v2.css?v=opera-atria-card-mobile-r1">
   <link rel="stylesheet" href="/assets/mobile-scroll-stability.css?v=axora-mobile-scroll-r1">
-  <link rel="stylesheet" href="/assets/provisions.css?v=axora-catalogs-r1">
+  <link rel="stylesheet" href="/assets/provisions.css?v=axora-revisions-r1">
 </head>
 <body>
   <div id="login" class="login-screen">
@@ -103,8 +103,7 @@
         <div class="field"><label for="pv-value">Valor previsto (R$) *</label><input id="pv-value" name="planned_value" type="number" min="0.01" step="0.01" placeholder="0,00" required></div>
         <div class="field"><label for="pv-recurrence">Tipo de compromisso *</label><select id="pv-recurrence" name="recurrence"><option value="once">Pagamento único</option><option value="unlimited" selected>Fixo/recorrente sem prazo final</option><option value="until_date">Recorrente com prazo final</option><option value="installments">Parcelado por quantidade</option></select></div>
         <div class="field" id="provision-frequency-wrap"><label for="pv-frequency">Periodicidade</label><select id="pv-frequency" name="frequency"><option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="monthly" selected>Mensal</option><option value="bimonthly">Bimestral</option><option value="quarterly">Trimestral</option><option value="semiannual">Semestral</option><option value="yearly">Anual</option></select></div>
-        <div class="field" id="provision-end-wrap" hidden><label for="pv-end">Último vencimento *</label><input id="pv-end" name="end_date" type="date"></div>
-        <div class="field" id="provision-installments-wrap" hidden><label for="pv-count">Quantidade de parcelas *</label><input id="pv-count" name="installment_count" type="number" min="1" max="360" step="1"></div>
+        <div class="field" id="provision-installments-wrap" hidden><label id="pv-count-label" for="pv-count">Quantidade de vencimentos *</label><input id="pv-count" name="installment_count" type="number" min="1" max="360" step="1"></div>
         <div class="field full"><label for="pv-mode">Natureza do valor</label><select id="pv-mode" name="value_mode"><option value="fixed">Fixo — valor igual a cada vencimento</option><option value="variable">Variável — valor estimado, ajustável no pagamento</option></select></div>
       </div>
       <p class="provision-warning">Categorias e responsáveis são padronizados em Configurações. <button type="button" class="catalog-settings-link" data-action="open-catalog-settings">Gerenciar listas</button> Cada vencimento será acompanhado separadamente; pagamentos confirmados vão para Registros.</p>
@@ -125,10 +124,47 @@
       <div class="dialog-actions"><button type="button" class="btn ghost" data-dismiss-payment>Cancelar</button><button type="submit" class="btn primary">Confirmar pagamento</button></div>
     </form>
   </dialog>
+  <dialog id="provision-edit-dialog" class="provision-dialog">
+    <form id="provision-edit-form">
+      <div class="dialog-heading"><div><span class="overline">AXORA · AJUSTE DE PLANEJAMENTO</span><h2>Editar provisão</h2></div><button type="button" class="icon-button" data-dismiss-edit aria-label="Fechar">×</button></div>
+      <p class="provision-payment-description" id="provision-edit-detail"></p>
+      <input type="hidden" name="occurrence_id">
+      <div class="provision-form-grid">
+        <div class="field full"><label for="pve-description">Descrição *</label><input id="pve-description" name="description" maxlength="240" required></div>
+        <div class="field"><label for="pve-category">Categoria *</label><select id="pve-category" name="category" required><option value="">Selecione uma categoria</option></select></div>
+        <div class="field"><label for="pve-responsible">Responsável *</label><select id="pve-responsible" name="responsible" required><option value="">Selecione um responsável</option></select></div>
+        <div class="field"><label for="pve-due-date">Vencimento *</label><input id="pve-due-date" name="due_date" type="date" required></div>
+        <div class="field"><label for="pve-value">Valor previsto (R$) *</label><input id="pve-value" name="planned_value" type="number" min="0.01" step="0.01" required></div>
+        <div class="field full"><label for="pve-mode">Natureza do valor</label><select id="pve-mode" name="value_mode"><option value="fixed">Fixo</option><option value="variable">Variável</option></select></div>
+      </div>
+      <fieldset class="provision-scope">
+        <legend>Quais vencimentos deseja alterar?</legend>
+        <label><input name="scope" type="radio" value="single" checked><span><b>Somente este registro</b><small>As outras parcelas e vencimentos não serão alterados.</small></span></label>
+        <label><input name="scope" type="radio" value="future"><span><b>Este e todos os próximos</b><small>Atualiza somente vencimentos pendentes desta mesma série, incluindo os que serão gerados no futuro.</small></span></label>
+      </fieldset>
+      <p class="provision-warning">Pagamentos já realizados e vencimentos anteriores permanecem preservados. A periodicidade original da série será mantida.</p>
+      <div class="dialog-actions"><button type="button" class="btn ghost" data-dismiss-edit>Cancelar</button><button type="submit" class="btn primary">Salvar alterações</button></div>
+    </form>
+  </dialog>
+  <dialog id="provision-cancel-dialog" class="provision-dialog">
+    <form id="provision-cancel-form">
+      <div class="dialog-heading"><div><span class="overline">AXORA · CANCELAMENTO</span><h2>Excluir provisão</h2></div><button type="button" class="icon-button" data-dismiss-cancel aria-label="Fechar">×</button></div>
+      <p class="provision-payment-description" id="provision-cancel-detail"></p>
+      <input type="hidden" name="occurrence_id">
+      <fieldset class="provision-scope">
+        <legend>Quais vencimentos deseja excluir?</legend>
+        <label><input name="scope" type="radio" value="single" checked><span><b>Somente este registro</b><small>Exclui da lista apenas este vencimento pendente.</small></span></label>
+        <label><input name="scope" type="radio" value="future"><span><b>Este e todos os próximos</b><small>Cancela as pendências restantes e interrompe os próximos vencimentos desta série.</small></span></label>
+      </fieldset>
+      <label class="provision-cancel-confirm"><input name="confirm_cancel" type="checkbox" required> Entendo que os vencimentos escolhidos deixarão a lista de Provisões.</label>
+      <p class="provision-warning">Nenhum pagamento já realizado será excluído. O cancelamento fica registrado no banco para rastreabilidade.</p>
+      <div class="dialog-actions"><button type="button" class="btn ghost" data-dismiss-cancel>Voltar</button><button type="submit" class="btn danger">Confirmar exclusão</button></div>
+    </form>
+  </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="/assets/app.js?v=axora-catalogs-r1" defer></script>
-  <script src="/assets/provisions.js?v=axora-catalogs-r1" defer></script>
-  <script src="/assets/catalogs.js?v=axora-catalogs-r1" defer></script>
+  <script src="/assets/app.js?v=axora-revisions-r1" defer></script>
+  <script src="/assets/provisions.js?v=axora-revisions-r1" defer></script>
+  <script src="/assets/catalogs.js?v=axora-revisions-r1" defer></script>
   <script src="/assets/brand-kit.js?v=brand-icon-flash-r1" defer></script>
 </body>
 </html>
