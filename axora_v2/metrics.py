@@ -48,7 +48,7 @@ def compute(movements, forecasts, accounts, debts, settings):
     discrepancy = located - realized
 
     current = date.today()
-    start = max((2026, 7), (current.year + (current.month - 6) // 12, ((current.month - 6) % 12) + 1))
+    start = (current.year + (current.month - 5) // 12, ((current.month - 5) % 12) + 1)
     months = []
     yy, mm = start
     while (yy, mm) <= (current.year, current.month):
@@ -60,7 +60,7 @@ def compute(movements, forecasts, accounts, debts, settings):
 
     categories = defaultdict(float)
     for row in movements:
-        if outgoing(row) and month_key(row.get("competence")) >= (2026, 7):
+        if outgoing(row):
             categories[str(row.get("category") or "Sem categoria")] += number(row.get("value"))
     categories_sorted = [
         {"name": k, "value": round(v, 2)}
