@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="/assets/shell-finish.css?v=exterior-network-wallpaper-r2-login-foot-v1">
   <link rel="stylesheet" href="/assets/mobile-frame-login-v2.css?v=opera-atria-card-mobile-r1">
   <link rel="stylesheet" href="/assets/mobile-scroll-stability.css?v=axora-mobile-scroll-r1">
-  <link rel="stylesheet" href="/assets/provisions.css?v=axora-native-workspaces-r1">
+  <link rel="stylesheet" href="/assets/provisions.css?v=axora-catalogs-r1">
 </head>
 <body>
   <div id="login" class="login-screen">
@@ -97,8 +97,8 @@
       <div class="dialog-heading"><div><span class="overline">AXORA · PLANEJAMENTO</span><h2>Adicionar provisão</h2></div><button type="button" class="icon-button" data-dismiss-provision aria-label="Fechar">×</button></div>
       <div class="provision-form-grid">
         <div class="field full"><label for="pv-description">Descrição *</label><input id="pv-description" name="description" type="text" maxlength="240" placeholder="Ex.: Energia, Aluguel, Seguro" required></div>
-        <div class="field"><label for="pv-category">Categoria *</label><input id="pv-category" name="category" type="text" maxlength="120" placeholder="Ex.: Moradia" required></div>
-        <div class="field"><label for="pv-responsible">Responsável *</label><input id="pv-responsible" name="responsible" type="text" maxlength="120" placeholder="Ex.: Próprio ou Compartilhado" required></div>
+        <div class="field"><label for="pv-category">Categoria *</label><select id="pv-category" name="category" required><option value="">Selecione uma categoria</option></select></div>
+        <div class="field"><label for="pv-responsible">Responsável *</label><select id="pv-responsible" name="responsible" required><option value="">Selecione um responsável</option></select></div>
         <div class="field"><label for="pv-due">Primeiro vencimento *</label><input id="pv-due" name="start_due_date" type="date" required></div>
         <div class="field"><label for="pv-value">Valor previsto (R$) *</label><input id="pv-value" name="planned_value" type="number" min="0.01" step="0.01" placeholder="0,00" required></div>
         <div class="field"><label for="pv-recurrence">Tipo de compromisso *</label><select id="pv-recurrence" name="recurrence"><option value="once">Pagamento único</option><option value="unlimited" selected>Fixo/recorrente sem prazo final</option><option value="until_date">Recorrente com prazo final</option><option value="installments">Parcelado por quantidade</option></select></div>
@@ -107,7 +107,7 @@
         <div class="field" id="provision-installments-wrap" hidden><label for="pv-count">Quantidade de parcelas *</label><input id="pv-count" name="installment_count" type="number" min="1" max="360" step="1"></div>
         <div class="field full"><label for="pv-mode">Natureza do valor</label><select id="pv-mode" name="value_mode"><option value="fixed">Fixo — valor igual a cada vencimento</option><option value="variable">Variável — valor estimado, ajustável no pagamento</option></select></div>
       </div>
-      <p class="provision-warning">Cada vencimento será acompanhado separadamente. Pagamentos confirmados deixam a lista de pendências e vão para Registros.</p>
+      <p class="provision-warning">Categorias e responsáveis são padronizados em Configurações. <button type="button" class="catalog-settings-link" data-action="open-catalog-settings">Gerenciar listas</button> Cada vencimento será acompanhado separadamente; pagamentos confirmados vão para Registros.</p>
       <div class="dialog-actions"><button type="button" class="btn ghost" data-dismiss-provision>Cancelar</button><button type="submit" class="btn primary">Salvar provisão</button></div>
     </form>
   </dialog>
@@ -126,8 +126,9 @@
     </form>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="/assets/app.js?v=axora-native-workspaces-r1" defer></script>
-  <script src="/assets/provisions.js?v=axora-native-workspaces-r1" defer></script>
+  <script src="/assets/app.js?v=axora-catalogs-r1" defer></script>
+  <script src="/assets/provisions.js?v=axora-catalogs-r1" defer></script>
+  <script src="/assets/catalogs.js?v=axora-catalogs-r1" defer></script>
   <script src="/assets/brand-kit.js?v=brand-icon-flash-r1" defer></script>
 </body>
 </html>
