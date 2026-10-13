@@ -286,7 +286,8 @@ function modulePage(kind){
     (kind==="movements"?optionFilter("classification","Todas classificações",["ENTRADA","SAÍDA"]):"")+
     (kind==="forecasts"?optionFilter("classification","Todos os tipos",["Entrada","Saída"])+optionFilter("status","Todos os status",["Não pago","Pago"]):"")+
     (kind==="movements"?optionFilter("category","Todas categorias",uniq(kind,"category")):"");
-  return '<div id="module-stats">'+moduleStats(kind,rows)+'</div><section class="panel table-panel"><div class="table-tools"><div class="filters">'+filtersHtml+'</div><button class="btn ghost small btn-clear" data-action="clear-filters">'+interfaceIcon("reset")+'<span>Limpar filtros</span></button></div><div id="table-body">'+moduleTable(kind,rows)+'</div></section>';
+  const legacyWarning=kind==="forecasts"?'<div class="notice warning"><b>Base antiga:</b> essas previsões ainda não estão ligadas aos pagamentos automáticos. Para novos compromissos, utilize a aba Provisões.</div>':"";
+  return legacyWarning+'<div id="module-stats">'+moduleStats(kind,rows)+'</div><section class="panel table-panel"<div class="table-tools"><div class="filters">'+filtersHtml+'</div><button class="btn ghost small btn-clear" data-action="clear-filters">'+interfaceIcon("reset")+'<span>Limpar filtros</span></button></div><div id="table-body">'+moduleTable(kind,rows)+'</div></section>';
 }
 function moduleTable(kind,rows){
   const cols=columns[kind],visible=rows.slice(0,150);
