@@ -28,6 +28,8 @@
 .provision-dialog .dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}
 .provision-dialog .dialog-actions .btn{min-width:132px}
 .provision-payment-description{margin:0 0 20px;color:#627b94;font-size:13px}
+.provision-full-settlement{display:flex;align-items:flex-start;gap:10px;margin-top:16px;font-size:12px;line-height:1.6;font-weight:650;color:#294762}
+.provision-full-settlement input{flex:0 0 18px;width:18px;height:18px;accent-color:#16aba5;margin-top:1px}
 .provision-warning{margin-top:15px;font-size:12px;line-height:1.6;color:#607992}
 @media(max-width:850px){
   .provision-toolbar{align-items:stretch;flex-direction:column}
