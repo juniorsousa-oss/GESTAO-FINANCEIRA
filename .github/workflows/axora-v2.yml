@@ -6,6 +6,7 @@ on:
       - '.github/workflows/axora-v2.yml'
   push:
     branches:
+      - main
       - feat/axora-web-v2-20261009
     paths:
       - 'axora_v2/**'
