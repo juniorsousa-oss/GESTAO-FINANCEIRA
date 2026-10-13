@@ -3,20 +3,23 @@
    Sem reset da base, sem débito direto de contas e sem efeitos sobre a V1. */
 "use strict";
 let provisionItems=null;
+let provisionError=null;
 let provisionView="all";
 const provisionRecurrence={once:"Única",unlimited:"Indeterminada",until_date:"Prazo definido",installments:"Parcelada"};
 const provisionFrequency={weekly:"Semanal",biweekly:"Quinzenal",monthly:"Mensal",bimonthly:"Bimestral",quarterly:"Trimestral",semiannual:"Semestral",yearly:"Anual"};
 const provisionMonth=v=>String(v||"").slice(0,7);
+const provisionToday=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")};
 const provisionSum=items=>items.reduce((total,item)=>total+Number(item.planned_value||0),0);
 
 function provisionsPage(){
+  if(provisionError)return '<section class="panel"><h2>Provisões ainda não disponíveis</h2><p class="panel-copy">A migração de banco desta etapa precisa ser aplicada no ambiente de testes antes do cadastro. Os dados antigos permanecem preservados.</p></section>';
   if(provisionItems===null)return '<div class="panel"><p class="panel-copy">Carregando provisões…</p></div>';
-  const todayISO=today(),month=todayISO.slice(0,7);
+  const todayISO=provisionToday(),month=todayISO.slice(0,7);
   const items=provisionItems;
   const overdue=items.filter(x=>x.due_date<todayISO);
   const thisMonth=items.filter(x=>provisionMonth(x.due_date)===month);
   const thirtyDays=new Date(todayISO+"T12:00:00");thirtyDays.setDate(thirtyDays.getDate()+30);
-  const limit=thirtyDays.toLocaleDateString("en-CA");
+  const limit=[thirtyDays.getFullYear(),String(thirtyDays.getMonth()+1).padStart(2,"0"),String(thirtyDays.getDate()).padStart(2,"0")].join("-");
   const soon=items.filter(x=>x.due_date>=todayISO&&x.due_date<=limit);
   const shown=items.filter(x=>{
     if(provisionView==="overdue")return x.due_date<todayISO;
@@ -49,18 +52,17 @@ async function loadProvisions(){
   try{
     const answer=await api("/api/provisions");
     provisionItems=Array.isArray(answer.items)?answer.items:[];
+    provisionError=null;
   }catch(err){
-    provisionItems=[];
-    if(page==="provisions"){
-      $("#page-content").innerHTML='<section class="panel"><h2>Provisões ainda não disponíveis</h2><p class="panel-copy">Confira a migração de banco desta etapa antes de cadastrar pagamentos. Nenhum dado antigo foi apagado.</p></section>';
-    }
+    provisionError=err.message;
+    if(page==="provisions")render();
     throw err;
   }
   if(page==="provisions")render();
 }
 function openProvisionDialog(){
   const d=$("#provision-dialog");const f=$("#provision-form");
-  f.reset();f.elements.start_due_date.value=today();
+  f.reset();f.elements.start_due_date.value=provisionToday();
   f.elements.recurrence.value="unlimited";f.elements.frequency.value="monthly";
   f.elements.value_mode.value="fixed";provisionOptions();
   d.showModal();f.elements.description.focus();
@@ -77,7 +79,7 @@ function openPaymentDialog(id){
   const item=(provisionItems||[]).find(x=>Number(x.id)===Number(id));
   if(!item)return showToast("Provisão não encontrada. Atualize a lista.",true);
   const f=$("#provision-payment-form");f.reset();f.elements.occurrence_id.value=id;
-  f.elements.payment_date.value=today();
+  f.elements.payment_date.value=provisionToday();
   f.elements.amount.value=Number(item.planned_value).toFixed(2);
   $("#provision-payment-detail").textContent=(item.rule?.description||"Conta")+" · vencimento "+dateBR(item.due_date);
   $("#provision-payment-dialog").showModal();
@@ -110,7 +112,8 @@ document.addEventListener("DOMContentLoaded",()=>{
   });
   $("#provision-payment-form").addEventListener("submit",async e=>{
     e.preventDefault();const form=e.currentTarget,btn=form.querySelector('button[type="submit"]');
-    if(!confirm("Confirmar pagamento? Será criado automaticamente um Registro financeiro."))return;
+    if(!form.elements.full_settlement.checked){showToast("Confirme a quitação integral do vencimento.",true);return;}
+    if(!confirm("Confirmar quitação integral? Será criado automaticamente um Registro financeiro."))return;
     btn.disabled=true;
     try{
       await api("/api/provisions/"+Number(form.elements.occurrence_id.value)+"/pay",{
