@@ -21,6 +21,11 @@ ALTER TABLE public.finance_provision_rules
   );
 
 ALTER TABLE public.finance_provision_occurrences
+  DROP CONSTRAINT IF EXISTS finance_provision_occurrences_check;
+ALTER TABLE public.finance_provision_occurrences
+  ADD CONSTRAINT axora_provision_settlement_check
+  CHECK (status<>'paid' OR (payment_date IS NOT NULL AND paid_value>0));
+ALTER TABLE public.finance_provision_occurrences
   DROP CONSTRAINT IF EXISTS finance_provision_occurrences_status_check;
 ALTER TABLE public.finance_provision_occurrences
   ADD CONSTRAINT axora_provision_status_check
@@ -174,7 +179,9 @@ CREATE OR REPLACE FUNCTION public.axora_edit_provision(
 DECLARE o record; r record; v_changed integer; v_trim_description text:=btrim(p_description);
         v_trim_category text:=btrim(p_category);v_trim_responsible text:=btrim(p_responsible);
 BEGIN
-  IF p_scope NOT IN ('single','future') OR p_due_date IS NULL OR
+  IF p_scope IS NULL OR p_scope NOT IN ('single','future') OR p_due_date IS NULL OR
+     p_description IS NULL OR p_category IS NULL OR p_responsible IS NULL OR
+     p_planned_value IS NULL OR p_value_mode IS NULL OR
      length(v_trim_description) NOT BETWEEN 1 AND 240 OR
      length(v_trim_category) NOT BETWEEN 1 AND 120 OR
      length(v_trim_responsible) NOT BETWEEN 1 AND 120 OR
@@ -189,6 +196,7 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Provisão não encontrada'; END IF;
   SELECT i.* INTO o FROM public.finance_provision_occurrences i
   WHERE i.id=p_occurrence_id AND i.workspace_id=p_workspace_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Provisão não encontrada'; END IF;
   IF o.status<>'open' THEN RAISE EXCEPTION 'Somente provisões em aberto podem ser alteradas'; END IF;
   IF r.stop_before_sequence IS NOT NULL AND o.sequence_no>=r.stop_before_sequence THEN
     RAISE EXCEPTION 'Série encerrada';
@@ -237,6 +245,7 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Provisão não encontrada'; END IF;
   SELECT i.* INTO o FROM public.finance_provision_occurrences i
   WHERE i.id=p_occurrence_id AND i.workspace_id=p_workspace_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Provisão não encontrada'; END IF;
   IF o.status<>'open' THEN RAISE EXCEPTION 'Somente provisões em aberto podem ser excluídas'; END IF;
   IF p_scope='future' THEN
     UPDATE public.finance_provision_rules SET
