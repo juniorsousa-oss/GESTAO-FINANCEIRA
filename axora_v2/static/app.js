@@ -118,23 +118,37 @@ function updateSyncStatus(status){
   const settings=$("#settings-connection-status");
   if(settings)settings.textContent=status==="ready"?"Dados financeiros sincronizados":status==="loading"?"Atualizando informações financeiras":"Falha ao atualizar informações financeiras";
 }
-async function refresh(){
+let snapshotRequest=null,lastSnapshotSync=0;
+async function refresh({silent=false}={}){
+  if(snapshotRequest)return snapshotRequest;
   const button=$("#refresh");
-  if(button)button.disabled=true;
-  updateSyncStatus("loading");
-  try{
-    const latest=await api("/api/snapshot");
-    snapshot=latest;
-    render();
-    updateSyncStatus("ready");
-  }catch(error){
-    updateSyncStatus("error");
-    throw error;
-  }finally{
-    if(button)button.disabled=false;
-  }
+  if(!silent && button)button.disabled=true;
+  if(!silent)updateSyncStatus("loading");
+  snapshotRequest=(async()=>{
+    try{
+      const latest=await api("/api/snapshot");
+      if(!me)return;
+      const changed=!snapshot || JSON.stringify(snapshot)!==JSON.stringify(latest);
+      snapshot=latest;
+      lastSnapshotSync=Date.now();
+      if(!silent || changed){
+        const scroll=$("#workspace .main-area");
+        const previousPosition=silent&&scroll?scroll.scrollTop:null;
+        render();
+        if(previousPosition!==null && scroll)scroll.scrollTop=previousPosition;
+      }
+      updateSyncStatus("ready");
+    }catch(error){
+      if(me)updateSyncStatus("error");
+      throw error;
+    }finally{
+      if(button)button.disabled=false;
+    }
+  })();
+  try{return await snapshotRequest}
+  finally{snapshotRequest=null}
 }
-function go(next){page=next;filters={};hideMenu();render();if(next==="settings"){if(me?.is_admin)loadUsers();loadFinanceCatalogs(true).catch(e=>showToast(e.message,true));}if(next==="provisions")loadProvisions().catch(e=>showToast(e.message,true));const scroller=$("#workspace .main-area");if(scroller)scroller.scrollTop=0;}
+function go(next){page=next;filters={};hideMenu();render();if(next==="settings"){if(me?.is_admin)loadUsers();loadFinanceCatalogs(true).catch(e=>showToast(e.message,true));}if(next==="provisions")loadProvisions().catch(e=>showToast(e.message,true));if(next==="dashboard"&&typeof autoSyncNow==="function")autoSyncNow("navigation");const scroller=$("#workspace .main-area");if(scroller)scroller.scrollTop=0;}
 function syncMenuTrigger(){
   const button=$("#menu-toggle"),mobile=window.matchMedia("(max-width:850px)").matches;
   const sidebar=$("#sidebar");
@@ -203,8 +217,8 @@ function dashboard(){
     metric("Saldo realizado",x.realized,"Receitas menos despesas","trend"),
     metric("Saldo localizado",x.located,"Diferença "+money(x.discrepancy),"wallet","info"),
     metric("A receber",x.to_receive,"Previsões pendentes","receive"),
-    metric("A pagar",x.to_pay,"Compromissos futuros","pay","negative"),
-    metric("Saldo projetado",x.projected,"Realizado + previsões","projection","info"),
+    metric("A pagar",x.to_pay,(x.pending_count??0)+" compromissos pendentes no total","pay","negative"),
+    metric("Saldo projetado",x.projected,"Realizado menos todas as provisões","projection","info"),
     metric("Dívida em aberto",x.debt_open,"Passivo financeiro","debt","negative")
   ].join("");
   let forecasts=table(["Vencimento","Descrição","Tipo","Valor","Status"],x.next_forecasts.map(f=>[
@@ -216,7 +230,7 @@ function dashboard(){
   ].map(([l,v])=>'<div class="goal-item"><small>'+esc(l)+'</small><b>'+money(v)+'</b></div>').join("")+'</div>':'<div class="empty-state">Defina sua renda líquida em Configurações para visualizar as metas.</div>';
   let reconciliation='<div class="conciliation-big">'+num(x.conciliation).toFixed(0)+'%</div><p class="panel-copy">Nível estimado de conciliação</p><progress class="progress-native" value="'+num(x.conciliation)+'" max="100" aria-label="Conciliação dos saldos"></progress><ul class="checklist"><li>Realizado separado do previsto</li><li>Saldos comparados com o sistema</li><li>Divergência: '+money(x.discrepancy)+'</li></ul>';
   const html='<div class="metric-grid">'+cards+'</div><div class="grid-two">'+
-    panel("Evolução financeira mensal","Receitas, despesas e saldo a partir de julho de 2026.",chartMonthly(x.monthly))+
+    panel("Evolução financeira mensal","Receitas e despesas realizadas nos últimos seis meses.",chartMonthly(x.monthly))+
     panel("Despesas por categoria","Distribuição das saídas registradas.",chartDonut(x.categories))+'</div><div class="grid-two">'+
     panel("Próximas contas e previsões","Agenda financeira para acompanhamento imediato.",forecasts)+
     panel("Conciliação de saldo","Conferência do saldo calculado e localizado.",reconciliation)+'</div>'+
@@ -360,7 +374,7 @@ function bind(){
   });
   window.addEventListener("resize",()=>{if(window.innerWidth>850&&$("#sidebar").classList.contains("open"))hideMenu();else syncMenuTrigger()});
   syncMenuTrigger();
-  $("#refresh").onclick=()=>refresh().then(()=>showToast("Dados atualizados.")).catch(e=>showToast(e.message,true));$("#profile-button").onclick=()=>go("settings");
+  $("#refresh").onclick=()=>refresh().then(()=>page==="provisions"?loadProvisions({silent:true}):null).then(()=>showToast("Dados atualizados.")).catch(e=>showToast(e.message,true));$("#profile-button").onclick=()=>go("settings");
   $("#main-nav").onclick=e=>{const b=e.target.closest("[data-page]");if(b)go(b.dataset.page)};
   $$(".dialog-close").forEach(x=>x.onclick=()=>$("#editor-dialog").close());$("#editor-form").addEventListener("submit",saveEditor);
   $("#page-content").addEventListener("change",e=>{
