@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from axora_v2 import db, metrics, security, branding, provisions, catalogs, banking
+from axora_v2 import db, metrics, security, branding, provisions, catalogs, banking, pluggy
 from services.importer import parse_excel
 from services.profile import clean_display_name, avatar_data_uri
 
@@ -508,6 +508,139 @@ def banking_add_transaction(payload:dict,user=Depends(authorized)):
     created=db.call("POST","finance_bank_transactions",
       data={"workspace_id":workspace,**cleaned},prefer="return=representation")
     return {"item":created[0]}
+
+
+# Pluggy piloto: autorização do titular no widget; sem senhas bancárias na aplicação.
+@app.get("/api/banking/pluggy/status")
+def pluggy_status(user=Depends(auth)):
+    return {"configured": pluggy.ready(), "live_enabled": pluggy.live_enabled(),
+            "mode": "live" if pluggy.live_enabled() else "sandbox",
+            "provider": "Pluggy", "read_only": True}
+
+
+def pluggy_intent_or_404(workspace, user, intent_id):
+    intent_id = pluggy.checked_uuid(intent_id)
+    found=banking_rows(workspace,"finance_pluggy_intents",
+        filters={"id":"eq."+intent_id,"initiated_by":"eq."+str(user["id"])},limit=1)
+    if not found:
+        raise HTTPException(404,"Sessão de conexão não encontrada.")
+    intent=found[0]
+    if intent.get("completed_at"):
+        raise HTTPException(409,"Esta conexão já foi finalizada.")
+    expiry=datetime.fromisoformat(str(intent["expires_at"]).replace("Z","+00:00"))
+    if expiry <= datetime.now(timezone.utc):
+        raise HTTPException(409,"O prazo de conexão expirou. Inicie uma nova autorização.")
+    return intent
+
+
+@app.post("/api/banking/pluggy/start")
+def pluggy_start(payload: dict, user=Depends(authorized)):
+    if not isinstance(payload,dict) or set(payload)!={"account_id","consent_confirmed"}:
+        raise HTTPException(422,"Escolha uma conta e confirme a autorização do titular.")
+    if payload["consent_confirmed"] is not True:
+        raise HTTPException(422,"A autorização bancária deve ser confirmada pelo titular.")
+    workspace=user_workspace(user)
+    account_id=banking.positive_id(payload["account_id"])
+    accounts=banking_rows(workspace,"finance_bank_accounts",
+        filters={"id":"eq."+str(account_id)},limit=1)
+    if not accounts:
+        raise HTTPException(404,"Conta bancária não encontrada neste espaço.")
+    if accounts[0].get("pluggy_account_id"):
+        raise HTTPException(409,"Conta já vinculada. Use Sincronizar.")
+    if not pluggy.ready():
+        raise HTTPException(503,"Configure a conta de desenvolvedor Pluggy na VPS antes de conectar.")
+    connector_id = None if pluggy.live_enabled() else pluggy.allowed_sandbox_connector()
+    rows=db.call("POST","finance_pluggy_intents",data={
+        "workspace_id":workspace,"account_id":account_id,"initiated_by":int(user["id"])
+    },prefer="return=representation")
+    intent=rows[0]
+    token=pluggy.connect_token(intent["id"])
+    return {"intent_id":intent["id"],"connect_token":token,
+            "sandbox":not pluggy.live_enabled(),"sandbox_connector_id":connector_id}
+
+
+@app.post("/api/banking/pluggy/complete")
+def pluggy_complete(payload:dict,user=Depends(authorized)):
+    if not isinstance(payload,dict) or set(payload)!={"intent_id","item_id"}:
+        raise HTTPException(422,"Identificação da conexão incompleta.")
+    workspace=user_workspace(user)
+    intent=pluggy_intent_or_404(workspace,user,payload["intent_id"])
+    item_id=pluggy.checked_uuid(payload["item_id"])
+    pluggy.item_details(item_id,intent["id"])
+    accounts=pluggy.bank_accounts(item_id)
+    if not accounts:
+        raise HTTPException(409,"O banco não disponibilizou contas correntes ou poupanças em BRL.")
+    return {"intent_id":intent["id"],"item_id":item_id,
+            "accounts":[pluggy.public_bank_account(a) for a in accounts]}
+
+
+@app.post("/api/banking/pluggy/link")
+def pluggy_link(payload:dict,user=Depends(authorized)):
+    if not isinstance(payload,dict) or set(payload)!={"intent_id","item_id","provider_account_id","confirm_account"}:
+        raise HTTPException(422,"Selecione e confirme a conta retornada pelo banco.")
+    if payload["confirm_account"] is not True:
+        raise HTTPException(422,"Confirme o vínculo entre a conta bancária e o titular cadastrado.")
+    workspace=user_workspace(user)
+    intent=pluggy_intent_or_404(workspace,user,payload["intent_id"])
+    item_id=pluggy.checked_uuid(payload["item_id"])
+    account_id=pluggy.checked_uuid(payload["provider_account_id"])
+    item=pluggy.item_details(item_id,intent["id"])
+    bank=next((a for a in pluggy.bank_accounts(item_id) if pluggy.checked_uuid(a["id"])==account_id),None)
+    if not bank:
+        raise HTTPException(404,"Conta não corresponde à autorização recebida.")
+    target=banking_rows(workspace,"finance_bank_accounts",
+        filters={"id":"eq."+str(intent["account_id"])},limit=1)
+    if not target or target[0].get("pluggy_account_id"):
+        raise HTTPException(409,"A conta AXORA já foi vinculada ou não está disponível.")
+    updated=db.call("PATCH","finance_bank_accounts",params={
+        "id":"eq."+str(intent["account_id"]),"workspace_id":"eq."+workspace,
+        "pluggy_account_id":"is.null"
+    },data={"pluggy_item_id":item_id,"pluggy_account_id":account_id,
+            "pluggy_sandbox":bool((item.get("connector") or {}).get("isSandbox")),
+            "pluggy_balance":bank.get("balance"),"pluggy_last_synced":datetime.now(timezone.utc).isoformat()},
+            prefer="return=representation")
+    if not updated:
+        raise HTTPException(409,"A conta foi vinculada por outra sessão.")
+    db.call("PATCH","finance_pluggy_intents",params={
+        "id":"eq."+str(intent["id"]),"workspace_id":"eq."+workspace,
+        "initiated_by":"eq."+str(user["id"])
+    },data={"provider_item_id":item_id,"completed_at":datetime.now(timezone.utc).isoformat()},
+       prefer="return=minimal")
+    return {"account_id":intent["account_id"],"linked":True,"sandbox":updated[0].get("pluggy_sandbox"),
+            "balance":updated[0].get("pluggy_balance")}
+
+
+@app.post("/api/banking/pluggy/sync/{account_id}")
+def pluggy_sync(account_id:int,user=Depends(authorized)):
+    account_id=banking.positive_id(account_id)
+    workspace=user_workspace(user)
+    matches=banking_rows(workspace,"finance_bank_accounts",
+        filters={"id":"eq."+str(account_id)},limit=1)
+    if not matches or not matches[0].get("pluggy_account_id"):
+        raise HTTPException(404,"Esta conta ainda não está vinculada.")
+    bound=matches[0]
+    if not pluggy.live_enabled() and bound.get("pluggy_sandbox") is not True:
+        raise HTTPException(403,"Conexão real não habilitada para este piloto.")
+    item=pluggy.request("GET","/items/"+pluggy.checked_uuid(bound["pluggy_item_id"]))
+    if item.get("status")!="UPDATED":
+        raise HTTPException(409,"A instituição ainda não concluiu a atualização dos dados.")
+    bank=next((x for x in pluggy.bank_accounts(bound["pluggy_item_id"])
+        if pluggy.checked_uuid(x["id"])==pluggy.checked_uuid(bound["pluggy_account_id"])),None)
+    if not bank:
+        raise HTTPException(409,"A conta não consta mais no consentimento bancário.")
+    incoming=pluggy.postable_transactions(bound["pluggy_account_id"])
+    if incoming:
+        data=[{"workspace_id":workspace,"account_id":account_id,**row} for row in incoming]
+        # Banco preserva as conciliações anteriores: ignora conflitos pela identidade única.
+        db.call("POST","finance_bank_transactions",params={
+            "on_conflict":"account_id,source,external_ref"
+        },data=data,prefer="resolution=ignore-duplicates,return=minimal")
+    db.call("PATCH","finance_bank_accounts",params={
+        "id":"eq."+str(account_id),"workspace_id":"eq."+workspace
+    },data={"pluggy_balance":bank.get("balance"),
+            "pluggy_last_synced":datetime.now(timezone.utc).isoformat()},prefer="return=minimal")
+    return {"account_id":account_id,"read_only":True,"received":len(incoming),
+            "message":"Extrato sincronizado com a fila de análise. Nenhum pagamento foi confirmado."}
 
 
 @app.get("/api/banking/transactions/{transaction_id}/suggestions")
