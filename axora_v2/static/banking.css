@@ -51,3 +51,16 @@
 .bank-dialog .dialog-actions{flex-wrap:wrap}
 .bank-dialog .dialog-actions .btn{flex:1}
 }
+
+/* Administração de titulares e contas: ações discretas, acessíveis e responsivas. */
+.bank-entity-actions,.bank-account-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bank-account-actions{border-top:1px solid #dde9f1;padding-top:12px;margin-top:6px}
+.bank-entity-actions .btn,.bank-account-actions .btn{min-height:34px;padding:7px 11px;font-size:11px}
+.bank-entity-actions .bank-delete,.bank-account-actions .bank-delete{border-color:#edd5da;color:#b74e60}
+.bank-entity-actions .bank-delete:hover,.bank-account-actions .bank-delete:hover{background:#fff2f4}
+.bank-entity-actions button:focus-visible,.bank-account-actions button:focus-visible{outline:2px solid #0ea9aa;outline-offset:2px}
+@media(max-width:620px){
+  .bank-entity{align-items:flex-start;flex-wrap:wrap}
+  .bank-entity-actions{width:100%;justify-content:flex-end}
+  .bank-account-actions .btn{flex:1}
+}
