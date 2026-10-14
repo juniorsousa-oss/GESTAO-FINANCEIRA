@@ -26,6 +26,7 @@ jobs:
       - run: python -m pytest axora_v2/tests -q
       - run: node --check axora_v2/static/app.js
       - run: node --check axora_v2/static/provisions.js
+      - run: node --check axora_v2/static/auto-sync.js
       - run: node --check axora_v2/static/catalogs.js
       - run: node --check axora_v2/static/brand-kit.js
       - run: node axora_v2/tests/ui_runtime.cjs
