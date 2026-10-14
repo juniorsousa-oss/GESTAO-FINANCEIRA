@@ -31,7 +31,13 @@ function bankTitle(item){
     " · "+(holder?.name||"Titular");
 }
 function bankInfoBanner(){
-  return '<div class="notice bank-info"><b>Modo manual — sem conexão bancária.</b> Cadastre titulares, contas e transações de exemplo. Nenhuma consulta à CAIXA, Nubank ou outro banco está ativa. Somente dados validados entram nos Registros.</div>';
+  const provider=bankingData?.provider||{};
+  return '<div class="notice bank-info"><b>Conexão bancária opcional.</b> '+
+    (provider.configured?(provider.live_enabled?
+      'Pluggy Open Finance habilitado. O titular deve autorizar cada conta.':
+      'Pluggy disponível em sandbox. Nenhuma conta real será vinculada enquanto o modo de produção não for habilitado.') :
+      'Pluggy ainda não configurada na Hostinger; cadastros e conciliação manual seguem disponíveis.')+
+    ' Toda movimentação importada fica pendente até confirmação do operador.</div>';
 }
 function bankUnavailable(){
   return '<section class="panel"><h2>Dados bancários indisponíveis</h2><p class="panel-copy">'+
@@ -47,8 +53,15 @@ function bankingAccountsPage(){
     const h=holders.find(x=>Number(x.id)===Number(a.holder_id));
     return '<div class="bank-account-card"><div class="bank-card-top"><span class="bank-icon">'+interfaceIcon("wallet")+'</span><span class="bank-tag">Manual</span></div>'+
       '<strong>'+esc(a.nickname)+'</strong><div>'+esc(a.bank_name)+' · '+esc(h?.name||"Titular")+'</div>'+
-      '<small>'+esc(a.account_type)+' · BRL</small><p>Sem sincronização bancária</p>'+
-      '<div class="bank-account-actions"><button type="button" class="btn ghost small" data-action="bank-edit-account" data-id="'+Number(a.id)+'">Editar</button>'+
+      '<small>'+esc(a.account_type)+' · BRL</small>'+
+      (a.pluggy_account_id?'<p class="bank-connected">Conectada via Pluggy · '+(a.pluggy_sandbox?'Teste':'Open Finance')+
+        (a.pluggy_balance!=null?' · Saldo informado pelo banco: '+money(a.pluggy_balance):'')+'</p>':
+        '<p>Sem sincronização bancária</p>')+
+      '<div class="bank-account-actions">'+
+      (a.pluggy_account_id?
+        '<button type="button" class="btn primary small" data-action="pluggy-sync" data-id="'+Number(a.id)+'">Sincronizar extrato</button>':
+        '<button type="button" class="btn primary small" data-action="pluggy-start" data-id="'+Number(a.id)+'">Conectar banco</button>')+
+      '<button type="button" class="btn ghost small" data-action="bank-edit-account" data-id="'+Number(a.id)+'">Editar</button>'+
       '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-account" data-id="'+Number(a.id)+'">Excluir</button></div></div>';
   }).join("");
   return '<div class="stack bank-module">'+bankInfoBanner()+
