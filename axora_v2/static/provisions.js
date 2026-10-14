@@ -28,6 +28,7 @@ function provisionsPage(){
     return true;
   });
   const cards='<div class="metric-grid">'+[
+     ["Total comprometido",provisionSum(items),items.length+" ocorrência(s) pendente(s)"],
      ["A vencer no mês",provisionSum(thisMonth),thisMonth.length+" ocorrência(s)"],
      ["Vencidas",provisionSum(overdue),overdue.length+" ocorrência(s) pendente(s)"],
      ["Próximos 30 dias",provisionSum(soon),soon.length+" ocorrência(s)"]
@@ -56,17 +57,32 @@ function provisionsPage(){
   return '<div class="stack provision-module">'+cards+info+
     '<section class="panel"><div class="provision-toolbar"><div><h2>Compromissos em aberto</h2><p>Pagamentos confirmados passam para Registros.</p></div>'+selector+'</div>'+listing+'<p class="table-count">'+shown.length+' vencimento(s) exibido(s).</p></section></div>';
 }
-async function loadProvisions(){
-  try{
-    const answer=await api("/api/provisions");
-    provisionItems=Array.isArray(answer.items)?answer.items:[];
-    provisionError=null;
-  }catch(err){
-    provisionError=err.message;
-    if(page==="provisions")render();
-    throw err;
-  }
-  if(page==="provisions")render();
+let provisionRequest=null;
+async function loadProvisions({silent=false}={}){
+  if(provisionRequest)return provisionRequest;
+  provisionRequest=(async()=>{
+    let changed=false;
+    try{
+      const answer=await api("/api/provisions");
+      const latest=Array.isArray(answer.items)?answer.items:[];
+      changed=provisionError!==null || !provisionItems ||
+        JSON.stringify(provisionItems)!==JSON.stringify(latest);
+      provisionItems=latest;
+      provisionError=null;
+    }catch(err){
+      provisionError=err.message;
+      if(page==="provisions" && !silent)render();
+      throw err;
+    }
+    if(page==="provisions" && (!silent || changed)){
+      const scroller=$("#workspace .main-area");
+      const oldPosition=silent&&scroller?scroller.scrollTop:null;
+      render();
+      if(oldPosition!==null&&scroller)scroller.scrollTop=oldPosition;
+    }
+  })();
+  try{return await provisionRequest}
+  finally{provisionRequest=null}
 }
 async function openProvisionDialog(){
   await loadFinanceCatalogs(true);
