@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="/assets/mobile-frame-login-v2.css?v=opera-atria-card-mobile-r1">
   <link rel="stylesheet" href="/assets/mobile-scroll-stability.css?v=axora-mobile-scroll-r1">
   <link rel="stylesheet" href="/assets/provisions.css?v=axora-revisions-r1">
-  <link rel="stylesheet" href="/assets/banking.css?v=axora-banking-mvp-r1">
+  <link rel="stylesheet" href="/assets/banking.css?v=axora-bank-crud-r1">
 </head>
 <body>
   <div id="login" class="login-screen">
@@ -166,23 +166,23 @@
     </form>
   </dialog>
   
-  <dialog id="bank-holder-dialog" class="bank-dialog"><form id="bank-holder-form">
-    <div class="bank-dialog-heading"><div><p>AXORA · CONTA E TITULAR</p><h2>Novo titular</h2></div><button type="button" class="icon-button" data-bank-dismiss aria-label="Fechar">×</button></div>
+  <dialog id="bank-holder-dialog" class="bank-dialog"><form id="bank-holder-form"><input type="hidden" name="record_id" value="">
+    <div class="bank-dialog-heading"><div><p>AXORA · CONTA E TITULAR</p><h2 id="bank-holder-title">Novo titular</h2></div><button type="button" class="icon-button" data-bank-dismiss aria-label="Fechar">×</button></div>
     <div class="bank-field"><label for="bh-name">Nome do titular</label><input id="bh-name" name="name" maxlength="100" required placeholder="Ex.: Maria, João, titular pessoal"></div>
     <div class="bank-field"><label for="bh-relation">Vínculo</label><select id="bh-relation" name="relationship" required>
       <option value="proprio">Próprio</option><option value="conjuge">Cônjuge</option><option value="mae">Mãe</option><option value="pai">Pai</option><option value="familiar">Familiar</option><option value="outro">Outro</option>
     </select></div>
     <p class="panel-copy">Este cadastro não concede acesso a dados bancários reais. Cada titular deverá autorizar uma futura conexão.</p>
-    <div class="dialog-actions"><button class="btn ghost" type="button" data-bank-dismiss>Cancelar</button><button class="btn primary" type="submit">Salvar titular</button></div>
+    <div class="dialog-actions"><button class="btn ghost" type="button" data-bank-dismiss>Cancelar</button><button class="btn primary" id="bank-holder-submit" type="submit">Salvar titular</button></div>
   </form></dialog>
-  <dialog id="bank-account-dialog" class="bank-dialog"><form id="bank-account-form">
-    <div class="bank-dialog-heading"><div><p>AXORA · CONTAS</p><h2>Nova conta bancária</h2></div><button type="button" class="icon-button" data-bank-dismiss aria-label="Fechar">×</button></div>
+  <dialog id="bank-account-dialog" class="bank-dialog"><form id="bank-account-form"><input type="hidden" name="record_id" value="">
+    <div class="bank-dialog-heading"><div><p>AXORA · CONTAS</p><h2 id="bank-account-title">Nova conta bancária</h2></div><button type="button" class="icon-button" data-bank-dismiss aria-label="Fechar">×</button></div>
     <div class="bank-field"><label for="ba-holder">Titular</label><select id="ba-holder" name="holder_id" required></select></div>
     <div class="bank-field"><label for="ba-bank">Instituição financeira</label><input id="ba-bank" name="bank_name" maxlength="80" required placeholder="Ex.: CAIXA ou Nubank"></div>
     <div class="bank-field"><label for="ba-nickname">Apelido da conta</label><input id="ba-nickname" name="nickname" maxlength="100" required placeholder="Ex.: CAIXA pessoal"></div>
     <div class="bank-field"><label for="ba-type">Tipo de conta</label><select id="ba-type" name="account_type" required><option value="corrente">Corrente</option><option value="poupanca">Poupança</option><option value="pagamento">Pagamento</option><option value="outro">Outro</option></select></div>
     <p class="panel-copy">Conta manual para estruturar o AXORA. Ainda não há autenticação com o banco.</p>
-    <div class="dialog-actions"><button class="btn ghost" type="button" data-bank-dismiss>Cancelar</button><button class="btn primary" type="submit">Salvar conta</button></div>
+    <div class="dialog-actions"><button class="btn ghost" type="button" data-bank-dismiss>Cancelar</button><button class="btn primary" id="bank-account-submit" type="submit">Salvar conta</button></div>
   </form></dialog>
   <dialog id="bank-transaction-dialog" class="bank-dialog"><form id="bank-transaction-form">
     <div class="bank-dialog-heading"><div><p>AXORA · EXTRATO DE TESTE</p><h2>Adicionar transação</h2></div><button type="button" class="icon-button" data-bank-dismiss aria-label="Fechar">×</button></div>
@@ -213,7 +213,7 @@
   <script src="/assets/provisions.js?v=axora-complete-obligations-r1" defer></script>
   <script src="/assets/catalogs.js?v=axora-revisions-r1" defer></script>
   <script src="/assets/auto-sync.js?v=axora-complete-obligations-r1" defer></script>
-  <script src="/assets/banking.js?v=axora-banking-mvp-r1" defer></script>
+  <script src="/assets/banking.js?v=axora-bank-crud-r1" defer></script>
   <script src="/assets/brand-kit.js?v=brand-icon-flash-r1" defer></script>
 </body>
 </html>
