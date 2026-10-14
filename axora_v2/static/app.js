@@ -19,6 +19,7 @@ function metricIcon(name){
 // Ícones lineares compartilhados — a mesma linguagem em todas as páginas.
 const interfaceIconPaths={
   plus:'<path d="M12 5v14M5 12h14"/>',
+  wallet:'<rect x="3" y="6" width="18" height="15" rx="2"/><path d="M3 10h18M16 15h2"/>',
   download:'<path d="M12 3v12m-5-5 5 5 5-5"/><path d="M5 18v3h14v-3"/>',
   edit:'<path d="M12 20h9"/><path d="m16.5 3.5 4 4L9 19H5v-4L16.5 3.5Z"/>',
   trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 11v6m4-6v6"/>',
