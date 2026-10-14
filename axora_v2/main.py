@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from axora_v2 import db, metrics, security, branding, provisions, catalogs
+from axora_v2 import db, metrics, security, branding, provisions, catalogs, banking
 from services.importer import parse_excel
 from services.profile import clean_display_name, avatar_data_uri
 
@@ -361,6 +361,96 @@ def pay_provision(pk: int, payload: dict, user=Depends(authorized)):
     values = provisions.clean_payment(payload)
     return db.call("POST", "rpc/axora_pay_provision",
                    data={"p_workspace_id": user_workspace(user), "p_occurrence_id": pk, **values})
+
+
+# Banco manual e Central de Conciliação: nenhuma integração Open Finance ativa.
+def banking_rows(workspace, name, *, filters=None, select="*", order=None, limit=500):
+    params={"select":select,"workspace_id":"eq."+workspace,"limit":limit}
+    if filters: params.update(filters)
+    if order:params["order"]=order
+    return db.call("GET",name,params=params)
+
+
+@app.get("/api/banking")
+def banking_overview(user=Depends(auth)):
+    workspace=user_workspace(user)
+    holders=banking_rows(workspace,"finance_bank_holders",order="name.asc")
+    accounts=banking_rows(workspace,"finance_bank_accounts",order="nickname.asc")
+    transactions=banking_rows(workspace,"finance_bank_transactions",
+       filters={"status":"eq.pending"},order="posted_on.desc,id.desc",limit=500)
+    return {"holders":holders,"accounts":accounts,"pending":transactions,
+            "mode":"manual","bank_connected":False}
+
+
+@app.post("/api/banking/holders")
+def banking_add_holder(payload:dict,user=Depends(authorized)):
+    workspace=user_workspace(user)
+    cleaned=banking.clean_holder(payload)
+    created=db.call("POST","finance_bank_holders",data={"workspace_id":workspace,**cleaned},
+                    prefer="return=representation")
+    return {"item":created[0]}
+
+
+@app.post("/api/banking/accounts")
+def banking_add_account(payload:dict,user=Depends(authorized)):
+    workspace=user_workspace(user)
+    cleaned=banking.clean_account(payload)
+    holders=banking_rows(workspace,"finance_bank_holders",
+                          filters={"id":"eq."+str(cleaned["holder_id"])},limit=1)
+    if not holders:raise HTTPException(404,"Titular não encontrado neste espaço.")
+    created=db.call("POST","finance_bank_accounts",
+      data={"workspace_id":workspace,**cleaned},prefer="return=representation")
+    return {"item":created[0]}
+
+
+@app.post("/api/banking/transactions")
+def banking_add_transaction(payload:dict,user=Depends(authorized)):
+    workspace=user_workspace(user)
+    cleaned=banking.clean_transaction(payload)
+    accounts=banking_rows(workspace,"finance_bank_accounts",
+                           filters={"id":"eq."+str(cleaned["account_id"])},limit=1)
+    if not accounts:raise HTTPException(404,"Conta não localizada neste espaço.")
+    created=db.call("POST","finance_bank_transactions",
+      data={"workspace_id":workspace,**cleaned},prefer="return=representation")
+    return {"item":created[0]}
+
+
+@app.get("/api/banking/transactions/{transaction_id}/suggestions")
+def banking_suggestions(transaction_id:int,user=Depends(auth)):
+    banking.positive_id(transaction_id)
+    workspace=user_workspace(user)
+    transactions=banking_rows(workspace,"finance_bank_transactions",
+      filters={"id":"eq."+str(transaction_id),"status":"eq.pending"},limit=1)
+    if not transactions:raise HTTPException(404,"Transação pendente não encontrada.")
+    transaction=transactions[0]
+    movements=db.select("movements",order="movement_date.desc,id.desc",
+      params={"workspace_id":"eq."+workspace,"limit":500})
+    provision_rows=banking_rows(workspace,"finance_provision_occurrences",
+      filters={"status":"eq.open"},
+      select="id,due_date,planned_value,description_override,rule:finance_provision_rules(description)",
+      order="due_date.asc,id.asc",limit=1000)
+    linked=banking_rows(workspace,"finance_bank_transactions",
+      filters={"movement_id":"not.is.null"},select="movement_id",limit=1000)
+    occupied=[row["movement_id"] for row in linked if row.get("movement_id")]
+    return {"transaction_id":transaction_id,
+            "candidates":banking.suggestions(transaction,movements,provision_rows,occupied)}
+
+
+@app.get("/api/banking/history")
+def banking_history(user=Depends(auth)):
+    workspace=user_workspace(user)
+    rows=banking_rows(workspace,"finance_reconciliation_events",
+      select="id,transaction_id,actor_id,action,movement_id,provision_occurrence_id,counterpart_id,notes,created_at",
+      order="created_at.desc,id.desc",limit=100)
+    return {"items":rows}
+
+
+@app.post("/api/banking/reconcile")
+def banking_reconcile(payload:dict,user=Depends(authorized)):
+    workspace=user_workspace(user)
+    data=banking.clean_decision(payload)
+    return db.call("POST","rpc/axora_confirm_reconciliation",
+      data={"p_workspace_id":workspace,"p_user_id":int(user["id"]),**data})
 
 
 @app.post("/api/settings")
