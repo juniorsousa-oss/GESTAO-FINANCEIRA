@@ -23,6 +23,7 @@ async function autoSyncNow(reason="timer"){
   try{
     await refresh({silent:true});
     if(page==="provisions" && me)await loadProvisions({silent:true});
+    if(["bank-accounts","reconciliation"].includes(page) && me)await loadBanking(true);
   }catch{
     // refresh() atualiza o indicador de falha; não exibe pop-ups intrusivos.
   }finally{
