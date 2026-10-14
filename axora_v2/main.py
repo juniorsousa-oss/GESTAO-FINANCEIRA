@@ -221,8 +221,14 @@ def change_row(kind: str, pk: int, payload: dict, user=Depends(authorized)):
     if not current:
         raise HTTPException(404, "Registro não localizado.")
     row = sanitize(kind, payload)
-    if kind == "movements" and current[0].get("provision_occurrence_id"):
-        raise HTTPException(409, "Registro de quitação vinculado à provisão; edição isolada bloqueada.")
+    if kind == "movements":
+        if current[0].get("provision_occurrence_id"):
+            raise HTTPException(409, "Registro de quitação vinculado à provisão; edição isolada bloqueada.")
+        bank_links=db.call("GET","finance_bank_transactions",params={
+            "select":"id","workspace_id":"eq."+workspace,
+            "movement_id":"eq."+str(pk),"limit":1})
+        if bank_links:
+            raise HTTPException(409, "Registro conciliado com banco. Use o procedimento de estorno auditado.")
     return db.update(kind, pk, row, workspace_id=workspace)
 
 
@@ -235,8 +241,14 @@ def remove_row(kind: str, pk: int, user=Depends(authorized)):
         "id": f"eq.{pk}", "workspace_id": "eq." + workspace, "limit": 1})
     if not current:
         raise HTTPException(404, "Registro não localizado.")
-    if kind == "movements" and current[0].get("provision_occurrence_id"):
-        raise HTTPException(409, "Registro vinculado à provisão; estorno controlado virá na próxima etapa.")
+    if kind == "movements":
+        if current[0].get("provision_occurrence_id"):
+            raise HTTPException(409, "Registro vinculado à provisão; estorno controlado virá na próxima etapa.")
+        bank_links=db.call("GET","finance_bank_transactions",params={
+            "select":"id","workspace_id":"eq."+workspace,
+            "movement_id":"eq."+str(pk),"limit":1})
+        if bank_links:
+            raise HTTPException(409, "Registro conciliado com banco. Exclusão isolada bloqueada.")
     db.delete(kind, pk, workspace_id=workspace)
     return {"ok": True}
 
