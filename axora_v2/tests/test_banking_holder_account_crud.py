@@ -122,6 +122,6 @@ def test_ui_both_sections_have_actions_and_confirmation():
     assert "method:id?\"PATCH\":\"POST\"" in js
     assert 'id="bank-holder-title"' in html
     assert 'id="bank-account-title"' in html
-    assert "banking.js?v=axora-bank-crud-r1" in html
+    assert "banking.js?v=axora-pluggy-pilot-r1" in html
     assert ".bank-account-actions" in css
     assert "GRANT UPDATE, DELETE" in sql
