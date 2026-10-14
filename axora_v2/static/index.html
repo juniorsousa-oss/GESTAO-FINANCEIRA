@@ -208,27 +208,12 @@
       <button class="btn primary" id="bank-submit" type="submit" disabled>Confirmar decisão</button>
     </div>
   </form></dialog>
-  
-  <dialog id="bank-pluggy-dialog" class="bank-dialog"><form id="bank-pluggy-account-form">
-    <div class="bank-dialog-heading"><div><p>AXORA · OPEN FINANCE</p><h2>Confirmar conta bancária</h2></div>
-    <button type="button" class="icon-button" data-pluggy-dismiss aria-label="Fechar">×</button></div>
-    <p class="panel-copy">Confira o titular, a instituição e a identificação parcial retornados pelo banco antes de vincular esta conta ao AXORA.</p>
-    <input type="hidden" name="intent_id"><input type="hidden" name="item_id">
-    <div class="bank-field"><label for="pluggy-provider-account">Conta autorizada</label>
-      <select id="pluggy-provider-account" name="provider_account_id" required></select></div>
-    <label class="provision-cancel-confirm"><input name="confirm_account" type="checkbox" required>
-      Confirmo que esta é a conta correta e que seu titular autorizou o compartilhamento.</label>
-    <p class="panel-copy">Conectar não importa nem registra pagamentos. Você decidirá quando sincronizar e conciliar cada movimentação.</p>
-    <div class="dialog-actions"><button class="btn ghost" type="button" data-pluggy-dismiss>Cancelar</button>
-      <button class="btn primary" type="submit">Vincular esta conta</button></div>
-  </form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/assets/app.js?v=axora-banking-mvp-r1" defer></script>
   <script src="/assets/provisions.js?v=axora-complete-obligations-r1" defer></script>
   <script src="/assets/catalogs.js?v=axora-revisions-r1" defer></script>
   <script src="/assets/auto-sync.js?v=axora-complete-obligations-r1" defer></script>
-  <script src="/assets/banking.js?v=axora-pluggy-pilot-r1" defer></script>
-  <script src="/assets/pluggy-connect.js?v=axora-pluggy-pilot-r1" defer></script>
+  <script src="/assets/banking.js?v=axora-bank-crud-r1" defer></script>
   <script src="/assets/brand-kit.js?v=brand-icon-flash-r1" defer></script>
 </body>
 </html>
