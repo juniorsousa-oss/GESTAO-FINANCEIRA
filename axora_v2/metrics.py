@@ -37,13 +37,14 @@ def month_key(value):
     return 0, 0
 
 
-def compute(movements, forecasts, accounts, debts, settings):
+def compute(movements, forecasts, accounts, debts, settings, *, provision_overview=None):
     receipts = sum(number(x.get("value")) for x in movements if income(x))
     expenses = sum(number(x.get("value")) for x in movements if outgoing(x))
     realized = receipts - expenses
     located = sum(number(x.get("balance")) for x in accounts)
     to_receive = sum(number(x.get("final_value")) for x in forecasts if pending(x) and forecast_income(x))
-    to_pay = sum(number(x.get("final_value")) for x in forecasts if pending(x) and not forecast_income(x))
+    to_pay = (number(provision_overview.get("to_pay")) if provision_overview is not None
+              else sum(number(x.get("final_value")) for x in forecasts if pending(x) and not forecast_income(x)))
     debt_open = sum(number(x.get("open_value")) for x in debts)
     discrepancy = located - realized
 
@@ -84,12 +85,14 @@ def compute(movements, forecasts, accounts, debts, settings):
         "discrepancy": round(discrepancy, 2),
         "to_receive": round(to_receive, 2),
         "to_pay": round(to_pay, 2),
+        "pending_count": int(provision_overview.get("pending_count", 0)) if provision_overview is not None else len(forecasts),
         "projected": round(realized + to_receive - to_pay, 2),
         "debt_open": round(debt_open, 2),
         "conciliation": round(conciliation, 1),
         "monthly": months,
         "categories": categories_sorted,
-        "next_forecasts": sorted(forecasts, key=lambda r: (str(r.get("status", "")), str(r.get("due_date") or "")))[:5],
+        "next_forecasts": (provision_overview.get("next_forecasts", []) if provision_overview is not None
+                           else sorted(forecasts, key=lambda r: (str(r.get("status", "")), str(r.get("due_date") or "")))[:5]),
         "goals": {
             "emergency": round(net * number(settings.get("emergency_months", 6)), 2),
             "investment": round(net * number(settings.get("investment_pct", 20)) / 100, 2),
