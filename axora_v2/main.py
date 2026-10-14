@@ -391,7 +391,9 @@ def banking_overview(user=Depends(auth)):
     transactions=banking_rows(workspace,"finance_bank_transactions",
        filters={"status":"eq.pending"},order="posted_on.desc,id.desc",limit=500)
     return {"holders":holders,"accounts":accounts,"pending":transactions,
-            "mode":"manual","bank_connected":False}
+            "mode":"manual","bank_connected":any(x.get("pluggy_account_id") for x in accounts),
+            "provider":{"configured":pluggy.ready(),"live_enabled":pluggy.live_enabled(),
+                        "mode":"live" if pluggy.live_enabled() else "sandbox"}}
 
 
 @app.post("/api/banking/holders")
