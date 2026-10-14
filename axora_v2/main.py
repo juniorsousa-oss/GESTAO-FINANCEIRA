@@ -193,19 +193,13 @@ def snapshot(user=Depends(auth)):
     rows = {kind: db.select(kind, order=ORDERS[kind], params=scope)
             for kind in ("movements", "accounts", "debts")}
     db.call("POST", "rpc/axora_ensure_provisions", data={"p_workspace_id": workspace})
-    pending = db.call("GET", "finance_provision_occurrences", params={
-        "select": "due_date,planned_value,rule:finance_provision_rules(description,category)",
-        "workspace_id": "eq." + workspace, "status": "eq.open",
-        "order": "due_date.asc", "limit": 4000,
-    })
-    future = [{"due_date": item.get("due_date"),
-               "description": (item.get("rule") or {}).get("description", ""),
-               "type": "Saída", "status": "Não pago",
-               "final_value": item.get("planned_value", 0)}
-              for item in pending]
+    # Agregação no banco: não corta em 1.000 linhas, nem ignora parcelas distantes.
+    provision_totals = db.call("POST", "rpc/axora_provision_overview",
+                               data={"p_workspace_id": workspace})
     rows["forecasts"] = []
     settings = db.get_settings(workspace)
-    summary = metrics.compute(rows["movements"], future, rows["accounts"], rows["debts"], settings)
+    summary = metrics.compute(rows["movements"], [], rows["accounts"], rows["debts"],
+                              settings, provision_overview=provision_totals)
     return {**rows, "settings": settings, "summary": summary}
 
 
@@ -312,12 +306,22 @@ def change_finance_catalog(pk: int, payload: dict, user=Depends(authorized)):
 def list_provisions(user=Depends(auth)):
     workspace = user_workspace(user)
     db.call("POST", "rpc/axora_ensure_provisions", data={"p_workspace_id": workspace})
-    rows = db.call("GET", "finance_provision_occurrences", params={
-        "select": "id,rule_id,sequence_no,due_date,planned_value,status,description_override,category_override,responsible_override,value_mode_override,rule:finance_provision_rules(description,category,responsible,value_mode,recurrence,frequency,planned_value,end_date,installment_count)",
-        "workspace_id": "eq." + workspace,
-        "status": "eq.open", "order": "due_date.asc,id.asc"
-    })
-    return {"items": rows}
+    # Paginação explícita: o Supabase costuma limitar GET a 1.000 registros.
+    items = []
+    page_size = 500
+    while True:
+        rows = db.call("GET", "finance_provision_occurrences", params={
+            "select": "id,rule_id,sequence_no,due_date,planned_value,status,description_override,category_override,responsible_override,value_mode_override,rule:finance_provision_rules(description,category,responsible,value_mode,recurrence,frequency,planned_value,end_date,installment_count)",
+            "workspace_id": "eq." + workspace,
+            "status": "eq.open", "order": "due_date.asc,id.asc",
+            "limit": page_size, "offset": len(items),
+        })
+        items.extend(rows)
+        if len(rows) < page_size:
+            break
+        if len(items) >= 10000:
+            raise HTTPException(503, "Muitas provisões abertas. Use filtros por período.")
+    return {"items": items}
 
 
 @app.post("/api/provisions")
