@@ -469,7 +469,7 @@ def banking_edit_account(account_id:int,payload:dict,user=Depends(authorized)):
         raise HTTPException(404,"Novo titular não encontrado neste espaço.")
     transactions=banking_rows(workspace,"finance_bank_transactions",
         filters={"account_id":"eq."+str(account_id)},select="id",limit=1)
-    if transactions and any(
+    if (transactions or original[0].get("pluggy_account_id")) and any(
         str(details[key])!=str(original[0][key])
         for key in ("holder_id","bank_name","account_type")
     ):
@@ -494,6 +494,10 @@ def banking_delete_account(account_id:int,user=Depends(authorized)):
         filters={"account_id":"eq."+str(account_id)},select="id",limit=1)
     if transactions:
         raise HTTPException(409,"Esta conta possui movimentações bancárias. A exclusão está bloqueada para preservar o histórico.")
+    details=banking_rows(workspace,"finance_bank_accounts",
+        filters={"id":"eq."+str(account_id)},select="pluggy_account_id",limit=1)
+    if details and details[0].get("pluggy_account_id"):
+        raise HTTPException(409,"Conta vinculada ao banco. Desconexão com revogação de consentimento será disponibilizada separadamente.")
     db.call("DELETE","finance_bank_accounts",
         params={"id":"eq."+str(account_id),"workspace_id":"eq."+workspace},
         prefer="return=minimal")
@@ -599,7 +603,9 @@ def pluggy_link(payload:dict,user=Depends(authorized)):
         "pluggy_account_id":"is.null"
     },data={"pluggy_item_id":item_id,"pluggy_account_id":account_id,
             "pluggy_sandbox":bool((item.get("connector") or {}).get("isSandbox")),
-            "pluggy_balance":bank.get("balance"),"pluggy_last_synced":datetime.now(timezone.utc).isoformat()},
+            "pluggy_balance":bank.get("balance"),
+            "connection_status":"pluggy_sandbox" if (item.get("connector") or {}).get("isSandbox") else "pluggy_live",
+            "pluggy_last_synced":datetime.now(timezone.utc).isoformat()},
             prefer="return=representation")
     if not updated:
         raise HTTPException(409,"A conta foi vinculada por outra sessão.")
