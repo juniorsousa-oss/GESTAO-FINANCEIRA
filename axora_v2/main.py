@@ -415,6 +415,89 @@ def banking_add_account(payload:dict,user=Depends(authorized)):
     return {"item":created[0]}
 
 
+@app.patch("/api/banking/holders/{holder_id}")
+def banking_edit_holder(holder_id:int,payload:dict,user=Depends(authorized)):
+    holder_id=banking.positive_id(holder_id)
+    workspace=user_workspace(user)
+    existing=banking_rows(workspace,"finance_bank_holders",
+        filters={"id":"eq."+str(holder_id)},limit=1)
+    if not existing:
+        raise HTTPException(404,"Titular não encontrado neste espaço.")
+    details=banking.clean_holder(payload)
+    updated=db.call("PATCH","finance_bank_holders",
+        params={"id":"eq."+str(holder_id),"workspace_id":"eq."+workspace},
+        data=details,prefer="return=representation")
+    if not updated:
+        raise HTTPException(404,"Titular não encontrado.")
+    return {"item":updated[0]}
+
+
+@app.delete("/api/banking/holders/{holder_id}")
+def banking_delete_holder(holder_id:int,user=Depends(authorized)):
+    holder_id=banking.positive_id(holder_id)
+    workspace=user_workspace(user)
+    existing=banking_rows(workspace,"finance_bank_holders",
+        filters={"id":"eq."+str(holder_id)},limit=1)
+    if not existing:
+        raise HTTPException(404,"Titular não encontrado neste espaço.")
+    accounts=banking_rows(workspace,"finance_bank_accounts",
+        filters={"holder_id":"eq."+str(holder_id)},select="id",limit=1)
+    if accounts:
+        raise HTTPException(409,"Este titular possui contas vinculadas. Remova primeiro as contas sem movimentações.")
+    if existing[0].get("linked_user_id") is not None:
+        raise HTTPException(409,"Titular vinculado a um usuário. Desfaça a vinculação antes de excluir.")
+    db.call("DELETE","finance_bank_holders",
+        params={"id":"eq."+str(holder_id),"workspace_id":"eq."+workspace},
+        prefer="return=minimal")
+    return {"deleted":True,"id":holder_id}
+
+
+@app.patch("/api/banking/accounts/{account_id}")
+def banking_edit_account(account_id:int,payload:dict,user=Depends(authorized)):
+    account_id=banking.positive_id(account_id)
+    workspace=user_workspace(user)
+    original=banking_rows(workspace,"finance_bank_accounts",
+        filters={"id":"eq."+str(account_id)},limit=1)
+    if not original:
+        raise HTTPException(404,"Conta não encontrada neste espaço.")
+    details=banking.clean_account(payload)
+    holders=banking_rows(workspace,"finance_bank_holders",
+        filters={"id":"eq."+str(details["holder_id"])},select="id",limit=1)
+    if not holders:
+        raise HTTPException(404,"Novo titular não encontrado neste espaço.")
+    transactions=banking_rows(workspace,"finance_bank_transactions",
+        filters={"account_id":"eq."+str(account_id)},select="id",limit=1)
+    if transactions and any(
+        str(details[key])!=str(original[0][key])
+        for key in ("holder_id","bank_name","account_type")
+    ):
+        raise HTTPException(409,"Conta com transações: apenas o apelido pode ser corrigido. Titular, banco e tipo devem preservar o histórico.")
+    updated=db.call("PATCH","finance_bank_accounts",
+        params={"id":"eq."+str(account_id),"workspace_id":"eq."+workspace},
+        data=details,prefer="return=representation")
+    if not updated:
+        raise HTTPException(404,"Conta não encontrada.")
+    return {"item":updated[0]}
+
+
+@app.delete("/api/banking/accounts/{account_id}")
+def banking_delete_account(account_id:int,user=Depends(authorized)):
+    account_id=banking.positive_id(account_id)
+    workspace=user_workspace(user)
+    existing=banking_rows(workspace,"finance_bank_accounts",
+        filters={"id":"eq."+str(account_id)},select="id",limit=1)
+    if not existing:
+        raise HTTPException(404,"Conta não encontrada neste espaço.")
+    transactions=banking_rows(workspace,"finance_bank_transactions",
+        filters={"account_id":"eq."+str(account_id)},select="id",limit=1)
+    if transactions:
+        raise HTTPException(409,"Esta conta possui movimentações bancárias. A exclusão está bloqueada para preservar o histórico.")
+    db.call("DELETE","finance_bank_accounts",
+        params={"id":"eq."+str(account_id),"workspace_id":"eq."+workspace},
+        prefer="return=minimal")
+    return {"deleted":True,"id":account_id}
+
+
 @app.post("/api/banking/transactions")
 def banking_add_transaction(payload:dict,user=Depends(authorized)):
     workspace=user_workspace(user)
