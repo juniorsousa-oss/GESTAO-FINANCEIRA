@@ -104,11 +104,11 @@ BEGIN
  IF p_action IS NULL OR p_action NOT IN ('matched_record','matched_provision','recorded','transfer','ignored')
  THEN RAISE EXCEPTION 'Ação de conciliação inválida'; END IF;
  IF NOT EXISTS(
-   SELECT 1 FROM public.finance_workspace_members m
-   JOIN public.finance_workspaces w ON w.id=m.workspace_id
-   JOIN public.finance_users u ON u.id=m.user_id
-   WHERE m.workspace_id=p_workspace_id AND m.user_id=p_user_id
-     AND m.role IN ('owner','admin','editor') AND u.is_active AND w.is_active
+   SELECT 1 FROM public.finance_workspace_members member
+   JOIN public.finance_workspaces w ON w.id=member.workspace_id
+   JOIN public.finance_users u ON u.id=member.user_id
+   WHERE member.workspace_id=p_workspace_id AND member.user_id=p_user_id
+     AND member.role IN ('owner','admin','editor') AND u.is_active AND w.is_active
  ) THEN RAISE EXCEPTION 'Acesso não autorizado ao espaço financeiro'; END IF;
 
  -- Evita disputas entre dois operadores conciliando transações do mesmo espaço.
