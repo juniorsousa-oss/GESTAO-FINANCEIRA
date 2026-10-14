@@ -40,12 +40,16 @@ function bankUnavailable(){
 function bankingAccountsPage(){
   if(!bankingData||bankingError)return bankUnavailable();
   const holders=bankingData.holders||[],accounts=bankingData.accounts||[];
-  const people=holders.map(h=>'<div class="bank-entity"><div><strong>'+esc(h.name)+'</strong><small>'+esc(holderRelations[h.relationship]||"Outro")+'</small></div><span class="bank-tag">Titular</span></div>').join("");
+  const people=holders.map(h=>'<div class="bank-entity"><div><strong>'+esc(h.name)+'</strong><small>'+esc(holderRelations[h.relationship]||"Outro")+'</small></div>'+
+    '<div class="bank-entity-actions"><button type="button" class="btn ghost small" data-action="bank-edit-holder" data-id="'+Number(h.id)+'">Editar</button>'+
+    '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-holder" data-id="'+Number(h.id)+'">Excluir</button></div></div>').join("");
   const cards=accounts.map(a=>{
     const h=holders.find(x=>Number(x.id)===Number(a.holder_id));
     return '<div class="bank-account-card"><div class="bank-card-top"><span class="bank-icon">'+interfaceIcon("wallet")+'</span><span class="bank-tag">Manual</span></div>'+
       '<strong>'+esc(a.nickname)+'</strong><div>'+esc(a.bank_name)+' · '+esc(h?.name||"Titular")+'</div>'+
-      '<small>'+esc(a.account_type)+' · BRL</small><p>Sem sincronização bancária</p></div>';
+      '<small>'+esc(a.account_type)+' · BRL</small><p>Sem sincronização bancária</p>'+
+      '<div class="bank-account-actions"><button type="button" class="btn ghost small" data-action="bank-edit-account" data-id="'+Number(a.id)+'">Editar</button>'+
+      '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-account" data-id="'+Number(a.id)+'">Excluir</button></div></div>';
   }).join("");
   return '<div class="stack bank-module">'+bankInfoBanner()+
     panel("Contas cadastradas","Cada conta é individual, mesmo quando o banco é o mesmo.",
@@ -80,15 +84,35 @@ function bankFillSelect(select,items,label){
   select.replaceChildren(new Option(label,""));
   for(const item of items)select.add(new Option(item.label,item.id));
 }
-function bankOpenHolder(){
-  $("#bank-holder-form").reset();
+function bankOpenHolder(id=null){
+  const form=$("#bank-holder-form");form.reset();
+  const selected=id===null?null:(bankingData?.holders||[]).find(h=>Number(h.id)===Number(id));
+  if(id!==null&&!selected)throw Error("Titular não localizado. Atualize a lista.");
+  form.elements.record_id.value=selected?.id||"";
+  if(selected){
+    form.elements.name.value=selected.name;
+    form.elements.relationship.value=selected.relationship;
+  }
+  $("#bank-holder-title").textContent=selected?"Editar titular":"Novo titular";
+  $("#bank-holder-submit").textContent=selected?"Salvar alterações":"Salvar titular";
   $("#bank-holder-dialog").showModal();
 }
-function bankOpenAccount(){
+function bankOpenAccount(id=null){
   if(!(bankingData?.holders||[]).length){showToast("Cadastre primeiro um titular.",true);return}
   const form=$("#bank-account-form");form.reset();
+  const selected=id===null?null:(bankingData?.accounts||[]).find(a=>Number(a.id)===Number(id));
+  if(id!==null&&!selected)throw Error("Conta não localizada. Atualize a lista.");
+  form.elements.record_id.value=selected?.id||"";
   bankFillSelect(form.elements.holder_id,bankingData.holders.map(h=>({id:h.id,label:h.name})),
                  "Selecione o titular");
+  if(selected){
+    form.elements.holder_id.value=selected.holder_id;
+    form.elements.bank_name.value=selected.bank_name;
+    form.elements.nickname.value=selected.nickname;
+    form.elements.account_type.value=selected.account_type;
+  }
+  $("#bank-account-title").textContent=selected?"Editar conta bancária":"Nova conta bancária";
+  $("#bank-account-submit").textContent=selected?"Salvar alterações":"Salvar conta";
   $("#bank-account-dialog").showModal();
 }
 function bankOpenTransaction(){
@@ -162,13 +186,34 @@ function bankReviewDecision(){
 async function bankSaveForm(form,endpoint,transform=x=>x){
   const button=form.querySelector('button[type="submit"]');button.disabled=true;
   try{
-    const data=transform(Object.fromEntries(new FormData(form).entries()));
-    await api(endpoint,{method:"POST",body:JSON.stringify(data)});
+    const raw=Object.fromEntries(new FormData(form).entries());
+    const id=raw.record_id||"";
+    delete raw.record_id;
+    const data=transform(raw);
+    await api(endpoint+(id?"/"+Number(id):""),{
+      method:id?"PATCH":"POST",body:JSON.stringify(data)
+    });
     form.closest("dialog").close();
     await loadBanking(true);
-    showToast("Informação salva no espaço financeiro.");
+    showToast(id?"Cadastro atualizado com sucesso.":"Cadastro adicionado com sucesso.");
   }catch(e){showToast(e.message,true)}
   finally{button.disabled=false}
+}
+async function bankDelete(type,id){
+  const holder=type==="holder";
+  const collection=holder?bankingData?.holders:bankingData?.accounts;
+  const item=(collection||[]).find(x=>Number(x.id)===Number(id));
+  if(!item)throw Error("Cadastro não localizado. Atualize a lista.");
+  const label=holder?item.name:item.nickname;
+  if(holder&&(bankingData?.accounts||[]).some(a=>Number(a.holder_id)===Number(id))){
+    throw Error("Este titular possui contas vinculadas. Exclua primeiro as contas sem movimentações ou edite o titular.");
+  }
+  // A API revalida todas as relações; a confirmação não substitui a proteção do banco.
+  if(!confirm("Excluir "+(holder?"o titular":"a conta")+" \""+label+"\"? Esta ação só é permitida quando não há vínculos financeiros."))return;
+  const endpoint=holder?"/api/banking/holders/":"/api/banking/accounts/";
+  await api(endpoint+Number(id),{method:"DELETE"});
+  await loadBanking(true);
+  showToast(holder?"Titular excluído.":"Conta bancária excluída.");
 }
 document.addEventListener("DOMContentLoaded",()=>{
   document.addEventListener("click",async e=>{
@@ -177,6 +222,10 @@ document.addEventListener("DOMContentLoaded",()=>{
     try{
       if(action==="bank-new-holder")bankOpenHolder();
       else if(action==="bank-new-account")bankOpenAccount();
+      else if(action==="bank-edit-holder")bankOpenHolder(Number(el.dataset.id));
+      else if(action==="bank-edit-account")bankOpenAccount(Number(el.dataset.id));
+      else if(action==="bank-delete-holder")await bankDelete("holder",Number(el.dataset.id));
+      else if(action==="bank-delete-account")await bankDelete("account",Number(el.dataset.id));
       else if(action==="bank-new-transaction")bankOpenTransaction();
       else if(action==="bank-analyze")await bankOpenAnalysis(Number(el.dataset.id));
       else if(action==="bank-review")bankReviewDecision();
