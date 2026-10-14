@@ -84,9 +84,9 @@ ALTER TABLE public.finance_bank_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.finance_reconciliation_events ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.finance_bank_holders,public.finance_bank_accounts,
  public.finance_bank_transactions,public.finance_reconciliation_events FROM PUBLIC,anon,authenticated;
-GRANT SELECT,INSERT ON TABLE public.finance_bank_holders,public.finance_bank_accounts,
- public.finance_bank_transactions TO service_role;
-GRANT SELECT ON TABLE public.finance_reconciliation_events TO service_role;
+GRANT SELECT,INSERT ON TABLE public.finance_bank_holders,public.finance_bank_accounts TO service_role;
+GRANT SELECT,INSERT,UPDATE ON TABLE public.finance_bank_transactions TO service_role;
+GRANT SELECT,INSERT ON TABLE public.finance_reconciliation_events TO service_role;
 GRANT USAGE,SELECT ON SEQUENCE public.finance_bank_holders_id_seq,
  public.finance_bank_accounts_id_seq,public.finance_bank_transactions_id_seq,
  public.finance_reconciliation_events_id_seq TO service_role;
