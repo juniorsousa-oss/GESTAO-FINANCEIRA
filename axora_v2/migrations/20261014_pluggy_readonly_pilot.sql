@@ -28,5 +28,11 @@ ALTER TABLE public.finance_bank_accounts
 CREATE UNIQUE INDEX IF NOT EXISTS axora_pluggy_provider_account_unique
   ON public.finance_bank_accounts(pluggy_account_id)
   WHERE pluggy_account_id IS NOT NULL;
+ALTER TABLE public.finance_bank_accounts
+  DROP CONSTRAINT IF EXISTS finance_bank_accounts_connection_status_check;
+ALTER TABLE public.finance_bank_accounts
+  ADD CONSTRAINT axora_bank_connection_status_check
+  CHECK(connection_status IN ('manual','pluggy_sandbox','pluggy_live'));
+
 COMMIT;
 NOTIFY pgrst,'reload schema';
