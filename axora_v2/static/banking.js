@@ -31,7 +31,11 @@ function bankTitle(item){
     " · "+(holder?.name||"Titular");
 }
 function bankInfoBanner(){
-  return '<div class="notice bank-info"><b>Modo manual — sem conexão bancária.</b> Cadastre titulares, contas e transações de exemplo. Nenhuma consulta à CAIXA, Nubank ou outro banco está ativa. Somente dados validados entram nos Registros.</div>';
+  const enabled=bankingData?.provider?.configured;
+  return '<div class="notice bank-info"><b>'+(enabled?'MeuPluggy pessoal disponível.':'Conexão bancária ainda não configurada.')+'</b> '+
+    (enabled?'Vincule sua conta já autorizada no MeuPluggy. A sincronização consulta saldo e extrato automaticamente, sem movimentar dinheiro.':
+    'Os cadastros manuais e a conciliação continuam disponíveis. O administrador pode configurar as credenciais pessoais na VPS.')+
+    ' As transações bancárias importadas permanecem pendentes até sua confirmação.</div>';
 }
 function bankUnavailable(){
   return '<section class="panel"><h2>Dados bancários indisponíveis</h2><p class="panel-copy">'+
@@ -45,10 +49,19 @@ function bankingAccountsPage(){
     '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-holder" data-id="'+Number(h.id)+'">Excluir</button></div></div>').join("");
   const cards=accounts.map(a=>{
     const h=holders.find(x=>Number(x.id)===Number(a.holder_id));
-    return '<div class="bank-account-card"><div class="bank-card-top"><span class="bank-icon">'+interfaceIcon("wallet")+'</span><span class="bank-tag">Manual</span></div>'+
+    return '<div class="bank-account-card"><div class="bank-card-top"><span class="bank-icon">'+interfaceIcon("wallet")+'</span><span class="bank-tag">'+(a.pluggy_account_id?'MeuPluggy · leitura':'Manual')+'</span></div>'+
       '<strong>'+esc(a.nickname)+'</strong><div>'+esc(a.bank_name)+' · '+esc(h?.name||"Titular")+'</div>'+
-      '<small>'+esc(a.account_type)+' · BRL</small><p>Sem sincronização bancária</p>'+
-      '<div class="bank-account-actions"><button type="button" class="btn ghost small" data-action="bank-edit-account" data-id="'+Number(a.id)+'">Editar</button>'+
+      '<small>'+esc(a.account_type)+' · BRL</small>'+
+      (a.pluggy_account_id?
+       '<p class="bank-connected">Saldo bancário: '+(a.pluggy_balance==null?'Aguardando consulta':money(a.pluggy_balance))+
+       (a.pluggy_last_synced?' · Sincronizado '+esc(a.pluggy_last_synced.slice(0,16).replace("T"," ")):'')+'</p>':
+       '<p>Sem sincronização bancária</p>')+
+      '<div class="bank-account-actions">'+
+      (bankingData?.provider?.configured?
+        (a.pluggy_account_id?
+         '<button type="button" class="btn primary small" data-action="meu-pluggy-sync" data-id="'+Number(a.id)+'">Sincronizar</button>':
+         '<button type="button" class="btn primary small" data-action="meu-pluggy-link" data-id="'+Number(a.id)+'">Vincular MeuPluggy</button>'):'')+
+      '<button type="button" class="btn ghost small" data-action="bank-edit-account" data-id="'+Number(a.id)+'">Editar</button>'+
       '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-account" data-id="'+Number(a.id)+'">Excluir</button></div></div>';
   }).join("");
   return '<div class="stack bank-module">'+bankInfoBanner()+
@@ -183,6 +196,33 @@ function bankReviewDecision(){
     (match?" · "+match.label:"")+". Esta ação só será gravada após clicar em Confirmar decisão.";
   $("#bank-submit").disabled=false;
 }
+async function bankOpenMeuPluggy(localId){
+  const local=(bankingData?.accounts||[]).find(x=>Number(x.id)===Number(localId));
+  if(!local)throw Error("Conta não encontrada. Atualize a página.");
+  const result=await api("/api/banking/meu-pluggy/accounts");
+  const form=$("#meu-pluggy-link-form");
+  form.reset();
+  form.elements.account_id.value=localId;
+  $("#meu-pluggy-local-account").textContent=local.bank_name+" · "+local.nickname;
+  bankFillSelect(form.elements.provider_account_id,
+    (result.accounts||[]).map(a=>({
+      id:a.id,
+      label:a.name+(a.last_digits?" · final "+a.last_digits:"")+
+        (a.balance!=null?" · Saldo "+money(a.balance):"")
+    })), "Selecione sua conta autorizada no MeuPluggy");
+  if(!(result.accounts||[]).length)
+    throw Error("Nenhuma conta bancária em BRL disponível neste item MeuPluggy.");
+  $("#meu-pluggy-link-dialog").showModal();
+}
+async function bankSyncMeuPluggy(accountId){
+  const account=(bankingData?.accounts||[]).find(x=>Number(x.id)===accountId);
+  if(!account)throw Error("Conta não encontrada.");
+  const result=await api("/api/banking/meu-pluggy/sync/"+accountId,{
+    method:"POST",body:"{}"
+  });
+  await loadBanking(true);
+  showToast("Extrato consultado: "+result.checked+" transação(ões) verificadas. Conciliação manual obrigatória.");
+}
 async function bankSaveForm(form,endpoint,transform=x=>x){
   const button=form.querySelector('button[type="submit"]');button.disabled=true;
   try{
@@ -226,6 +266,8 @@ document.addEventListener("DOMContentLoaded",()=>{
       else if(action==="bank-edit-account")bankOpenAccount(Number(el.dataset.id));
       else if(action==="bank-delete-holder")await bankDelete("holder",Number(el.dataset.id));
       else if(action==="bank-delete-account")await bankDelete("account",Number(el.dataset.id));
+      else if(action==="meu-pluggy-link")await bankOpenMeuPluggy(Number(el.dataset.id));
+      else if(action==="meu-pluggy-sync")await bankSyncMeuPluggy(Number(el.dataset.id));
       else if(action==="bank-new-transaction")bankOpenTransaction();
       else if(action==="bank-analyze")await bankOpenAnalysis(Number(el.dataset.id));
       else if(action==="bank-review")bankReviewDecision();
@@ -235,6 +277,27 @@ document.addEventListener("DOMContentLoaded",()=>{
     }catch(err){showToast(err.message,true)}
   });
   document.querySelectorAll("[data-bank-dismiss]").forEach(el=>el.addEventListener("click",()=>el.closest("dialog").close()));
+  document.querySelectorAll("[data-meu-pluggy-dismiss]").forEach(el=>{
+    el.addEventListener("click",()=>$("#meu-pluggy-link-dialog").close());
+  });
+  $("#meu-pluggy-link-form").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const form=e.currentTarget,button=form.querySelector('button[type="submit"]');
+    button.disabled=true;
+    try{
+      if(!form.elements.confirm_owner.checked)throw Error("Confirme a titularidade.");
+      const data={
+        account_id:Number(form.elements.account_id.value),
+        provider_account_id:form.elements.provider_account_id.value,
+        confirm_owner:true
+      };
+      await api("/api/banking/meu-pluggy/link",{method:"POST",body:JSON.stringify(data)});
+      $("#meu-pluggy-link-dialog").close();
+      await loadBanking(true);
+      showToast("Conta vinculada. A atualização automática está habilitada.");
+    }catch(err){showToast(err.message,true)}
+    finally{button.disabled=false}
+  });
   $("#bank-holder-form").addEventListener("submit",e=>{
     e.preventDefault();bankSaveForm(e.currentTarget,"/api/banking/holders");
   });
