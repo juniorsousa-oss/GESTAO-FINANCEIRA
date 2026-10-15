@@ -481,7 +481,7 @@ def banking_edit_account(account_id:int,payload:dict,user=Depends(authorized)):
         raise HTTPException(404,"Novo titular não encontrado neste espaço.")
     transactions=banking_rows(workspace,"finance_bank_transactions",
         filters={"account_id":"eq."+str(account_id)},select="id",limit=1)
-    if transactions and any(
+    if (transactions or original[0].get("pluggy_account_id")) and any(
         str(details[key])!=str(original[0][key])
         for key in ("holder_id","bank_name","account_type")
     ):
@@ -506,6 +506,9 @@ def banking_delete_account(account_id:int,user=Depends(authorized)):
         filters={"account_id":"eq."+str(account_id)},select="id",limit=1)
     if transactions:
         raise HTTPException(409,"Esta conta possui movimentações bancárias. A exclusão está bloqueada para preservar o histórico.")
+    account=banking_rows(workspace,"finance_bank_accounts",filters={"id":"eq."+str(account_id)},limit=1)
+    if account and account[0].get("pluggy_account_id"):
+        raise HTTPException(409,"Conta conectada ao MeuPluggy. Desvincule-a antes de excluir.")
     db.call("DELETE","finance_bank_accounts",
         params={"id":"eq."+str(account_id),"workspace_id":"eq."+workspace},
         prefer="return=minimal")
