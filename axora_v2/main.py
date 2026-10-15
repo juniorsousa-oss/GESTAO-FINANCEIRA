@@ -1,5 +1,7 @@
 """AXORA 2.0: API privada e frontend web, sem bibliotecas Streamlit."""
 import io
+import asyncio
+from contextlib import suppress
 from datetime import datetime, timezone
 import math
 import os
@@ -13,7 +15,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from axora_v2 import db, metrics, security, branding, provisions, catalogs, banking
+from axora_v2 import db, metrics, security, branding, provisions, catalogs, banking, meu_pluggy, meu_pluggy_sync
 from services.importer import parse_excel
 from services.profile import clean_display_name, avatar_data_uri
 
@@ -22,7 +24,14 @@ async def lifespan(_app):
     if not db.configured():
         raise RuntimeError("Configure SUPABASE_URL e SUPABASE_KEY antes de iniciar o AXORA.")
     security.signer()
-    yield
+    task = asyncio.create_task(meu_pluggy_sync.periodic_sync()) if meu_pluggy.configured() else None
+    try:
+        yield
+    finally:
+        if task is not None:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
 
 
 app = FastAPI(title="AXORA API", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
@@ -390,8 +399,13 @@ def banking_overview(user=Depends(auth)):
     accounts=banking_rows(workspace,"finance_bank_accounts",order="nickname.asc")
     transactions=banking_rows(workspace,"finance_bank_transactions",
        filters={"status":"eq.pending"},order="posted_on.desc,id.desc",limit=500)
+    is_owner = meu_pluggy.configured() and int(user["id"]) == meu_pluggy.owner_id()
     return {"holders":holders,"accounts":accounts,"pending":transactions,
-            "mode":"manual","bank_connected":False}
+            "mode":"read_only" if is_owner else "manual",
+            "bank_connected":any(a.get("pluggy_account_id") for a in accounts),
+            "provider":{"configured":bool(is_owner),
+                        "type":"meu_pluggy_personal" if is_owner else "none",
+                        "read_only":True}}
 
 
 @app.post("/api/banking/holders")
@@ -508,6 +522,55 @@ def banking_add_transaction(payload:dict,user=Depends(authorized)):
     created=db.call("POST","finance_bank_transactions",
       data={"workspace_id":workspace,**cleaned},prefer="return=representation")
     return {"item":created[0]}
+
+
+# MeuPluggy pessoal: a conexão já foi autorizada no dashboard do provedor.
+# Não abrir um widget de nova autorização bancária e não usar contas de terceiros.
+def require_meu_pluggy(user):
+    meu_pluggy.require_owner(user)
+    return user_workspace(user)
+
+
+@app.get("/api/banking/meu-pluggy/accounts")
+def personal_bank_preview(user=Depends(auth)):
+    require_meu_pluggy(user)
+    return {"accounts":meu_pluggy.bank_accounts(),
+            "read_only":True, "personal_use":True,
+            "message":"Somente contas bancárias em BRL; cartão de crédito virá em etapa separada."}
+
+
+@app.post("/api/banking/meu-pluggy/link")
+def personal_bank_link(payload:dict,user=Depends(authorized)):
+    workspace=require_meu_pluggy(user)
+    if not isinstance(payload,dict) or set(payload)!={"account_id","provider_account_id","confirm_owner"}:
+        raise HTTPException(422,"Escolha a conta do AXORA, a conta do provedor e confirme a titularidade.")
+    if payload["confirm_owner"] is not True:
+        raise HTTPException(422,"Confirme a titularidade antes de vincular.")
+    local_id=banking.positive_id(payload["account_id"])
+    provider_id=meu_pluggy.uuid_text(payload["provider_account_id"])
+    own=banking_rows(workspace,"finance_bank_accounts",
+                     filters={"id":"eq."+str(local_id)},limit=1)
+    if not own:
+        raise HTTPException(404,"Conta AXORA não localizada neste espaço.")
+    if own[0].get("pluggy_account_id"):
+        raise HTTPException(409,"A conta já possui conexão bancária.")
+    if not any(a["id"]==provider_id for a in meu_pluggy.bank_accounts()):
+        raise HTTPException(404,"A conta não pertence ao item MeuPluggy autorizado.")
+    updated=db.call("PATCH","finance_bank_accounts",params={
+        "workspace_id":"eq."+workspace,"id":"eq."+str(local_id),
+        "pluggy_account_id":"is.null"
+    },data={"pluggy_item_id":meu_pluggy.personal_item(),
+            "pluggy_account_id":provider_id},prefer="return=representation")
+    if not updated:
+        raise HTTPException(409,"Conta já vinculada por outra sessão.")
+    # A primeira sincronização pode ser iniciada manualmente após conferir o vínculo.
+    return {"linked":True,"account_id":local_id,"read_only":True}
+
+
+@app.post("/api/banking/meu-pluggy/sync/{account_id}")
+def personal_bank_sync(account_id:int,user=Depends(authorized)):
+    workspace=require_meu_pluggy(user)
+    return meu_pluggy_sync.sync_account(workspace,banking.positive_id(account_id))
 
 
 @app.get("/api/banking/transactions/{transaction_id}/suggestions")
