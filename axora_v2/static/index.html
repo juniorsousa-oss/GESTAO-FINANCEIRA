@@ -208,12 +208,35 @@
       <button class="btn primary" id="bank-submit" type="submit" disabled>Confirmar decisão</button>
     </div>
   </form></dialog>
+    <dialog id="meu-pluggy-link-dialog" class="bank-dialog">
+    <form id="meu-pluggy-link-form">
+      <div class="bank-dialog-heading">
+        <div><p>AXORA · CONEXÃO PESSOAL</p><h2>Vincular MeuPluggy</h2></div>
+        <button type="button" class="icon-button" data-meu-pluggy-dismiss aria-label="Fechar">×</button>
+      </div>
+      <p class="panel-copy">Selecione a conta bancária que você já autorizou no MeuPluggy. Não é necessário digitar sua senha bancária aqui.</p>
+      <div class="bank-decision-explanation">Conta AXORA: <strong id="meu-pluggy-local-account"></strong></div>
+      <input type="hidden" name="account_id">
+      <div class="bank-field"><label for="meu-pluggy-provider-account">Conta retornada pelo banco</label>
+        <select id="meu-pluggy-provider-account" name="provider_account_id" required></select>
+      </div>
+      <label class="provision-cancel-confirm">
+        <input type="checkbox" name="confirm_owner" required>
+        Confirmo que sou o titular desta conta bancária e autorizo a leitura dos dados exclusivamente para meu uso pessoal.
+      </label>
+      <p class="panel-copy">Saldos e extratos serão sincronizados periodicamente. Nenhum Registro será criado ou Provisão quitada sem confirmação.</p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-meu-pluggy-dismiss>Cancelar</button>
+        <button type="submit" class="btn primary">Vincular conta</button>
+      </div>
+    </form>
+  </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/assets/app.js?v=axora-banking-mvp-r1" defer></script>
   <script src="/assets/provisions.js?v=axora-complete-obligations-r1" defer></script>
   <script src="/assets/catalogs.js?v=axora-revisions-r1" defer></script>
   <script src="/assets/auto-sync.js?v=axora-complete-obligations-r1" defer></script>
-  <script src="/assets/banking.js?v=axora-bank-crud-r1" defer></script>
+  <script src="/assets/banking.js?v=axora-meupluggy-personal-r1" defer></script>
   <script src="/assets/brand-kit.js?v=brand-icon-flash-r1" defer></script>
 </body>
 </html>
