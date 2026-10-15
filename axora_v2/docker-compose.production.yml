@@ -14,6 +14,11 @@ services:
       APP_OWNER_NAME: ${APP_OWNER_NAME:-Júnior}
       SESSION_SECRET: ${SESSION_SECRET:?Configure SESSION_SECRET com pelo menos 32 caracteres aleatorios na VPS}
       COOKIE_SECURE: "1"
+      # MeuPluggy gratuito: exclusivo do titular, somente leitura (vazio = desativado)
+      PLUGGY_CLIENT_ID: ${PLUGGY_CLIENT_ID:-}
+      PLUGGY_CLIENT_SECRET: ${PLUGGY_CLIENT_SECRET:-}
+      PLUGGY_ITEM_ID: ${PLUGGY_ITEM_ID:-}
+      PLUGGY_PERSONAL_USER_ID: ${PLUGGY_PERSONAL_USER_ID:-}
     expose:
       - "8000"
     labels:
