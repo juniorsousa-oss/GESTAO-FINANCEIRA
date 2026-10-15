@@ -113,12 +113,14 @@ def bank_accounts():
         except (TypeError, InvalidOperation):
             balance = None
         number = str(account.get("number") or "")
+        institution = account.get("institution")
+        institution_name = institution.get("name", "") if isinstance(institution, dict) else ""
         accounts.append({
             "id": account_id,
             "name": str(account.get("name") or "Conta bancária")[:100],
             "last_digits": number[-4:] if len(number) >= 4 else "",
             "balance": balance,
-            "institution": str((account.get("institution") or {}).get("name") or "")[:80],
+            "institution": str(institution_name or "")[:80],
         })
     return accounts
 
