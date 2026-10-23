@@ -142,11 +142,19 @@ def payment_matches(occurrence, payment_date, amount, bank_transactions, movemen
             if days > 45:
                 continue
             similarity = SequenceMatcher(None, banking.normalize(description), target).ratio()
-            if similarity < 0.24 and not learned:
+            # "PIX ... CEMIG" deve casar com "CEMIG", mesmo quando o
+            # nome da concessionária é uma pequena parte do texto bancário.
+            common = banking.bank_signature(description) & banking.bank_signature(
+                occurrence["description"])
+            merchant_match = any(len(word)>=5 for word in common)
+            if similarity < 0.24 and not learned and not merchant_match:
                 continue
             confidence = min(100, round(52 + max(0, 24-days*2) +
-                                         similarity*22 + min(32, learned*25)))
+                                         similarity*22 + (16 if merchant_match else 0) +
+                                         min(32, learned*25)))
             reasons = ["valor igual"]
+            if merchant_match:
+                reasons.append("favorecido identificado na descrição")
             if days <= 3:
                 reasons.append("data próxima")
             if similarity >= .5:
