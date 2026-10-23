@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="/assets/shell-finish.css?v=exterior-network-wallpaper-r2-login-foot-v1">
   <link rel="stylesheet" href="/assets/mobile-frame-login-v2.css?v=opera-atria-card-mobile-r1">
   <link rel="stylesheet" href="/assets/mobile-scroll-stability.css?v=axora-mobile-scroll-r1">
-  <link rel="stylesheet" href="/assets/provisions.css?v=axora-payment-portals-r1">
+  <link rel="stylesheet" href="/assets/provisions.css?v=axora-variable-last-paid-r1">
   <link rel="stylesheet" href="/assets/banking.css?v=axora-balance-summary-r1">
 </head>
 <body>
@@ -105,11 +105,11 @@
         <div class="field"><label for="pv-category">Categoria *</label><select id="pv-category" name="category" required><option value="">Selecione uma categoria</option></select></div>
         <div class="field"><label for="pv-responsible">Responsável *</label><select id="pv-responsible" name="responsible" required><option value="">Selecione um responsável</option></select></div>
         <div class="field"><label for="pv-due">Primeiro vencimento *</label><input id="pv-due" name="start_due_date" type="date" required></div>
-        <div class="field"><label for="pv-value">Valor previsto (R$) *</label><input id="pv-value" name="planned_value" type="number" min="0.01" step="0.01" placeholder="0,00" required></div>
+        <div class="field"><label for="pv-value" id="pv-value-label">Valor previsto (R$) *</label><input id="pv-value" name="planned_value" type="number" min="0.01" step="0.01" placeholder="Ex.: 150,00" required><small id="pv-value-help" class="provision-link-help">Obrigatório para valor fixo.</small></div>
         <div class="field"><label for="pv-recurrence">Tipo de compromisso *</label><select id="pv-recurrence" name="recurrence"><option value="once">Pagamento único</option><option value="unlimited" selected>Fixo/recorrente sem prazo final</option><option value="until_date">Recorrente por quantidade definida</option><option value="installments">Parcelado por quantidade</option></select></div>
         <div class="field" id="provision-frequency-wrap"><label for="pv-frequency">Periodicidade</label><select id="pv-frequency" name="frequency"><option value="weekly">Semanal</option><option value="biweekly">Quinzenal</option><option value="monthly" selected>Mensal</option><option value="bimonthly">Bimestral</option><option value="quarterly">Trimestral</option><option value="semiannual">Semestral</option><option value="yearly">Anual</option></select></div>
         <div class="field" id="provision-installments-wrap" hidden><label id="pv-count-label" for="pv-count">Quantidade de vencimentos *</label><input id="pv-count" name="installment_count" type="number" min="1" max="360" step="1"></div>
-        <div class="field full"><label for="pv-mode">Natureza do valor</label><select id="pv-mode" name="value_mode"><option value="fixed">Fixo — valor igual a cada vencimento</option><option value="variable">Variável — valor estimado, ajustável no pagamento</option></select></div>
+        <div class="field full"><label for="pv-mode">Natureza do valor</label><select id="pv-mode" name="value_mode"><option value="fixed">Fixo — valor igual a cada vencimento</option><option value="variable">Recorrente com valor variável — pode ficar sem valor inicial</option></select></div>
       </div>
       <p class="provision-warning">Categorias e responsáveis são padronizados em Configurações. <button type="button" class="catalog-settings-link" data-action="open-catalog-settings">Gerenciar listas</button> Cada vencimento será acompanhado separadamente; pagamentos confirmados vão para Registros.</p>
       <div class="dialog-actions"><button type="button" class="btn ghost" data-dismiss-provision>Cancelar</button><button type="submit" class="btn primary">Salvar provisão</button></div>
@@ -125,7 +125,7 @@
         <div class="field"><label for="pv-paid-date">Data efetiva do pagamento *</label><input id="pv-paid-date" name="payment_date" type="date" required></div>
         <div class="field"><label for="pv-paid-amount">Valor pago (R$) *</label><input id="pv-paid-amount" name="amount" type="number" min="0.01" step="0.01" required></div>
       </div>
-      <p class="provision-warning">Consulte correspondências no extrato e em Registros antes de criar outra despesa. O sistema nunca vincula automaticamente.</p>
+      <p class="provision-warning" id="provision-variable-payment-note" hidden>O valor efetivamente quitado se tornará a referência dos próximos vencimentos variáveis desta série. Vencimentos já pagos permanecem preservados.</p><p class="provision-warning">Consulte correspondências no extrato e em Registros antes de criar outra despesa. O sistema nunca vincula automaticamente.</p>
       <fieldset id="provision-match-options" class="provision-payment-matches" aria-label="Origem do pagamento">
         <p class="panel-copy">Consultando lançamentos existentes…</p>
       </fieldset>
@@ -145,8 +145,8 @@
         <div class="field"><label for="pve-category">Categoria *</label><select id="pve-category" name="category" required><option value="">Selecione uma categoria</option></select></div>
         <div class="field"><label for="pve-responsible">Responsável *</label><select id="pve-responsible" name="responsible" required><option value="">Selecione um responsável</option></select></div>
         <div class="field"><label for="pve-due-date">Vencimento *</label><input id="pve-due-date" name="due_date" type="date" required></div>
-        <div class="field"><label for="pve-value">Valor previsto (R$) *</label><input id="pve-value" name="planned_value" type="number" min="0.01" step="0.01" required></div>
-        <div class="field full"><label for="pve-mode">Natureza do valor</label><select id="pve-mode" name="value_mode"><option value="fixed">Fixo</option><option value="variable">Variável</option></select></div>
+        <div class="field"><label for="pve-value" id="pve-value-label">Valor previsto (R$) *</label><input id="pve-value" name="planned_value" type="number" min="0.01" step="0.01" placeholder="Sem valor definido" required><small id="pve-value-help" class="provision-link-help">Altere a previsão apenas desta parcela ou de todas as próximas.</small></div>
+        <div class="field full"><label for="pve-mode">Natureza do valor</label><select id="pve-mode" name="value_mode"><option value="fixed">Fixo</option><option value="variable">Variável — usa último pagamento como referência</option></select></div>
       </div>
       <fieldset class="provision-scope">
         <legend>Quais vencimentos deseja alterar?</legend>
@@ -274,7 +274,7 @@
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/assets/app.js?v=axora-banking-mvp-r1" defer></script>
-  <script src="/assets/provisions.js?v=axora-payment-portals-r1" defer></script>
+  <script src="/assets/provisions.js?v=axora-variable-last-paid-r1" defer></script>
   <script src="/assets/catalogs.js?v=axora-revisions-r1" defer></script>
   <script src="/assets/auto-sync.js?v=axora-complete-obligations-r1" defer></script>
   <script src="/assets/banking.js?v=axora-balance-summary-r1" defer></script>
