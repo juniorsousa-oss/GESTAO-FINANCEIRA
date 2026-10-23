@@ -41,6 +41,35 @@ function bankUnavailable(){
   return '<section class="panel"><h2>Dados bancários indisponíveis</h2><p class="panel-copy">'+
    (bankingError?'Confira a migração bancária no Supabase antes de usar o módulo.':'Carregando cadastros...')+'</p></section>';
 }
+function bankBalancePanel(){
+  const b=bankingData?.balances;
+  if(!b)return "";
+  const holders=bankingData.holders||[], accounts=bankingData.accounts||[];
+  const ownKnown=accounts.filter(a=>holders.some(h=>Number(h.id)===Number(a.holder_id)
+    && h.relationship==="proprio" && (a.pluggy_account_id?a.pluggy_balance!=null:a.manual_balance!=null))).length;
+  const rows=(b.holders||[]).map(h=>
+    '<div class="bank-holder-balance"><div><b>'+esc(h.name)+'</b><small>'+
+    (h.relationship==="proprio"?"Minhas contas":esc(holderRelations[h.relationship]||"Outro"))+
+    ' · '+h.known+' com saldo'+(h.missing?' · '+h.missing+' sem saldo':'')+'</small></div><strong>'+
+    (h.known?money(h.total):"Não informado")+'</strong></div>').join("");
+  return '<section class="panel bank-balance-panel"><div class="bank-balance-heading"><div>'+
+    '<h2>Resumo dos saldos bancários</h2><p>Seu dinheiro separado dos demais titulares.</p></div>'+
+    '<span>'+b.known_accounts+' de '+accounts.length+' saldos informados</span></div>'+
+    '<div class="bank-balance-grid">'+
+    '<div class="bank-balance-metric bank-balance-mine"><span>Meu dinheiro</span><strong>'+
+    (ownKnown?money(b.personal):'Não informado')+'</strong><small>'+
+    (b.personal_missing?'Parcial · '+b.personal_missing+' conta(s) pendente(s)':'Soma das minhas contas')+'</small></div>'+
+    '<div class="bank-balance-metric"><span>Outros titulares</span><strong>'+
+    (b.known_accounts>ownKnown?money(b.family):'Não informado')+'</strong><small>'+
+    (b.family_missing?'Parcial · '+b.family_missing+' conta(s) pendente(s)':'Contas dos familiares')+'</small></div>'+
+    '<div class="bank-balance-metric"><span>Todas as contas</span><strong>'+
+    (b.known_accounts?money(b.combined):'Não informado')+'</strong><small>'+
+    (b.missing_accounts?'Parcial, há contas sem saldo':'Visão conjunta, não patrimônio individual')+'</small></div></div>'+
+    (b.missing_accounts?'<p class="bank-balance-note"><b>Resumo parcial:</b> '+b.missing_accounts+
+     ' conta(s) ainda sem saldo informado. Não foram consideradas como saldo zero.</p>':'')+
+    '<div class="bank-holder-balances">'+rows+'</div>'+
+    '<p class="bank-balance-footnote">Saldos conectados vêm do MeuPluggy; os outros são informados manualmente. Não somamos extratos, lançamentos ou previsões para evitar duplicidades.</p></section>';
+}
 function bankingAccountsPage(){
   if(!bankingData||bankingError)return bankUnavailable();
   const holders=bankingData.holders||[],accounts=bankingData.accounts||[];
@@ -55,16 +84,17 @@ function bankingAccountsPage(){
       (a.pluggy_account_id?
        '<p class="bank-connected">Saldo bancário: '+(a.pluggy_balance==null?'Aguardando consulta':money(a.pluggy_balance))+
        (a.pluggy_last_synced?' · Sincronizado '+esc(a.pluggy_last_synced.slice(0,16).replace("T"," ")):'')+'</p>':
-       '<p>Sem sincronização bancária</p>')+
+       '<p class="bank-manual-balance">Saldo informado: '+(a.manual_balance==null?'Não informado':money(a.manual_balance))+'</p>')+
       '<div class="bank-account-actions">'+
-      (bankingData?.provider?.configured?
-        (a.pluggy_account_id?
-         '<button type="button" class="btn primary small" data-action="meu-pluggy-sync" data-id="'+Number(a.id)+'">Sincronizar</button>':
-         '<button type="button" class="btn primary small" data-action="meu-pluggy-link" data-id="'+Number(a.id)+'">Vincular MeuPluggy</button>'):'')+
+      (a.pluggy_account_id?
+        (bankingData?.provider?.configured?'<button type="button" class="btn primary small" data-action="meu-pluggy-sync" data-id="'+Number(a.id)+'">Sincronizar</button>':''):
+        '<button type="button" class="btn primary small" data-action="bank-update-balance" data-id="'+Number(a.id)+'">Atualizar saldo</button>')+
+      (bankingData?.provider?.configured && !a.pluggy_account_id && h?.relationship==="proprio"?
+        '<button type="button" class="btn ghost small" data-action="meu-pluggy-link" data-id="'+Number(a.id)+'">Vincular MeuPluggy</button>':'')+
       '<button type="button" class="btn ghost small" data-action="bank-edit-account" data-id="'+Number(a.id)+'">Editar</button>'+
       '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-account" data-id="'+Number(a.id)+'">Excluir</button></div></div>';
   }).join("");
-  return '<div class="stack bank-module">'+bankInfoBanner()+
+  return '<div class="stack bank-module">'+bankBalancePanel()+bankInfoBanner()+
     panel("Contas cadastradas","Cada conta é individual, mesmo quando o banco é o mesmo.",
        '<div class="bank-cards">'+(cards||'<p class="panel-copy">Cadastre uma conta para começar.</p>')+'</div>')+
     panel("Titulares","Diferencie os responsáveis. O acesso familiar compartilhado será configurado em uma próxima etapa.",
@@ -146,6 +176,21 @@ function bankOpenAccount(id=null){
   $("#bank-account-title").textContent=selected?"Editar conta bancária":"Nova conta bancária";
   $("#bank-account-submit").textContent=selected?"Salvar alterações":"Salvar conta";
   $("#bank-account-dialog").showModal();
+}
+function bankOpenBalance(id){
+  const account=(bankingData?.accounts||[]).find(a=>Number(a.id)===Number(id));
+  if(!account)throw Error("Conta não encontrada. Recarregue os dados.");
+  if(account.pluggy_account_id||account.pluggy_item_id)
+    throw Error("O saldo desta conta vem da integração bancária.");
+  const holder=(bankingData?.holders||[]).find(h=>Number(h.id)===Number(account.holder_id));
+  const form=$("#bank-balance-form");
+  form.reset();
+  form.elements.account_id.value=account.id;
+  form.elements.balance.value=account.manual_balance==null?"":Number(account.manual_balance).toFixed(2);
+  $("#bank-balance-detail").textContent=
+    account.bank_name+" · "+account.nickname+" · "+(holder?.name||"Titular");
+  $("#bank-balance-dialog").showModal();
+  form.elements.balance.focus();
 }
 function bankOpenTransaction(){
   if(!(bankingData?.accounts||[]).length){showToast("Cadastre primeiro uma conta bancária.",true);return}
@@ -284,6 +329,7 @@ document.addEventListener("DOMContentLoaded",()=>{
       else if(action==="bank-new-account")bankOpenAccount();
       else if(action==="bank-edit-holder")bankOpenHolder(Number(el.dataset.id));
       else if(action==="bank-edit-account")bankOpenAccount(Number(el.dataset.id));
+      else if(action==="bank-update-balance")bankOpenBalance(Number(el.dataset.id));
       else if(action==="bank-delete-holder")await bankDelete("holder",Number(el.dataset.id));
       else if(action==="bank-delete-account")await bankDelete("account",Number(el.dataset.id));
       else if(action==="meu-pluggy-link")await bankOpenMeuPluggy(Number(el.dataset.id));
@@ -325,6 +371,22 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#bank-account-form").addEventListener("submit",e=>{
     e.preventDefault();bankSaveForm(e.currentTarget,"/api/banking/accounts",
      x=>({...x,holder_id:Number(x.holder_id)}));
+  });
+  $("#bank-balance-form").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const form=e.currentTarget,button=form.querySelector('button[type="submit"]');
+    const id=Number(form.elements.account_id.value);
+    const raw=form.elements.balance.value.trim();
+    button.disabled=true;
+    try{
+      await api("/api/banking/accounts/"+id+"/balance",{
+        method:"PATCH",body:JSON.stringify({balance:raw===""?null:raw})
+      });
+      $("#bank-balance-dialog").close();
+      await loadBanking(true);
+      showToast(raw===""?"Saldo removido; conta marcada como não informada.":"Saldo atualizado no consolidado.");
+    }catch(err){showToast(err.message,true)}
+    finally{button.disabled=false}
   });
   $("#bank-transaction-form").addEventListener("submit",e=>{
     e.preventDefault();bankSaveForm(e.currentTarget,"/api/banking/transactions",

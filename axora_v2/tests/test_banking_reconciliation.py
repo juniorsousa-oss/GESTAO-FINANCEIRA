@@ -142,7 +142,7 @@ def test_migration_atomic_checks_and_ui():
     assert 'data-page="bank-accounts"' in html
     assert 'data-page="reconciliation"' in html
     assert 'id="bank-decision-dialog"' in html
-    assert 'banking.js?v=axora-undo-learning-r1' in html
+    assert 'banking.js?v=axora-balance-summary-r1' in html
     assert 'page==="reconciliation"?bankingReconciliationPage()' in app_js
     assert 'bankingReview=true;' in banking_js
     assert 'bankingChoice=null;' in banking_js

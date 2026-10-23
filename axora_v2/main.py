@@ -474,6 +474,7 @@ def banking_overview(user=Depends(auth)):
        filters={"status":"eq.pending"},order="posted_on.desc,id.desc",limit=500)
     is_owner = meu_pluggy.configured() and int(user["id"]) == meu_pluggy.owner_id()
     return {"holders":holders,"accounts":accounts,"pending":transactions,
+            "balances":banking.balance_overview(holders,accounts),
             "mode":"read_only" if is_owner else "manual",
             "bank_connected":any(a.get("pluggy_account_id") for a in accounts),
             "provider":{"configured":bool(is_owner),
@@ -567,6 +568,27 @@ def banking_edit_account(account_id:int,payload:dict,user=Depends(authorized)):
     return {"item":updated[0]}
 
 
+@app.patch("/api/banking/accounts/{account_id}/balance")
+def banking_update_manual_balance(account_id: int, payload: dict, user=Depends(authorized)):
+    """Atualiza só o saldo informado de conta manual, preservando extrato e saldos Pluggy."""
+    account_id=banking.positive_id(account_id)
+    value=banking.clean_manual_balance(payload)
+    workspace=user_workspace(user)
+    current=banking_rows(workspace,"finance_bank_accounts",
+                         filters={"id":"eq."+str(account_id)},limit=1)
+    if not current:
+        raise HTTPException(404,"Conta não encontrada neste espaço.")
+    if current[0].get("pluggy_account_id") or current[0].get("pluggy_item_id"):
+        raise HTTPException(409,"Esta conta está conectada ao banco. Seu saldo é atualizado pela integração.")
+    updated=db.call("PATCH","finance_bank_accounts",
+        params={"id":"eq."+str(account_id),"workspace_id":"eq."+workspace,
+                "pluggy_account_id":"is.null","pluggy_item_id":"is.null"},
+        data={"manual_balance":value},prefer="return=representation")
+    if not updated:
+        raise HTTPException(409,"Conta modificada por outra sessão. Recarregue e tente novamente.")
+    return {"item":updated[0], "source":"manual"}
+
+
 @app.delete("/api/banking/accounts/{account_id}")
 def banking_delete_account(account_id:int,user=Depends(authorized)):
     account_id=banking.positive_id(account_id)
@@ -630,6 +652,10 @@ def personal_bank_link(payload:dict,user=Depends(authorized)):
         raise HTTPException(404,"Conta AXORA não localizada neste espaço.")
     if own[0].get("pluggy_account_id"):
         raise HTTPException(409,"A conta já possui conexão bancária.")
+    holder=banking_rows(workspace,"finance_bank_holders",
+                        filters={"id":"eq."+str(own[0]["holder_id"])},limit=1)
+    if not holder or holder[0].get("relationship")!="proprio":
+        raise HTTPException(403,"O MeuPluggy pessoal só pode ser vinculado à própria conta.")
     if not any(a["id"]==provider_id for a in meu_pluggy.bank_accounts()):
         raise HTTPException(404,"A conta não pertence ao item MeuPluggy autorizado.")
     updated=db.call("PATCH","finance_bank_accounts",params={
