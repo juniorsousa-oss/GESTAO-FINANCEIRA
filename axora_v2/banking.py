@@ -45,6 +45,76 @@ def clean_account(data):
             "account_type": data["account_type"]}
 
 
+def clean_manual_balance(payload):
+    """Saldo de referência informado pelo operador, sem criar movimentações."""
+    if not isinstance(payload, dict) or set(payload) != {"balance"}:
+        raise HTTPException(422, "Informe somente o saldo atual da conta.")
+    raw = payload["balance"]
+    if raw is None:
+        return None  # Limpa um saldo desatualizado, voltando a 'não informado'.
+    if isinstance(raw, bool) or not isinstance(raw, (str, int, float)):
+        raise HTTPException(422, "Saldo bancário inválido.")
+    try:
+        value = Decimal(str(raw))
+        if (not value.is_finite() or abs(value) > Decimal("999999999999.99")
+                or value.as_tuple().exponent < -2):
+            raise InvalidOperation
+    except (ValueError, InvalidOperation):
+        raise HTTPException(422, "Informe um saldo válido, com até duas casas decimais.") from None
+    return str(value.quantize(Decimal("0.01")))
+
+
+def balance_overview(holders, accounts):
+    """Cada conta contribui apenas uma vez: Pluggy OU saldo manual.
+
+    Não inclui transações, provisões, cartões nem contas sem saldo informado.
+    O valor dos familiares nunca integra o total pessoal.
+    """
+    totals = {}
+    for holder in holders:
+        totals[str(holder["id"])] = {
+            "holder_id": holder["id"], "name": holder["name"],
+            "relationship": holder["relationship"], "total": Decimal("0.00"),
+            "known": 0, "missing": 0
+        }
+    for account in accounts:
+        group = totals.get(str(account.get("holder_id")))
+        if group is None:
+            continue
+        connected = bool(account.get("pluggy_account_id"))
+        raw = account.get("pluggy_balance") if connected else account.get("manual_balance")
+        if raw is None:
+            group["missing"] += 1
+            continue
+        try:
+            balance = Decimal(str(raw))
+            if not balance.is_finite():
+                raise InvalidOperation
+        except (ValueError, TypeError, InvalidOperation):
+            group["missing"] += 1
+            continue
+        group["total"] += balance
+        group["known"] += 1
+    personal = sum((x["total"] for x in totals.values()
+                    if x["relationship"] == "proprio"), Decimal("0.00"))
+    family = sum((x["total"] for x in totals.values()
+                  if x["relationship"] != "proprio"), Decimal("0.00"))
+    groups = [{**x, "total": str(x["total"].quantize(Decimal("0.01")))}
+              for x in totals.values() if x["known"] or x["missing"]]
+    return {
+        "personal": str(personal.quantize(Decimal("0.01"))),
+        "family": str(family.quantize(Decimal("0.01"))),
+        "combined": str((personal + family).quantize(Decimal("0.01"))),
+        "known_accounts": sum(x["known"] for x in totals.values()),
+        "missing_accounts": sum(x["missing"] for x in totals.values()),
+        "personal_missing": sum(x["missing"] for x in totals.values()
+                                if x["relationship"] == "proprio"),
+        "family_missing": sum(x["missing"] for x in totals.values()
+                              if x["relationship"] != "proprio"),
+        "holders": groups,
+    }
+
+
 def positive_id(value):
     if isinstance(value, bool) or not str(value).isdigit() or int(value) < 1:
         raise HTTPException(422, "Identificador inválido.")
