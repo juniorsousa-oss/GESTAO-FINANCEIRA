@@ -5,6 +5,14 @@
 let provisionItems=null;
 let provisionError=null;
 let provisionView="all";
+const provisionFilters={search:"",category:"",responsible:"",from:"",to:""};
+const provisionNorm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+const provisionSixMonthEnd=today=>{
+  const d=new Date(today+"T12:00:00"),day=d.getDate();
+  d.setDate(1);d.setMonth(d.getMonth()+6);
+  d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));
+  return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
+};
 const provisionRecurrence={once:"Única",unlimited:"Indeterminada",until_date:"Prazo definido",installments:"Parcelada"};
 const provisionFrequency={weekly:"Semanal",biweekly:"Quinzenal",monthly:"Mensal",bimonthly:"Bimestral",quarterly:"Trimestral",semiannual:"Semestral",yearly:"Anual"};
 const provisionMonth=v=>String(v||"").slice(0,7);
@@ -21,20 +29,43 @@ function provisionsPage(){
   const thirtyDays=new Date(todayISO+"T12:00:00");thirtyDays.setDate(thirtyDays.getDate()+30);
   const limit=[thirtyDays.getFullYear(),String(thirtyDays.getMonth()+1).padStart(2,"0"),String(thirtyDays.getDate()).padStart(2,"0")].join("-");
   const soon=items.filter(x=>x.due_date>=todayISO&&x.due_date<=limit);
+  const sixMonthLimit=provisionSixMonthEnd(todayISO);
+  const reserve=items.filter(x=>x.due_date>=todayISO&&x.due_date<=sixMonthLimit);
+  const categories=[...new Set(items.map(x=>x.category_override||x.rule?.category||"").filter(Boolean))].sort();
+  const responsibles=[...new Set(items.map(x=>x.responsible_override||x.rule?.responsible||"").filter(Boolean))].sort();
   const shown=items.filter(x=>{
     if(provisionView==="overdue")return x.due_date<todayISO;
     if(provisionView==="month")return provisionMonth(x.due_date)===month;
-    if(provisionView==="soon")return x.due_date>=todayISO&&x.due_date<=limit;
+    if(provisionView==="soon"&&(x.due_date<todayISO||x.due_date>limit))return false;
+    if(provisionView==="six"&&(x.due_date<todayISO||x.due_date>sixMonthLimit))return false;
+    const description=x.description_override||x.rule?.description||"";
+    const category=x.category_override||x.rule?.category||"";
+    const responsible=x.responsible_override||x.rule?.responsible||"";
+    if(provisionFilters.category&&category!==provisionFilters.category)return false;
+    if(provisionFilters.responsible&&responsible!==provisionFilters.responsible)return false;
+    if(provisionFilters.from&&x.due_date<provisionFilters.from)return false;
+    if(provisionFilters.to&&x.due_date>provisionFilters.to)return false;
+    if(provisionFilters.search&&!provisionNorm([description,category,responsible].join(" ")).includes(provisionNorm(provisionFilters.search)))return false;
     return true;
   });
   const cards='<div class="metric-grid">'+[
      ["Total comprometido",provisionSum(items),items.length+" ocorrência(s) pendente(s)"],
      ["A vencer no mês",provisionSum(thisMonth),thisMonth.length+" ocorrência(s)"],
      ["Vencidas",provisionSum(overdue),overdue.length+" ocorrência(s) pendente(s)"],
-     ["Próximos 30 dias",provisionSum(soon),soon.length+" ocorrência(s)"]
+     ["Próximos 30 dias",provisionSum(soon),soon.length+" ocorrência(s)"],
+     ["Reserva · 6 meses",provisionSum(reserve),reserve.length+" ocorrência(s) a vencer"]
    ].map(([label,total,note])=>'<div class="metric-card"><div class="metric-label">'+label+'</div><div class="metric-value">'+money(total)+'</div><div class="metric-meta">'+note+'</div></div>').join("")+'</div>';
-  const info='<div class="notice">Esta fase registra vencimentos individuais e <b>pagamentos completos</b>. Ao confirmar, a conta sai de Provisões e gera uma despesa vinculada na aba Registros. Saldos bancários, estornos e pagamentos parciais serão tratados nas etapas seguintes.</div>';
-  const selector='<label class="provision-filter-label">Visualizar <select id="provision-filter"><option value="all" '+(provisionView==="all"?"selected":"")+'>Todas as pendentes</option><option value="month" '+(provisionView==="month"?"selected":"")+'>Vencimentos do mês</option><option value="overdue" '+(provisionView==="overdue"?"selected":"")+'>Vencidas</option><option value="soon" '+(provisionView==="soon"?"selected":"")+'>Próximos 30 dias</option></select></label>';
+  const info='<div class="notice">Compromissos sem prazo final continuam ativos: o sistema gera vencimentos em uma <b>janela móvel de 18 meses</b>. A última data exibida não é uma data de encerramento. O indicador <b>Reserva · 6 meses</b> considera somente os próximos seis meses, sem os vencidos. Ao quitar, confira antes se já existe um lançamento para evitar duplicidade.</div>';
+  const filterOptions=(options,current,placeholder)=>'<option value="">'+placeholder+'</option>'+
+    options.map(x=>'<option value="'+esc(x)+'" '+(current===x?'selected':'')+'>'+esc(x)+'</option>').join("");
+  const selector='<div class="provision-filters" aria-label="Filtros de compromissos">'+
+    '<label class="provision-filter-label">Período<select id="provision-filter"><option value="all" '+(provisionView==="all"?"selected":"")+'>Todas as pendentes</option><option value="month" '+(provisionView==="month"?"selected":"")+'>Vencimentos do mês</option><option value="overdue" '+(provisionView==="overdue"?"selected":"")+'>Vencidas</option><option value="soon" '+(provisionView==="soon"?"selected":"")+'>Próximos 30 dias</option><option value="six" '+(provisionView==="six"?"selected":"")+'>Próximos 6 meses</option></select></label>'+
+    '<label class="provision-filter-label">Categoria<select id="provision-category-filter">'+filterOptions(categories,provisionFilters.category,"Todas")+'</select></label>'+
+    '<label class="provision-filter-label">Responsável<select id="provision-responsible-filter">'+filterOptions(responsibles,provisionFilters.responsible,"Todos")+'</select></label>'+
+    '<label class="provision-filter-label">De<input type="date" id="provision-from-filter" value="'+esc(provisionFilters.from)+'"></label>'+
+    '<label class="provision-filter-label">Até<input type="date" id="provision-to-filter" value="'+esc(provisionFilters.to)+'"></label>'+
+    '<label class="provision-filter-label provision-filter-search">Buscar<input type="search" id="provision-search-filter" maxlength="100" value="'+esc(provisionFilters.search)+'" placeholder="Descrição, categoria ou responsável"></label>'+
+    '<button class="btn ghost small provision-clear-filters" type="button" data-action="clear-provision-filters">Limpar</button></div>';
   const lines=shown.map(item=>{
     const rule=item.rule||{},late=item.due_date<todayISO;
     const type=provisionRecurrence[rule.recurrence]||"Recorrência";
@@ -45,7 +76,7 @@ function provisionsPage(){
     const category=item.category_override||rule.category||"";
     const responsible=item.responsible_override||rule.responsible||"";
     const mode=item.value_mode_override||rule.value_mode;
-    return '<tr><td data-label="Vencimento"><strong>'+dateBR(item.due_date)+'</strong>'+(late?'<span class="status-badge red">Vencida</span>':'')+'</td>'+
+    return '<tr data-provision-search="'+esc(provisionNorm([description,category,responsible].join(" ")))+'"><td data-label="Vencimento"><strong>'+dateBR(item.due_date)+'</strong>'+(late?'<span class="status-badge red">Vencida</span>':'')+'</td>'+
       '<td data-label="Descrição"><strong>'+esc(description)+'</strong><small>'+esc(type+frequency+sequence)+'</small></td>'+
       '<td data-label="Categoria / Responsável">'+esc(category)+'<small>'+esc(responsible)+'</small></td>'+
       '<td data-label="Previsto"><strong>'+money(item.planned_value)+'</strong><small>'+(mode==="fixed"?"Valor fixo":"Valor estimado")+'</small></td>'+
@@ -55,7 +86,7 @@ function provisionsPage(){
   }).join("");
   const listing=lines?'<div class="provision-scroll"><table class="provision-table"><thead><tr><th>Vencimento</th><th>Descrição</th><th>Categoria / Responsável</th><th>Previsto</th><th>Ação</th></tr></thead><tbody>'+lines+'</tbody></table></div>':'<div class="empty-state"><b>Nenhuma provisão pendente neste filtro.</b>Cadastre o primeiro compromisso ou altere o filtro.</div>';
   return '<div class="stack provision-module">'+cards+info+
-    '<section class="panel"><div class="provision-toolbar"><div><h2>Compromissos em aberto</h2><p>Pagamentos confirmados passam para Registros.</p></div>'+selector+'</div>'+listing+'<p class="table-count">'+shown.length+' vencimento(s) exibido(s).</p></section></div>';
+    '<section class="panel"><div class="provision-toolbar"><div><h2>Compromissos em aberto</h2><p>Pesquise e combine os filtros abaixo.</p></div></div>'+selector+listing+'<p class="table-count" id="provision-count">'+shown.length+' vencimento(s) exibido(s).</p></section></div>';
 }
 let provisionRequest=null;
 async function loadProvisions({silent=false}={}){
@@ -159,7 +190,10 @@ document.addEventListener("DOMContentLoaded",()=>{
   document.addEventListener("click",async e=>{
     const action=e.target.closest("[data-action]")?.dataset.action;
     if(action==="new-provision")openProvisionDialog().catch(err=>showToast(err.message,true));
-    if(action==="pay-provision")openPaymentDialog(e.target.closest("[data-id]").dataset.id);
+    if(action==="pay-provision")openPaymentDialog(e.target.closest("[data-id]").dataset.id).catch(err=>showToast(err.message,true));
+    if(action==="clear-provision-filters"){
+      provisionView="all";for(const key of Object.keys(provisionFilters))provisionFilters[key]="";render();
+    }
     if(action==="edit-provision")openEditProvisionDialog(e.target.closest("[data-id]").dataset.id).catch(err=>showToast(err.message,true));
     if(action==="cancel-provision")openCancelProvisionDialog(e.target.closest("[data-id]").dataset.id);
   });
@@ -170,6 +204,19 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#provision-form").elements.recurrence.addEventListener("change",provisionOptions);
   $("#page-content").addEventListener("change",e=>{
     if(e.target.id==="provision-filter"){provisionView=e.target.value;render();}
+    const filters={"provision-category-filter":"category","provision-responsible-filter":"responsible",
+      "provision-from-filter":"from","provision-to-filter":"to"};
+    if(filters[e.target.id]){provisionFilters[filters[e.target.id]]=e.target.value;render();}
+  });
+  $("#page-content").addEventListener("input",e=>{
+    if(e.target.id!=="provision-search-filter")return;
+    provisionFilters.search=e.target.value;const query=provisionNorm(e.target.value);
+    let count=0;
+    document.querySelectorAll(".provision-table tbody tr").forEach(tr=>{
+      const show=!query||tr.dataset.provisionSearch.includes(query);
+      tr.hidden=!show;if(show)count++;
+    });
+    const node=$("#provision-count");if(node)node.textContent=count+" vencimento(s) exibido(s).";
   });
   $("#provision-form").addEventListener("submit",async e=>{
     e.preventDefault();const form=e.currentTarget,btn=form.querySelector('button[type="submit"]');
