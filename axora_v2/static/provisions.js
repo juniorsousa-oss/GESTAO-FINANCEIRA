@@ -157,11 +157,11 @@ async function loadPaymentMatches(){
       '<label class="provision-match-item"><input type="radio" name="match_source" value="'+esc(x.kind)+':'+Number(x.id)+'">'+
       '<span><b>'+(x.kind==="bank"?"Extrato bancário":"Registro existente")+' · '+esc(x.description)+'</b>'+
       '<small>'+dateBR(x.date)+' · '+money(x.amount)+' · '+
-      (x.kind==="bank"?"Conta #"+Number(x.account_id):"Registro #"+Number(x.id))+
+      (x.kind==="bank"?esc(x.account_label||"Conta #"+Number(x.account_id)):"Registro #"+Number(x.id))+
       ' · '+esc(x.reasons.join(", "))+'</small></span></label>'
     ).join("");
     wrap.innerHTML='<p class="provision-match-title">Como deseja quitar?</p>'+
-      '<label class="provision-match-item"><input type="radio" name="match_source" value="new" checked>'+
+      '<label class="provision-match-item"><input type="radio" name="match_source" value="new">'+
       '<span><b>Criar novo Registro</b><small>Somente quando não houver pagamento já registrado.</small></span></label>'+
       (suggestions||'<p class="panel-copy">Nenhum lançamento correspondente encontrado. Confira o histórico antes de criar um novo Registro.</p>')+
       suggestions;
@@ -169,17 +169,19 @@ async function loadPaymentMatches(){
   }catch(err){
     if(request!==provisionMatchesRequest)return;
     wrap.innerHTML='<p class="panel-copy">Busca de correspondências indisponível: '+esc(err.message)+
-      '. A quitação manual continua disponível.</p>';
+      '. Se já conferiu o histórico, selecione explicitamente a opção abaixo.</p>'+
+      '<label class="provision-match-item"><input type="radio" name="match_source" value="new">'+
+      '<span><b>Criar novo Registro mesmo sem sugestões</b></span></label>';
     provisionPaymentMode();
   }
 }
 function provisionPaymentMode(){
   const f=$("#provision-payment-form");
-  const choice=f.querySelector('input[name="match_source"]:checked')?.value||"new";
+  const choice=f.querySelector('input[name="match_source"]:checked')?.value||"";
   const button=f.querySelector('button[type="submit"]');
-  if(button)button.textContent=choice==="new"?"Confirmar pagamento":"Vincular e quitar";
+  if(button)button.textContent=choice===""?"Escolher origem":choice==="new"?"Confirmar pagamento":"Vincular e quitar";
   const detail=$("#provision-payment-mode-detail");
-  if(detail)detail.textContent=choice==="new"?
+  if(detail)detail.textContent=!choice?"Selecione como registrar o pagamento antes de confirmar.":choice==="new"?
     "Esta opção cria um novo Registro. Certifique-se de que o pagamento não esteja no histórico.":
     "Será aproveitado o pagamento escolhido, sem duplicar a despesa. Data e valor efetivos serão os do lançamento de origem.";
 }
@@ -325,7 +327,8 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#provision-payment-form").addEventListener("submit",async e=>{
     e.preventDefault();const form=e.currentTarget,btn=form.querySelector('button[type="submit"]');
     if(!form.elements.full_settlement.checked){showToast("Confirme a quitação integral do vencimento.",true);return;}
-    const choice=form.querySelector('input[name="match_source"]:checked')?.value||"new";
+    const choice=form.querySelector('input[name="match_source"]:checked')?.value||"";
+    if(!choice){showToast("Escolha criar um novo Registro ou vincular um lançamento existente.",true);return;}
     const isLink=choice!=="new";
     if(isLink&&!provisionPaymentMatches.some(x=>x.kind+":"+x.id===choice)){
       showToast("Sugestão desatualizada. Atualize a busca.",true);return;
