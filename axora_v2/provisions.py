@@ -26,6 +26,13 @@ def positive_money(value, field="Valor"):
     return float(amount)
 
 
+def planned_money(value, mode):
+    """Fixas exigem valor; variáveis aceitam referência em branco (NULL)."""
+    if mode == "variable" and (value is None or value == ""):
+        return None
+    return positive_money(value, "Valor previsto")
+
+
 def valid_date(value, field):
     try:
         return date.fromisoformat(str(value)).isoformat()
@@ -71,7 +78,6 @@ def clean_provision(payload):
         result["p_" + field] = value.strip()
 
     result["p_start_due_date"] = valid_date(payload.get("start_due_date"), "Data de vencimento")
-    result["p_planned_value"] = positive_money(payload.get("planned_value"), "Valor previsto")
     recurrence = payload.get("recurrence")
     frequency = payload.get("frequency", "monthly")
     value_mode = payload.get("value_mode", "fixed")
@@ -79,6 +85,7 @@ def clean_provision(payload):
         raise HTTPException(422, "Escolha o tipo de recorrência.")
     if frequency not in FREQUENCY or value_mode not in VALUE_MODE:
         raise HTTPException(422, "Periodicidade ou natureza do valor inválida.")
+    result["p_planned_value"] = planned_money(payload.get("planned_value"), value_mode)
 
     result.update(p_recurrence=recurrence, p_frequency=frequency, p_value_mode=value_mode,
                   p_end_date=None, p_installment_count=None)
@@ -128,7 +135,7 @@ def clean_edit_provision(payload):
         raise HTTPException(422, "Natureza do valor inválida.")
     result = {"p_scope": scope,
               "p_due_date": valid_date(payload["due_date"], "Vencimento"),
-              "p_planned_value": positive_money(payload["planned_value"], "Valor previsto"),
+              "p_planned_value": planned_money(payload["planned_value"], payload["value_mode"]),
               "p_value_mode": payload["value_mode"], **details}
     if "payment_url" in payload:
         result["p_payment_url"] = clean_payment_url(payload["payment_url"])
