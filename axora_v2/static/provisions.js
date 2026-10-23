@@ -34,8 +34,8 @@ function provisionsPage(){
   const categories=[...new Set(items.map(x=>x.category_override||x.rule?.category||"").filter(Boolean))].sort();
   const responsibles=[...new Set(items.map(x=>x.responsible_override||x.rule?.responsible||"").filter(Boolean))].sort();
   const shown=items.filter(x=>{
-    if(provisionView==="overdue")return x.due_date<todayISO;
-    if(provisionView==="month")return provisionMonth(x.due_date)===month;
+    if(provisionView==="overdue"&&x.due_date>=todayISO)return false;
+    if(provisionView==="month"&&provisionMonth(x.due_date)!==month)return false;
     if(provisionView==="soon"&&(x.due_date<todayISO||x.due_date>limit))return false;
     if(provisionView==="six"&&(x.due_date<todayISO||x.due_date>sixMonthLimit))return false;
     const description=x.description_override||x.rule?.description||"";
@@ -136,7 +136,54 @@ function provisionOptions(){
   $("#pv-count-label").textContent=mode==="until_date"?"Quantidade de vencimentos *":"Quantidade de parcelas *";
   f.elements.installment_count.required=["until_date","installments"].includes(mode);
 }
-function openPaymentDialog(id){
+let provisionPaymentMatches=[];
+let provisionMatchesRequest=0;
+async function loadPaymentMatches(){
+  const f=$("#provision-payment-form"),wrap=$("#provision-match-options");
+  if(!f||!wrap||!$("#provision-payment-dialog").open)return;
+  const request=++provisionMatchesRequest;
+  provisionPaymentMatches=[];
+  wrap.innerHTML='<p class="panel-copy">Buscando lançamentos correspondentes…</p>';
+  const id=Number(f.elements.occurrence_id.value),amount=Number(f.elements.amount.value);
+  if(!id||!f.elements.payment_date.value||!Number.isFinite(amount)||amount<=0){
+    wrap.innerHTML="Informe data e valor para buscar correspondências.";return;
+  }
+  try{
+    const result=await api("/api/provisions/"+id+"/matches?payment_date="+
+      encodeURIComponent(f.elements.payment_date.value)+"&amount="+encodeURIComponent(amount));
+    if(request!==provisionMatchesRequest||!$("#provision-payment-dialog").open)return;
+    provisionPaymentMatches=result.items||[];
+    const suggestions=provisionPaymentMatches.map(x=>
+      '<label class="provision-match-item"><input type="radio" name="match_source" value="'+esc(x.kind)+':'+Number(x.id)+'">'+
+      '<span><b>'+(x.kind==="bank"?"Extrato bancário":"Registro existente")+' · '+esc(x.description)+'</b>'+
+      '<small>'+dateBR(x.date)+' · '+money(x.amount)+' · '+
+      (x.kind==="bank"?"Conta #"+Number(x.account_id):"Registro #"+Number(x.id))+
+      ' · '+esc(x.reasons.join(", "))+'</small></span></label>'
+    ).join("");
+    wrap.innerHTML='<p class="provision-match-title">Como deseja quitar?</p>'+
+      '<label class="provision-match-item"><input type="radio" name="match_source" value="new" checked>'+
+      '<span><b>Criar novo Registro</b><small>Somente quando não houver pagamento já registrado.</small></span></label>'+
+      (suggestions||'<p class="panel-copy">Nenhum lançamento correspondente encontrado. Confira o histórico antes de criar um novo Registro.</p>')+
+      suggestions;
+    provisionPaymentMode();
+  }catch(err){
+    if(request!==provisionMatchesRequest)return;
+    wrap.innerHTML='<p class="panel-copy">Busca de correspondências indisponível: '+esc(err.message)+
+      '. A quitação manual continua disponível.</p>';
+    provisionPaymentMode();
+  }
+}
+function provisionPaymentMode(){
+  const f=$("#provision-payment-form");
+  const choice=f.querySelector('input[name="match_source"]:checked')?.value||"new";
+  const button=f.querySelector('button[type="submit"]');
+  if(button)button.textContent=choice==="new"?"Confirmar pagamento":"Vincular e quitar";
+  const detail=$("#provision-payment-mode-detail");
+  if(detail)detail.textContent=choice==="new"?
+    "Esta opção cria um novo Registro. Certifique-se de que o pagamento não esteja no histórico.":
+    "Será aproveitado o pagamento escolhido, sem duplicar a despesa. Data e valor efetivos serão os do lançamento de origem.";
+}
+async function openPaymentDialog(id){
   const item=(provisionItems||[]).find(x=>Number(x.id)===Number(id));
   if(!item)return showToast("Provisão não encontrada. Atualize a lista.",true);
   const f=$("#provision-payment-form");f.reset();f.elements.occurrence_id.value=id;
@@ -144,6 +191,7 @@ function openPaymentDialog(id){
   f.elements.amount.value=Number(item.planned_value).toFixed(2);
   $("#provision-payment-detail").textContent=(item.rule?.description||"Conta")+" · vencimento "+dateBR(item.due_date);
   $("#provision-payment-dialog").showModal();
+  await loadPaymentMatches();
 }
 function findOpenProvision(id){
   const item=(provisionItems||[]).find(entry=>Number(entry.id)===Number(id));
@@ -198,7 +246,15 @@ document.addEventListener("DOMContentLoaded",()=>{
     if(action==="cancel-provision")openCancelProvisionDialog(e.target.closest("[data-id]").dataset.id);
   });
   $("#provision-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-provision]"))$("#provision-dialog").close()});
-  $("#provision-payment-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-payment]"))$("#provision-payment-dialog").close()});
+  $("#provision-payment-dialog").addEventListener("click",e=>{
+    if(e.target.closest("[data-dismiss-payment]")){
+      provisionMatchesRequest++;$("#provision-payment-dialog").close();
+    }
+  });
+  $("#provision-payment-form").addEventListener("change",e=>{
+    if(e.target.name==="match_source")provisionPaymentMode();
+    if(e.target.name==="payment_date"||e.target.name==="amount")loadPaymentMatches();
+  });
   $("#provision-edit-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-edit]"))$("#provision-edit-dialog").close()});
   $("#provision-cancel-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-cancel]"))$("#provision-cancel-dialog").close()});
   $("#provision-form").elements.recurrence.addEventListener("change",provisionOptions);
@@ -269,15 +325,30 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#provision-payment-form").addEventListener("submit",async e=>{
     e.preventDefault();const form=e.currentTarget,btn=form.querySelector('button[type="submit"]');
     if(!form.elements.full_settlement.checked){showToast("Confirme a quitação integral do vencimento.",true);return;}
-    if(!confirm("Confirmar quitação integral? Será criado automaticamente um Registro financeiro."))return;
+    const choice=form.querySelector('input[name="match_source"]:checked')?.value||"new";
+    const isLink=choice!=="new";
+    if(isLink&&!provisionPaymentMatches.some(x=>x.kind+":"+x.id===choice)){
+      showToast("Sugestão desatualizada. Atualize a busca.",true);return;
+    }
+    if(!confirm(isLink?
+      "Vincular lançamento existente e quitar esta previsão sem criar despesa duplicada?":
+      "Confirmar quitação integral? Será criado automaticamente um novo Registro financeiro."))return;
     btn.disabled=true;
     try{
-      await api("/api/provisions/"+Number(form.elements.occurrence_id.value)+"/pay",{
-        method:"POST",body:JSON.stringify({payment_date:form.elements.payment_date.value,amount:Number(form.elements.amount.value)})
-      });
+       const id=Number(form.elements.occurrence_id.value);
+       if(isLink){
+         const [kind,source_id]=choice.split(":");
+         await api("/api/provisions/"+id+"/match",{
+           method:"POST",body:JSON.stringify({kind,source_id:Number(source_id)})
+         });
+       }else{
+         await api("/api/provisions/"+id+"/pay",{
+           method:"POST",body:JSON.stringify({payment_date:form.elements.payment_date.value,amount:Number(form.elements.amount.value)})
+         });
+       }
       $("#provision-payment-dialog").close();
       await refresh();await loadProvisions();
-      showToast("Pagamento registrado e enviado para Registros.");
+      showToast(isLink?"Lançamento vinculado e previsão quitada sem duplicidade.":"Pagamento registrado e enviado para Registros.");
     }catch(err){showToast(err.message,true)}
     finally{btn.disabled=false}
   });
