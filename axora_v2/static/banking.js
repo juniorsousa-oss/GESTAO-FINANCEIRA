@@ -78,6 +78,25 @@ function bankTransactionRow(tx){
       '<div class="bank-transaction-actions"><strong class="'+(Number(tx.amount)<0?'bank-negative':'bank-positive')+'">'+
       money(tx.amount)+'</strong><button class="btn primary small" type="button" data-action="bank-analyze" data-id="'+Number(tx.id)+'">Analisar</button></div></div>';
 }
+function bankHistoryRow(h){
+  const title=h.action==="reversed"?"Conciliação desfeita":(bankingModes[h.action]||h.action);
+  return '<div class="bank-history-row"><div class="bank-history-content"><strong>'+esc(title)+'</strong>'+
+    '<small>Transação #'+Number(h.transaction_id)+' · usuário #'+Number(h.actor_id)+
+    ' · '+esc(h.created_at?.slice(0,16).replace("T"," ")||"")+'</small>'+
+    (h.bank_description?'<small>'+esc(h.bank_description)+'</small>':'')+
+    (h.action==="reversed"&&h.notes?'<small>Motivo: '+esc(h.notes)+'</small>':'')+'</div>'+
+    (h.can_undo?'<button type="button" class="btn ghost small bank-undo-btn" data-action="bank-undo" data-id="'+Number(h.id)+'">Desfazer conciliação</button>':'')+
+    '</div>';
+}
+function bankOpenUndo(eventId){
+  const event=(bankingHistory||[]).find(h=>Number(h.id)===Number(eventId));
+  if(!event||!event.can_undo)throw Error("Esta conciliação não pode mais ser revertida. Atualize o histórico.");
+  const form=$("#bank-undo-form");form.reset();
+  form.elements.transaction_id.value=event.transaction_id;
+  $("#bank-undo-detail").textContent=
+    (event.bank_description||"Transação #"+event.transaction_id)+" · "+(bankingModes[event.action]||event.action);
+  $("#bank-undo-dialog").showModal();
+}
 function bankingReconciliationPage(){
   if(!bankingData||bankingError)return bankUnavailable();
   const pending=bankingData.pending||[];
@@ -91,7 +110,7 @@ function bankingReconciliationPage(){
       '<div class="empty-state"><b>Nenhuma transação pendente.</b> Cadastre uma transação manual para testar a conciliação.</div>')+'</div>')+
     '<section class="panel"><div class="bank-history-heading"><div><h2>Histórico de decisões</h2><p>Quem confirmou, qual ação foi tomada e quando.</p></div>'+
     '<button type="button" class="btn ghost small" data-action="bank-history">Consultar histórico</button></div>'+
-    '<div id="bank-history-list">'+(bankingHistory?bankingHistory.map(h=>'<div class="bank-history-row"><strong>'+esc(bankingModes[h.action]||h.action)+'</strong><small>Transação #'+Number(h.transaction_id)+' · usuário #'+Number(h.actor_id)+' · '+esc(h.created_at?.slice(0,16).replace("T"," ")||"")+'</small></div>').join("")||'<p class="panel-copy">Ainda não há decisões registradas.</p>':'<p class="panel-copy">Clique para carregar o histórico de validações.</p>')+'</div></section></div>';
+    '<div id="bank-history-list">'+(bankingHistory?bankingHistory.map(bankHistoryRow).join("")||'<p class="panel-copy">Ainda não há decisões registradas.</p>':'<p class="panel-copy">Clique para carregar o histórico de validações.</p>')+'</div></section></div>';
 }
 function bankFillSelect(select,items,label){
   select.replaceChildren(new Option(label,""));
@@ -148,7 +167,8 @@ async function bankOpenAnalysis(id){
   const select=form.elements.action_choice;
   select.replaceChildren(new Option("Selecione a decisão do operador",""));
   for(const c of bankingCandidates){
-    select.add(new Option(c.strength+" proximidade · "+c.label+" · "+money(c.value)+
+    select.add(new Option((c.learned_count?"Padrão aprendido ("+c.learned_count+") · ":"")+
+      c.strength+" proximidade · "+c.label+" · "+money(c.value)+
       " · "+dateBR(c.date)+(c.can_confirm?"":" (valor diferente: revisão necessária)"),c.kind+":"+c.id));
   }
   const transfers=(bankingData.pending||[]).filter(x=>x.id!==tx.id&&x.account_id!==tx.account_id
@@ -270,6 +290,7 @@ document.addEventListener("DOMContentLoaded",()=>{
       else if(action==="meu-pluggy-sync")await bankSyncMeuPluggy(Number(el.dataset.id));
       else if(action==="bank-new-transaction")bankOpenTransaction();
       else if(action==="bank-analyze")await bankOpenAnalysis(Number(el.dataset.id));
+       else if(action==="bank-undo")bankOpenUndo(Number(el.dataset.id));
       else if(action==="bank-review")bankReviewDecision();
       else if(action==="bank-history"){
         const result=await api("/api/banking/history");bankingHistory=result.items||[];render();
@@ -308,6 +329,22 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#bank-transaction-form").addEventListener("submit",e=>{
     e.preventDefault();bankSaveForm(e.currentTarget,"/api/banking/transactions",
      x=>({...x,account_id:Number(x.account_id),amount:Number(x.amount)}));
+  });
+  $("#bank-undo-form").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const form=e.currentTarget,button=form.querySelector('button[type="submit"]');
+    button.disabled=true;
+    const payload={transaction_id:Number(form.elements.transaction_id.value),
+                   reason:form.elements.reason.value.trim()};
+    try{
+      await api("/api/banking/reconcile/undo",{method:"POST",body:JSON.stringify(payload)});
+      $("#bank-undo-dialog").close();bankingHistory=null;
+      await refresh();await loadBanking(true);
+      const history=await api("/api/banking/history");
+      bankingHistory=history.items||[];render();
+      showToast("Conciliação desfeita. A transação voltou à fila para nova análise.");
+    }catch(err){showToast(err.message,true)}
+    finally{button.disabled=false}
   });
   $("#bank-decision-form").elements.action_choice.addEventListener("change",bankDecisionState);
   $("#bank-decision-form").addEventListener("submit",async e=>{
