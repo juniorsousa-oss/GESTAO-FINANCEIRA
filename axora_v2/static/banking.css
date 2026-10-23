@@ -64,3 +64,14 @@
   .bank-entity-actions{width:100%;justify-content:flex-end}
   .bank-account-actions .btn{flex:1}
 }
+
+/* Central de Conciliação: estorno auditável no mesmo padrão visual AXORA. */
+.bank-history-row{grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px}
+.bank-history-content{display:grid;gap:5px;min-width:0;overflow-wrap:anywhere}
+.bank-undo-btn{border-color:#e6b6bf;color:#b24b5e;white-space:nowrap}
+.bank-undo-btn:hover{background:#fff1f4}
+.bank-undo-btn:focus-visible{outline:2px solid #0ea9aa;outline-offset:2px}
+@media(max-width:620px){
+  .bank-history-row{grid-template-columns:1fr}
+  .bank-undo-btn{width:100%}
+}
