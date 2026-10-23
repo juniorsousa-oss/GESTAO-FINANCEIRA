@@ -70,6 +70,9 @@ def test_payment_routes_require_auth_and_confirm_only_with_csrf(monkeypatch):
                      "status":"pending","posted_on":"2026-10-23","account_id":3}]
         if table=="finance_reconciliation_learning":
             return [{"source_description":"Pix BOM PASTOR","target_description":"Funerária"}]
+        if table=="finance_bank_accounts":
+            return [{"id":3,"bank_name":"Nubank","nickname":"Principal",
+                     "holder":{"name":"Titular"}}]
         if table=="rpc/axora_confirm_reconciliation":
             assert data["p_workspace_id"]==WORKSPACE
             assert data["p_user_id"]==12
@@ -89,6 +92,7 @@ def test_payment_routes_require_auth_and_confirm_only_with_csrf(monkeypatch):
           params={"payment_date":"2026-10-23","amount":189.90})
         assert result.status_code==200
         assert result.json()["items"][0]["kind"]=="bank"
+        assert "Nubank" in result.json()["items"][0]["account_label"]
         assert client.post("/api/provisions/2/match",
             json={"kind":"bank","source_id":8}).status_code==403
         head={"X-CSRF-Token":"test-token"}
