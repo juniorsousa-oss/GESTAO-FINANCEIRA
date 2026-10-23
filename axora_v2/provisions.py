@@ -49,7 +49,7 @@ def clean_payment_url(value):
         raise HTTPException(422, "Link inválido. Confira o endereço informado.") from None
     if (u.scheme != "https" or not hostname or u.username or u.password
         or not valid_port or len(value) < 12
-        or not re.fullmatch(r"(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,63}", hostname)
+        or not re.fullmatch(r"(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}", hostname)
         or u.netloc.endswith(".")):
         raise HTTPException(422, "Use um endereço HTTPS público, como https://www.exemplo.com.br.")
     return value
