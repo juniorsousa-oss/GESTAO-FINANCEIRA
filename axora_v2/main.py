@@ -418,6 +418,19 @@ def provision_payment_matches(pk: int, payment_date: str, amount: float, user=De
     items = provisions.payment_matches(
         {"description": reference},
         checked["p_payment_date"], checked["p_amount"], bank, movements, learned)
+    accounts = db.call("GET", "finance_bank_accounts", params={
+        "workspace_id": "eq." + workspace, "limit": 500,
+        "select": "id,bank_name,nickname,holder:finance_bank_holders(name)",
+    })
+    account_names = {
+        int(a["id"]): " · ".join(filter(None, [
+            a.get("bank_name"), a.get("nickname"),
+            (a.get("holder") or {}).get("name"),
+        ])) for a in accounts
+    }
+    for candidate in items:
+        if candidate["kind"] == "bank":
+            candidate["account_label"] = account_names.get(candidate["account_id"], "Conta bancária")
     return {"items": items, "message": "Sugestões exigem confirmação. Nenhum registro foi criado."}
 
 
