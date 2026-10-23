@@ -177,6 +177,21 @@ function bankOpenAccount(id=null){
   $("#bank-account-submit").textContent=selected?"Salvar alterações":"Salvar conta";
   $("#bank-account-dialog").showModal();
 }
+function bankOpenBalance(id){
+  const account=(bankingData?.accounts||[]).find(a=>Number(a.id)===Number(id));
+  if(!account)throw Error("Conta não encontrada. Recarregue os dados.");
+  if(account.pluggy_account_id||account.pluggy_item_id)
+    throw Error("O saldo desta conta vem da integração bancária.");
+  const holder=(bankingData?.holders||[]).find(h=>Number(h.id)===Number(account.holder_id));
+  const form=$("#bank-balance-form");
+  form.reset();
+  form.elements.account_id.value=account.id;
+  form.elements.balance.value=account.manual_balance==null?"":Number(account.manual_balance).toFixed(2);
+  $("#bank-balance-detail").textContent=
+    account.bank_name+" · "+account.nickname+" · "+(holder?.name||"Titular");
+  $("#bank-balance-dialog").showModal();
+  form.elements.balance.focus();
+}
 function bankOpenTransaction(){
   if(!(bankingData?.accounts||[]).length){showToast("Cadastre primeiro uma conta bancária.",true);return}
   const form=$("#bank-transaction-form");form.reset();
@@ -314,6 +329,7 @@ document.addEventListener("DOMContentLoaded",()=>{
       else if(action==="bank-new-account")bankOpenAccount();
       else if(action==="bank-edit-holder")bankOpenHolder(Number(el.dataset.id));
       else if(action==="bank-edit-account")bankOpenAccount(Number(el.dataset.id));
+      else if(action==="bank-update-balance")bankOpenBalance(Number(el.dataset.id));
       else if(action==="bank-delete-holder")await bankDelete("holder",Number(el.dataset.id));
       else if(action==="bank-delete-account")await bankDelete("account",Number(el.dataset.id));
       else if(action==="meu-pluggy-link")await bankOpenMeuPluggy(Number(el.dataset.id));
@@ -355,6 +371,22 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#bank-account-form").addEventListener("submit",e=>{
     e.preventDefault();bankSaveForm(e.currentTarget,"/api/banking/accounts",
      x=>({...x,holder_id:Number(x.holder_id)}));
+  });
+  $("#bank-balance-form").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const form=e.currentTarget,button=form.querySelector('button[type="submit"]');
+    const id=Number(form.elements.account_id.value);
+    const raw=form.elements.balance.value.trim();
+    button.disabled=true;
+    try{
+      await api("/api/banking/accounts/"+id+"/balance",{
+        method:"PATCH",body:JSON.stringify({balance:raw===""?null:raw})
+      });
+      $("#bank-balance-dialog").close();
+      await loadBanking(true);
+      showToast(raw===""?"Saldo removido; conta marcada como não informada.":"Saldo atualizado no consolidado.");
+    }catch(err){showToast(err.message,true)}
+    finally{button.disabled=false}
   });
   $("#bank-transaction-form").addEventListener("submit",e=>{
     e.preventDefault();bankSaveForm(e.currentTarget,"/api/banking/transactions",
