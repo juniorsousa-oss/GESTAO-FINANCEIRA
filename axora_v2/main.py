@@ -332,7 +332,7 @@ def list_provisions(user=Depends(auth)):
     page_size = 500
     while True:
         rows = db.call("GET", "finance_provision_occurrences", params={
-            "select": "id,rule_id,sequence_no,due_date,planned_value,status,description_override,category_override,responsible_override,value_mode_override,rule:finance_provision_rules(description,category,responsible,value_mode,recurrence,frequency,planned_value,end_date,installment_count)",
+            "select": "id,rule_id,sequence_no,due_date,planned_value,status,description_override,category_override,responsible_override,value_mode_override,rule:finance_provision_rules(description,category,responsible,value_mode,recurrence,frequency,planned_value,end_date,installment_count,payment_url)",
             "workspace_id": "eq." + workspace,
             "status": "eq.open", "order": "due_date.asc,id.asc",
             "limit": page_size, "offset": len(items),
@@ -351,7 +351,9 @@ def add_provision(payload: dict, user=Depends(authorized)):
     values = provisions.clean_provision(payload)
     catalogs.canonicalize_provision(values, finance_catalog_items(workspace))
     values["p_workspace_id"] = workspace
-    new_id = db.call("POST", "rpc/axora_create_provision", data=values)
+    endpoint = ("rpc/axora_create_provision_with_link" if "p_payment_url" in values
+                else "rpc/axora_create_provision")
+    new_id = db.call("POST", endpoint, data=values)
     return {"id": new_id, "ok": True}
 
 
@@ -361,7 +363,9 @@ def edit_provision(pk: int, payload: dict, user=Depends(authorized)):
     workspace = user_workspace(user)
     values = provisions.clean_edit_provision(payload)
     catalogs.canonicalize_provision(values, finance_catalog_items(workspace))
-    return db.call("POST", "rpc/axora_edit_provision",
+    endpoint = ("rpc/axora_edit_provision_with_link" if "p_payment_url" in values
+                else "rpc/axora_edit_provision")
+    return db.call("POST", endpoint,
                    data={"p_workspace_id": workspace, "p_occurrence_id": pk, **values})
 
 
