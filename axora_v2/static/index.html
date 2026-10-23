@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="/assets/shell-finish.css?v=exterior-network-wallpaper-r2-login-foot-v1">
   <link rel="stylesheet" href="/assets/mobile-frame-login-v2.css?v=opera-atria-card-mobile-r1">
   <link rel="stylesheet" href="/assets/mobile-scroll-stability.css?v=axora-mobile-scroll-r1">
-  <link rel="stylesheet" href="/assets/provisions.css?v=axora-revisions-r1">
+  <link rel="stylesheet" href="/assets/provisions.css?v=axora-provision-filters-match-r1">
   <link rel="stylesheet" href="/assets/banking.css?v=axora-undo-learning-r1">
 </head>
 <body>
@@ -123,7 +123,11 @@
         <div class="field"><label for="pv-paid-date">Data efetiva do pagamento *</label><input id="pv-paid-date" name="payment_date" type="date" required></div>
         <div class="field"><label for="pv-paid-amount">Valor pago (R$) *</label><input id="pv-paid-amount" name="amount" type="number" min="0.01" step="0.01" required></div>
       </div>
-      <p class="provision-warning">A confirmação gera uma despesa em Registros e quita este vencimento. Pagamento parcial e estorno estarão disponíveis em uma próxima etapa.</p>
+      <p class="provision-warning">Consulte correspondências no extrato e em Registros antes de criar outra despesa. O sistema nunca vincula automaticamente.</p>
+      <fieldset id="provision-match-options" class="provision-payment-matches" aria-label="Origem do pagamento">
+        <p class="panel-copy">Consultando lançamentos existentes…</p>
+      </fieldset>
+      <p id="provision-payment-mode-detail" class="provision-warning">Confira se o pagamento já está registrado.</p>
       <label class="provision-full-settlement"><input type="checkbox" name="full_settlement" required> Confirmo que este valor representa a quitação integral do vencimento.</label>
       <div class="dialog-actions"><button type="button" class="btn ghost" data-dismiss-payment>Cancelar</button><button type="submit" class="btn primary">Confirmar pagamento</button></div>
     </form>
@@ -253,7 +257,7 @@
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/assets/app.js?v=axora-banking-mvp-r1" defer></script>
-  <script src="/assets/provisions.js?v=axora-complete-obligations-r1" defer></script>
+  <script src="/assets/provisions.js?v=axora-provision-filters-match-r1" defer></script>
   <script src="/assets/catalogs.js?v=axora-revisions-r1" defer></script>
   <script src="/assets/auto-sync.js?v=axora-complete-obligations-r1" defer></script>
   <script src="/assets/banking.js?v=axora-undo-learning-r1" defer></script>

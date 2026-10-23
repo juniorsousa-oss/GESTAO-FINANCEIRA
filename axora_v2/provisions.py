@@ -103,3 +103,68 @@ def clean_edit_provision(payload):
             "p_due_date": valid_date(payload["due_date"], "Vencimento"),
             "p_planned_value": positive_money(payload["planned_value"], "Valor previsto"),
             "p_value_mode": payload["value_mode"], **details}
+
+# Sugestões supervisionadas de lançamentos já existentes:
+# mesmo valor e data aproximada; nenhuma ação financeira nesta busca.
+from difflib import SequenceMatcher
+from axora_v2 import banking
+
+
+def payment_matches(occurrence, payment_date, amount, bank_transactions, movements,
+                    learning=None):
+    """Candidatos de extrato/Registros, sem compensação ou quitação automática."""
+    target = banking.normalize(occurrence["description"])
+    target_amount = positive_money(amount)
+    payment_on = date.fromisoformat(valid_date(payment_date, "Data do pagamento"))
+    options = []
+    for kind, records in (("bank", bank_transactions), ("movement", movements)):
+        for entry in records:
+            if kind == "bank":
+                if entry.get("status") != "pending" or float(entry.get("amount") or 0) >= 0:
+                    continue
+                raw_value = abs(float(entry["amount"]))
+                description = str(entry.get("description") or "")
+                on = entry.get("posted_on")
+                learned = banking.learned_targets(description, learning or {}).get(target, 0)
+            else:
+                if entry.get("classification") != "SAÍDA" or entry.get("provision_occurrence_id"):
+                    continue
+                raw_value = float(entry.get("value") or 0)
+                description = str(entry.get("description") or "")
+                on = entry.get("movement_date")
+                learned = 0
+            if abs(raw_value - target_amount) > 0.01:
+                continue
+            try:
+                days = abs((date.fromisoformat(str(on)) - payment_on).days)
+            except (ValueError, TypeError):
+                continue
+            if days > 45:
+                continue
+            similarity = SequenceMatcher(None, banking.normalize(description), target).ratio()
+            if similarity < 0.24 and not learned:
+                continue
+            confidence = min(100, round(52 + max(0, 24-days*2) +
+                                         similarity*22 + min(32, learned*25)))
+            reasons = ["valor igual"]
+            if days <= 3:
+                reasons.append("data próxima")
+            if similarity >= .5:
+                reasons.append("descrição semelhante")
+            if learned:
+                reasons.append("padrão confirmado anteriormente")
+            options.append({
+                "kind": kind, "id": int(entry["id"]), "description": description,
+                "date": str(on), "amount": raw_value, "confidence": confidence,
+                "reasons": reasons, "account_id": entry.get("account_id"),
+                "learned": bool(learned),
+            })
+    return sorted(options, key=lambda x: (-x["confidence"], x["kind"], x["id"]))[:8]
+
+
+def clean_match(payload):
+    if not isinstance(payload, dict) or set(payload) != {"kind", "source_id"}:
+        raise HTTPException(422, "Selecione um lançamento existente.")
+    if payload["kind"] not in {"bank", "movement"}:
+        raise HTTPException(422, "Origem inválida.")
+    return {"kind": payload["kind"], "source_id": banking.positive_id(payload["source_id"])}

@@ -90,3 +90,24 @@
 .provision-cancel-confirm{display:flex;align-items:flex-start;gap:9px;margin-top:18px;color:#6a5060;font-size:12px;line-height:1.5;font-weight:650}
 .provision-cancel-confirm input{width:17px;height:17px;flex:0 0 17px;accent-color:#ba4e66}
 @media(max-width:850px){.provision-row-actions{gap:8px}.provision-row-actions .btn{flex:1 1 auto}}
+
+/* Provisões: filtros combináveis em grade fluida, inclusive mobile. */
+.provision-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:end;margin:0 0 18px}
+.provision-filters .provision-filter-label{min-width:0}
+.provision-filters .provision-filter-label input,
+.provision-filters .provision-filter-label select{width:100%;min-width:0;box-sizing:border-box;min-height:42px;border:1px solid #d8e3ee;border-radius:11px;background:#fff;padding:9px 12px;color:#1b3855;font:inherit;font-size:12px}
+.provision-filters .provision-filter-search{grid-column:span 2}
+.provision-filters .provision-clear-filters{min-height:42px}
+.provision-table tr[hidden]{display:none!important}
+.provision-payment-matches{border:1px solid #dce9f1;border-radius:14px;padding:14px;margin:17px 0 0;display:grid;gap:10px;min-width:0}
+.provision-payment-matches .panel-copy{margin:5px 0;color:#637e92;font-size:12px}
+.provision-match-title{font-weight:800;font-size:12px;color:#234860;margin:0}
+.provision-match-item{display:flex;align-items:flex-start;gap:12px;padding:11px 12px;border:1px solid #e2eaf1;border-radius:11px;cursor:pointer}
+.provision-match-item:has(input:checked){background:#eff9f9;border-color:#56b7b7}
+.provision-match-item input{flex:0 0 17px;width:17px;height:17px;margin-top:2px;accent-color:#139ea6}
+.provision-match-item span{display:grid;gap:6px;min-width:0}
+.provision-match-item b{color:#1b3d56;font-size:12px;overflow-wrap:anywhere}
+.provision-match-item small{color:#688197;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+@media(max-width:1100px){.provision-filters{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.provision-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.provision-filters{grid-template-columns:1fr}.provision-filters .provision-filter-search{grid-column:span 1}}
