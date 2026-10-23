@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="/assets/mobile-frame-login-v2.css?v=opera-atria-card-mobile-r1">
   <link rel="stylesheet" href="/assets/mobile-scroll-stability.css?v=axora-mobile-scroll-r1">
   <link rel="stylesheet" href="/assets/provisions.css?v=axora-revisions-r1">
-  <link rel="stylesheet" href="/assets/banking.css?v=axora-bank-crud-r1">
+  <link rel="stylesheet" href="/assets/banking.css?v=axora-undo-learning-r1">
 </head>
 <body>
   <div id="login" class="login-screen">
@@ -208,6 +208,26 @@
       <button class="btn primary" id="bank-submit" type="submit" disabled>Confirmar decisão</button>
     </div>
   </form></dialog>
+  <dialog id="bank-undo-dialog" class="bank-dialog">
+    <form id="bank-undo-form">
+      <div class="bank-dialog-heading">
+        <div><p>AXORA · CORREÇÃO AUDITÁVEL</p><h2>Desfazer conciliação</h2></div>
+        <button type="button" class="icon-button" data-bank-dismiss aria-label="Fechar">×</button>
+      </div>
+      <p id="bank-undo-detail" class="provision-payment-description"></p>
+      <p class="bank-decision-explanation">O extrato bancário será preservado. O vínculo será desfeito e a transação voltará para análise. Se esta conciliação quitou uma provisão, a quitação e o Registro gerados serão revertidos somente se não tiverem sido alterados posteriormente.</p>
+      <input type="hidden" name="transaction_id">
+      <div class="bank-field">
+        <label for="bank-undo-reason">Motivo da correção</label>
+        <textarea id="bank-undo-reason" name="reason" rows="3" minlength="5" maxlength="250" placeholder="Ex.: associação incorreta com outra previsão" required></textarea>
+        <small>A correção e o motivo ficam registrados no histórico.</small>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-bank-dismiss>Cancelar</button>
+        <button type="submit" class="btn primary">Confirmar estorno</button>
+      </div>
+    </form>
+  </dialog>
     <dialog id="meu-pluggy-link-dialog" class="bank-dialog">
     <form id="meu-pluggy-link-form">
       <div class="bank-dialog-heading">
@@ -236,7 +256,7 @@
   <script src="/assets/provisions.js?v=axora-complete-obligations-r1" defer></script>
   <script src="/assets/catalogs.js?v=axora-revisions-r1" defer></script>
   <script src="/assets/auto-sync.js?v=axora-complete-obligations-r1" defer></script>
-  <script src="/assets/banking.js?v=axora-meupluggy-personal-r1" defer></script>
+  <script src="/assets/banking.js?v=axora-undo-learning-r1" defer></script>
   <script src="/assets/brand-kit.js?v=brand-icon-flash-r1" defer></script>
 </body>
 </html>

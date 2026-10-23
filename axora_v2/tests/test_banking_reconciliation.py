@@ -142,8 +142,88 @@ def test_migration_atomic_checks_and_ui():
     assert 'data-page="bank-accounts"' in html
     assert 'data-page="reconciliation"' in html
     assert 'id="bank-decision-dialog"' in html
-    assert 'banking.js?v=axora-meupluggy-personal-r1' in html
+    assert 'banking.js?v=axora-undo-learning-r1' in html
     assert 'page==="reconciliation"?bankingReconciliationPage()' in app_js
     assert 'bankingReview=true;' in banking_js
     assert 'bankingChoice=null;' in banking_js
     assert "Não será" not in banking_js or True
+
+
+def test_aprendizado_bom_pastor_prioriza_funeraria_sem_confirmar():
+    tx={"description":"PIX ENVIADO PARA BOM PASTOR", "posted_on":"2026-11-15", "amount":-189.90}
+    provisions=[
+        {"id":7,"due_date":"2026-11-15","planned_value":189.90,
+         "description_override":None,"rule":{"description":"Serviço genérico"}},
+        {"id":8,"due_date":"2026-11-15","planned_value":189.90,
+         "description_override":None,"rule":{"description":"Funerária"}},
+    ]
+    # O primeiro exemplo já confirmado ensina apenas o favorecido, jamais o ID da parcela.
+    examples=[{"source_description":"Pix Bom Pastor",
+               "target_description":"FUNERÁRIA"}]
+    results=banking.suggestions(tx,[],provisions,patterns=examples)
+    assert results[0]["id"]==8
+    assert results[0]["learned_count"]==1
+    assert "padrão aprendido" in " ".join(results[0]["reasons"])
+    assert results[0]["can_confirm"] is True
+    assert banking.same_bank_counterpart("PIX - BOM PASTOR LTDA", "Pix Bom Pastor")
+    assert not banking.same_bank_counterpart("PIX OUTRA EMPRESA", "Pix Bom Pastor")
+    # Mesmo com histórico, valores divergentes não podem ser confirmados.
+    wrong=banking.suggestions({**tx,"amount":-245.00},[],provisions,patterns=examples)
+    assert not any(c["id"]==8 for c in wrong)
+    # Estorno desativa o exemplo e elimina o bônus aprendido.
+    no_pattern=banking.suggestions(tx,[],provisions,patterns=[])
+    assert all(x["learned_count"]==0 for x in no_pattern)
+
+
+def test_desfazer_exige_justificativa_e_permissao_csrf(monkeypatch):
+    monkeypatch.setenv("SUPABASE_URL","https://example.invalid")
+    monkeypatch.setenv("SUPABASE_KEY","ci-fake")
+    monkeypatch.setenv("SESSION_SECRET","z"*64)
+    monkeypatch.setenv("COOKIE_SECURE","0")
+    monkeypatch.setattr(security,"current",lambda _:{"id":12,"csrf":"test-token","is_admin":False})
+    def csrf(request,_user):
+        if request.headers.get("x-csrf-token")!="test-token":
+            raise HTTPException(403,"csrf")
+    monkeypatch.setattr(security,"require_csrf",csrf)
+    calls=[]
+    def fake_call(method,table,*,params=None,data=None,prefer=None):
+        calls.append((method,table,data))
+        if table=="rpc/axora_user_workspace":
+            return WORKSPACE
+        if table=="rpc/axora_undo_reconciliation":
+            assert data=={"p_workspace_id":WORKSPACE,"p_user_id":12,
+                          "p_transaction_id":55,"p_reason":"Vínculo incorreto"}
+            return {"transaction_id":55,"status":"pending","reverted":True}
+        raise AssertionError(table)
+    monkeypatch.setattr(db,"call",fake_call)
+    with TestClient(app) as client:
+        body={"transaction_id":55,"reason":"Vínculo incorreto"}
+        assert client.post("/api/banking/reconcile/undo",json=body).status_code==403
+        h={"X-CSRF-Token":"test-token"}
+        assert client.post("/api/banking/reconcile/undo",
+                           json={"transaction_id":55,"reason":"err"},headers=h).status_code==422
+        response=client.post("/api/banking/reconcile/undo",json=body,headers=h)
+        assert response.status_code==200
+        assert response.json()["reverted"] is True
+    assert sum(table=="rpc/axora_undo_reconciliation" for _,table,_ in calls)==1
+
+
+def test_sql_estorno_isola_workspace_preserva_extrato_e_grava_auditoria():
+    sql=(BASE/"migrations/20261023_reversible_reconciliation_learning.sql").read_text()
+    assert "axora_undo_reconciliation" in sql
+    assert "axora_confirm_reconciliation" in sql
+    assert "finance_reconciliation_learning" in sql
+    assert "ON CONFLICT (workspace_id,transaction_id)" in sql
+    assert "pg_advisory_xact_lock" in sql
+    assert "member.workspace_id=p_workspace_id" in sql
+    assert "UPDATE public.finance_bank_transactions SET" in sql
+    assert "status='pending'" in sql
+    assert "action,active" in sql
+    assert "'reversed'" in sql
+    assert "DELETE FROM public.finance_bank_transactions" not in sql
+    assert "TRUNCATE" not in sql
+    html=(BASE/"static/index.html").read_text()
+    js=(BASE/"static/banking.js").read_text()
+    assert 'id="bank-undo-dialog"' in html
+    assert "/api/banking/reconcile/undo" in js
+    assert "Padrão aprendido" in js

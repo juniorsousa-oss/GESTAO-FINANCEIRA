@@ -593,8 +593,13 @@ def banking_suggestions(transaction_id:int,user=Depends(auth)):
     linked=banking_rows(workspace,"finance_bank_transactions",
       filters={"movement_id":"not.is.null"},select="movement_id",limit=1000)
     occupied=[row["movement_id"] for row in linked if row.get("movement_id")]
+    history_patterns=banking_rows(workspace,"finance_reconciliation_learning",
+       filters={"active":"eq.true"},
+       select="source_description,target_description",
+       order="updated_at.desc,id.desc",limit=3000)
     return {"transaction_id":transaction_id,
-            "candidates":banking.suggestions(transaction,movements,provision_rows,occupied)}
+            "candidates":banking.suggestions(
+                transaction,movements,provision_rows,occupied,history_patterns)}
 
 
 @app.get("/api/banking/history")
@@ -603,7 +608,32 @@ def banking_history(user=Depends(auth)):
     rows=banking_rows(workspace,"finance_reconciliation_events",
       select="id,transaction_id,actor_id,action,movement_id,provision_occurrence_id,counterpart_id,notes,created_at",
       order="created_at.desc,id.desc",limit=100)
+    # Somente a decisão ativa mais recente pode ser revertida.
+    active=banking_rows(workspace,"finance_bank_transactions",
+       filters={"status":"neq.pending"},
+       select="id,status,description,amount,posted_on",
+       order="decided_at.desc,id.desc",limit=1000)
+    active_by_id={int(item["id"]):item for item in active}
+    seen=set()
+    for event in rows:
+        txid=int(event["transaction_id"])
+        tx=active_by_id.get(txid)
+        event["bank_description"]=tx["description"] if tx else ""
+        event["can_undo"]=bool(
+            tx and txid not in seen
+            and tx["status"]==event["action"]
+            and event["action"] in banking.UNDOABLE_ACTIONS
+        )
+        seen.add(txid)
     return {"items":rows}
+
+
+@app.post("/api/banking/reconcile/undo")
+def banking_undo(payload:dict,user=Depends(authorized)):
+    workspace=user_workspace(user)
+    data=banking.clean_undo(payload)
+    return db.call("POST","rpc/axora_undo_reconciliation",
+       data={"p_workspace_id":workspace,"p_user_id":int(user["id"]),**data})
 
 
 @app.post("/api/banking/reconcile")

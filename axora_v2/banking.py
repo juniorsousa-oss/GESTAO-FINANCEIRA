@@ -100,7 +100,7 @@ def normalize(text):
     return " ".join(re.findall(r"[a-z0-9]+", text))
 
 
-def score_match(transaction, candidate, *, candidate_type):
+def score_match(transaction, candidate, *, candidate_type, learned_count=0):
     """Pontuação informativa, jamais autorização de conciliação."""
     amount = float(transaction["amount"])
     target = float(candidate["amount"])
@@ -120,7 +120,8 @@ def score_match(transaction, candidate, *, candidate_type):
     similarity = SequenceMatcher(None, normalize(transaction["description"]),
                                  normalize(candidate["description"])).ratio()
     text_points = round(similarity * 20, 2)
-    score = round(amount_points + date_points + text_points)
+    score = min(100, round(amount_points + date_points + text_points +
+                           (min(35, 26 + 3 * learned_count) if learned_count else 0)))
     if score < 35:
         return None
     reasons = ["valor idêntico" if delta < .011 else "valor próximo, exige revisão"]
@@ -128,16 +129,73 @@ def score_match(transaction, candidate, *, candidate_type):
         reasons.append("datas próximas")
     if similarity >= .55:
         reasons.append("descrição semelhante")
+    if learned_count:
+        reasons.append(f"padrão aprendido em {learned_count} conciliação(ões) confirmada(s)")
     return {"kind": candidate_type, "id": candidate["id"],
             "label": candidate["description"], "value": abs(target),
             "date": candidate["date"], "score": score,
             "strength": "Alta" if score >= 80 else "Média" if score >= 60 else "Baixa",
-            "reasons": reasons, "can_confirm": delta < .011}
+            "reasons": reasons, "can_confirm": delta < .011,
+            "learned_count": learned_count}
 
 
-def suggestions(transaction, movements, occurrences, occupied=None):
+
+# As palavras genéricas de extrato não identificam o favorecido.
+BANK_GENERIC_WORDS = frozenset({
+    "pix", "enviado", "enviada", "recebido", "recebida", "transferencia",
+    "transferido", "transferida", "pagamento", "pago", "paga", "para",
+    "por", "com", "via", "de", "do", "da", "dos", "das", "cpf", "cnpj",
+    "banco", "conta", "debito", "credito", "ted", "doc", "ref", "id"
+})
+
+
+def bank_signature(description):
+    """Assinatura conservadora da contraparte, sem datas/IDs e prefixos PIX."""
+    return frozenset(
+        word for word in normalize(description).split()
+        if len(word) >= 3 and not word.isdigit() and word not in BANK_GENERIC_WORDS
+    )
+
+
+def same_bank_counterpart(current_description, historical_description):
+    current = bank_signature(current_description)
+    historical = bank_signature(historical_description)
+    if not current or not historical:
+        return False
+    if current == historical:
+        return True
+    return len(current & historical) >= 2 and (
+        current.issubset(historical) or historical.issubset(current)
+    )
+
+
+def learned_targets(bank_description, examples):
+    """Os exemplos pertencem ao workspace; nenhum vínculo é executado aqui."""
+    result = {}
+    for example in examples or []:
+        if not same_bank_counterpart(bank_description, example.get("source_description", "")):
+            continue
+        key = normalize(example.get("target_description", ""))
+        if key:
+            result[key] = result.get(key, 0) + 1
+    return result
+
+
+def clean_undo(data):
+    if not isinstance(data, dict) or set(data) != {"transaction_id", "reason"}:
+        raise HTTPException(422, "Informe transação e justificativa do estorno.")
+    return {
+        "p_transaction_id": positive_id(data["transaction_id"]),
+        "p_reason": clean_text(data["reason"], "Justificativa", 250, 5),
+    }
+
+
+UNDOABLE_ACTIONS = frozenset({"matched_record", "matched_provision", "transfer", "ignored"})
+
+def suggestions(transaction, movements, occurrences, occupied=None, patterns=None):
     occupied = set(occupied or [])
     choices = []
+    learned = learned_targets(transaction["description"], patterns)
     for m in movements:
         if m["id"] in occupied:
             continue
@@ -145,7 +203,8 @@ def suggestions(transaction, movements, occurrences, occupied=None):
         match = score_match(transaction, {
             "id": m["id"], "amount": direction * float(m["value"]),
             "date": m.get("movement_date"), "description": m["description"],
-        }, candidate_type="matched_record")
+        }, candidate_type="matched_record",
+            learned_count=learned.get(normalize(m["description"]), 0))
         if match:
             choices.append(match)
     if float(transaction["amount"]) < 0:
@@ -154,7 +213,9 @@ def suggestions(transaction, movements, occurrences, occupied=None):
                 "id": o["id"], "amount": -float(o["planned_value"]),
                 "date": o.get("due_date"),
                 "description": o.get("description_override") or (o.get("rule") or {}).get("description", ""),
-            }, candidate_type="matched_provision")
+            }, candidate_type="matched_provision",
+                learned_count=learned.get(normalize(
+                    o.get("description_override") or (o.get("rule") or {}).get("description", "")), 0))
             if match:
                 choices.append(match)
     return sorted(choices, key=lambda o: (-o["score"], o["kind"], o["id"]))[:6]
