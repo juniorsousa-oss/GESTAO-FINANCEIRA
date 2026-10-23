@@ -33,6 +33,13 @@ def test_payment_candidates_require_equal_amount_and_matching_description():
     assert found[0]["learned"] is True
     assert all(x["amount"]==189.90 for x in found)
     assert provisions.payment_matches(occurrence,"2026-10-23",200,bank,records,history)==[]
+    utility=provisions.payment_matches(
+       {"description":"CEMIG"},"2026-10-23",91.57,
+       [{"id":40,"description":"Transferência enviada pelo Pix CEMIG DISTRIBUIÇÃO",
+         "amount":-91.57,"posted_on":"2026-10-22",
+         "status":"pending","account_id":3}],[],[])
+    assert utility and utility[0]["id"]==40
+    assert "favorecido identificado" in " ".join(utility[0]["reasons"])
 
 
 def test_payment_match_payload_validation():
