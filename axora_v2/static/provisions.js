@@ -202,6 +202,10 @@ async function openPaymentDialog(id){
   f.elements.payment_date.value=provisionToday();
   f.elements.amount.value=Number(item.planned_value).toFixed(2);
   $("#provision-payment-detail").textContent=(item.rule?.description||"Conta")+" · vencimento "+dateBR(item.due_date);
+  const portal=provisionSafeUrl(item.rule?.payment_url);
+  $("#provision-payment-portal").innerHTML=portal?
+    '<a class="btn ghost small provision-site-link" href="'+esc(portal)+
+    '" target="_blank" rel="noopener noreferrer">Acessar site para consultar a conta ↗</a>':"";
   $("#provision-payment-dialog").showModal();
   await loadPaymentMatches();
 }
