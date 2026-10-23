@@ -332,7 +332,7 @@ def list_provisions(user=Depends(auth)):
     page_size = 500
     while True:
         rows = db.call("GET", "finance_provision_occurrences", params={
-            "select": "id,rule_id,sequence_no,due_date,planned_value,status,description_override,category_override,responsible_override,value_mode_override,rule:finance_provision_rules(description,category,responsible,value_mode,recurrence,frequency,planned_value,end_date,installment_count,payment_url)",
+            "select": "id,rule_id,sequence_no,due_date,planned_value,status,description_override,category_override,responsible_override,value_mode_override,rule:finance_provision_rules(description,category,responsible,value_mode,recurrence,frequency,planned_value,last_paid_value,last_paid_at,end_date,installment_count,payment_url)",
             "workspace_id": "eq." + workspace,
             "status": "eq.open", "order": "due_date.asc,id.asc",
             "limit": page_size, "offset": len(items),
