@@ -6,6 +6,8 @@ Quitações são atômicas via RPC SQL, criando finance_movements.
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from fastapi import HTTPException
+from urllib.parse import urlsplit
+import re
 
 RECURRENCE = {"once", "unlimited", "until_date", "installments"}
 FREQUENCY = {"weekly", "biweekly", "monthly", "bimonthly", "quarterly", "semiannual", "yearly"}
@@ -31,11 +33,33 @@ def valid_date(value, field):
         raise HTTPException(422, f"{field} inválida.") from None
 
 
+def clean_payment_url(value):
+    """Somente links externos HTTPS válidos; vazio remove o link da série."""
+    if value is None or value == "":
+        return None
+    if not isinstance(value, str) or len(value) > 2048 or value != value.strip():
+        raise HTTPException(422, "Link inválido. Informe uma URL HTTPS completa.")
+    if any(ch.isspace() or ord(ch) < 32 or ch in "\\<>\"'" for ch in value):
+        raise HTTPException(422, "O link contém caracteres não permitidos.")
+    try:
+        u = urlsplit(value)
+        hostname = u.hostname or ""
+        valid_port = u.port is None or u.port == 443
+    except ValueError:
+        raise HTTPException(422, "Link inválido. Confira o endereço informado.") from None
+    if (u.scheme != "https" or not hostname or u.username or u.password
+        or not valid_port or len(value) < 12
+        or not re.fullmatch(r"(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,63}", hostname)
+        or u.netloc.endswith(".")):
+        raise HTTPException(422, "Use um endereço HTTPS público, como https://www.exemplo.com.br.")
+    return value
+
+
 def clean_provision(payload):
     if not isinstance(payload, dict):
         raise HTTPException(422, "Cadastro de provisão inválido.")
     allowed = {"description", "category", "responsible", "start_due_date", "planned_value",
-               "value_mode", "recurrence", "frequency", "end_date", "installment_count"}
+               "value_mode", "recurrence", "frequency", "end_date", "installment_count", "payment_url"}
     if set(payload) - allowed:
         raise HTTPException(422, "Campos não reconhecidos para provisões.")
 
@@ -69,6 +93,8 @@ def clean_provision(payload):
         if isinstance(value, bool) or not str(value).isdigit() or not (1 <= int(value) <= 360):
             raise HTTPException(422, "Informe de 1 a 360 vencimentos ou parcelas.")
         result["p_installment_count"] = int(value)
+    if "payment_url" in payload:
+        result["p_payment_url"] = clean_payment_url(payload["payment_url"])
     return result
 
 
@@ -86,9 +112,10 @@ def clean_scope(value):
 
 
 def clean_edit_provision(payload):
-    if not isinstance(payload, dict) or set(payload) != {
-        "scope", "due_date", "description", "category", "responsible", "planned_value", "value_mode"
-    }:
+    if not isinstance(payload, dict) or (
+        set(payload) - {"scope", "due_date", "description", "category", "responsible", "planned_value", "value_mode", "payment_url"}
+        or not {"scope", "due_date", "description", "category", "responsible", "planned_value", "value_mode"} <= set(payload)
+    ):
         raise HTTPException(422, "Informe todos os campos da edição e seu alcance.")
     scope = clean_scope(payload["scope"])
     details = {}
@@ -99,10 +126,13 @@ def clean_edit_provision(payload):
         details["p_" + field] = value.strip()
     if payload["value_mode"] not in VALUE_MODE:
         raise HTTPException(422, "Natureza do valor inválida.")
-    return {"p_scope": scope,
-            "p_due_date": valid_date(payload["due_date"], "Vencimento"),
-            "p_planned_value": positive_money(payload["planned_value"], "Valor previsto"),
-            "p_value_mode": payload["value_mode"], **details}
+    result = {"p_scope": scope,
+              "p_due_date": valid_date(payload["due_date"], "Vencimento"),
+              "p_planned_value": positive_money(payload["planned_value"], "Valor previsto"),
+              "p_value_mode": payload["value_mode"], **details}
+    if "payment_url" in payload:
+        result["p_payment_url"] = clean_payment_url(payload["payment_url"])
+    return result
 
 # Sugestões supervisionadas de lançamentos já existentes:
 # mesmo valor e data aproximada; nenhuma ação financeira nesta busca.
