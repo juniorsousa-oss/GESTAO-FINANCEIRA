@@ -384,6 +384,62 @@ def pay_provision(pk: int, payload: dict, user=Depends(authorized)):
                    data={"p_workspace_id": user_workspace(user), "p_occurrence_id": pk, **values})
 
 
+@app.get("/api/provisions/{pk}/matches")
+def provision_payment_matches(pk: int, payment_date: str, amount: float, user=Depends(auth)):
+    """Somente sugere transações já importadas e Registros já existentes."""
+    positive_id(pk)
+    workspace = user_workspace(user)
+    checked = provisions.clean_payment({"payment_date": payment_date, "amount": amount})
+    rows = db.call("GET", "finance_provision_occurrences", params={
+        "workspace_id": "eq." + workspace, "id": "eq." + str(pk),
+        "status": "eq.open", "limit": 1,
+        "select": "id,planned_value,description_override,rule:finance_provision_rules(description)",
+    })
+    if not rows:
+        raise HTTPException(404, "Previsão em aberto não localizada.")
+    item = rows[0]
+    reference = item.get("description_override") or (item.get("rule") or {}).get("description", "")
+    if abs(float(item["planned_value"]) - checked["p_amount"]) > 0.01:
+        return {"items": [], "message": "O valor difere da previsão. Revise antes de conciliar."}
+
+    bank = db.call("GET", "finance_bank_transactions", params={
+        "workspace_id": "eq." + workspace, "status": "eq.pending",
+        "amount": "lt.0", "order": "posted_on.desc,id.desc", "limit": 800,
+        "select": "id,account_id,description,posted_on,amount,status",
+    })
+    movements = db.select("movements", order="movement_date.desc,id.desc", params={
+        "workspace_id": "eq." + workspace, "limit": 800,
+    })
+    learned = db.call("GET", "finance_reconciliation_learning", params={
+        "workspace_id": "eq." + workspace, "active": "eq.true",
+        "select": "source_description,target_description",
+        "order": "updated_at.desc,id.desc", "limit": 1000,
+    })
+    items = provisions.payment_matches(
+        {"description": reference},
+        checked["p_payment_date"], checked["p_amount"], bank, movements, learned)
+    return {"items": items, "message": "Sugestões exigem confirmação. Nenhum registro foi criado."}
+
+
+@app.post("/api/provisions/{pk}/match")
+def provision_confirm_match(pk: int, payload: dict, user=Depends(authorized)):
+    """Um único vínculo por operação, resolvido em transação SQL atômica."""
+    positive_id(pk)
+    values = provisions.clean_match(payload)
+    workspace = user_workspace(user)
+    if values["kind"] == "bank":
+        return db.call("POST", "rpc/axora_confirm_reconciliation", data={
+            "p_workspace_id": workspace, "p_user_id": int(user["id"]),
+            "p_transaction_id": values["source_id"],
+            "p_action": "matched_provision", "p_target_id": pk,
+            "p_counterpart_id": None, "p_category": None, "p_reason": None,
+        })
+    return db.call("POST", "rpc/axora_link_record_to_provision", data={
+        "p_workspace_id": workspace, "p_user_id": int(user["id"]),
+        "p_occurrence_id": pk, "p_movement_id": values["source_id"],
+    })
+
+
 # Banco manual e Central de Conciliação: nenhuma integração Open Finance ativa.
 def banking_rows(workspace, name, *, filters=None, select="*", order=None, limit=500):
     params={"select":select,"workspace_id":"eq."+workspace,"limit":limit}
