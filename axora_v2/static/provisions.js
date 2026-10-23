@@ -25,7 +25,20 @@ const provisionRecurrence={once:"Única",unlimited:"Indeterminada",until_date:"P
 const provisionFrequency={weekly:"Semanal",biweekly:"Quinzenal",monthly:"Mensal",bimonthly:"Bimestral",quarterly:"Trimestral",semiannual:"Semestral",yearly:"Anual"};
 const provisionMonth=v=>String(v||"").slice(0,7);
 const provisionToday=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")};
-const provisionSum=items=>items.reduce((total,item)=>total+Number(item.planned_value||0),0);
+const provisionSum=items=>items.reduce((total,item)=>total+(item.planned_value==null?0:Number(item.planned_value)),0);
+const provisionUnknown=items=>items.filter(x=>x.planned_value==null).length;
+const provisionEstimate=item=>item.planned_value==null?"A definir":money(item.planned_value);
+function provisionAmountOptions(form,labelId,helpId){
+  const variable=form.elements.value_mode.value==="variable";
+  const value=form.elements.planned_value;
+  value.required=!variable;
+  document.getElementById(labelId).textContent=variable?"Valor de referência (R$) · opcional":"Valor previsto (R$) *";
+  document.getElementById(helpId).textContent=variable?
+    "Deixe vazio até conhecer o valor. O último pagamento confirmado será referência para os próximos vencimentos.":
+    "Obrigatório para contas com valor fixo.";
+  if(variable)value.placeholder="Sem valor definido";
+  else value.placeholder="Ex.: 150,00";
+}
 
 function provisionsPage(){
   if(provisionError)return '<section class="panel"><h2>Provisões ainda não disponíveis</h2><p class="panel-copy">A migração de banco desta etapa precisa ser aplicada no ambiente de testes antes do cadastro. Os dados antigos permanecem preservados.</p></section>';
@@ -57,13 +70,13 @@ function provisionsPage(){
     return true;
   });
   const cards='<div class="metric-grid">'+[
-     ["Total comprometido",provisionSum(items),items.length+" ocorrência(s) pendente(s)"],
+     ["Total previsto",provisionSum(items),items.length+" pendente(s)"],
      ["A vencer no mês",provisionSum(thisMonth),thisMonth.length+" ocorrência(s)"],
      ["Vencidas",provisionSum(overdue),overdue.length+" ocorrência(s) pendente(s)"],
      ["Próximos 30 dias",provisionSum(soon),soon.length+" ocorrência(s)"],
      ["Reserva · 6 meses",provisionSum(reserve),reserve.length+" ocorrência(s) a vencer"]
-   ].map(([label,total,note])=>'<div class="metric-card"><div class="metric-label">'+label+'</div><div class="metric-value">'+money(total)+'</div><div class="metric-meta">'+note+'</div></div>').join("")+'</div>';
-  const info='<div class="notice">Compromissos sem prazo final continuam ativos: o sistema gera vencimentos em uma <b>janela móvel de 18 meses</b>. A última data exibida não é uma data de encerramento. O indicador <b>Reserva · 6 meses</b> considera somente os próximos seis meses, sem os vencidos. Ao quitar, confira antes se já existe um lançamento para evitar duplicidade.</div>';
+   ].map(([label,total,note],index)=>'<div class="metric-card"><div class="metric-label">'+label+'</div><div class="metric-value">'+money(total)+'</div><div class="metric-meta">'+note+' · '+provisionUnknown([items,thisMonth,overdue,soon,reserve][index])+' sem valor definido</div></div>').join("")+'</div>';
+  const info='<div class="notice">Compromissos sem prazo final continuam ativos: o sistema gera vencimentos em uma <b>janela móvel de 18 meses</b>. A última data exibida não é uma data de encerramento. O indicador <b>Reserva · 6 meses</b> considera somente os próximos seis meses, sem os vencidos. Contas de valor variável podem ficar <b>a definir</b>; elas não entram na soma até existir uma referência. Os totais são estimativas, não saldo disponível. Ao quitar, confira antes se já existe um lançamento para evitar duplicidade.</div>';
   const filterOptions=(options,current,placeholder)=>'<option value="">'+placeholder+'</option>'+
     options.map(x=>'<option value="'+esc(x)+'" '+(current===x?'selected':'')+'>'+esc(x)+'</option>').join("");
   const selector='<div class="provision-filters" aria-label="Filtros de compromissos">'+
@@ -88,7 +101,9 @@ function provisionsPage(){
     return '<tr data-provision-search="'+esc(provisionNorm([description,category,responsible].join(" ")))+'"><td data-label="Vencimento"><strong>'+dateBR(item.due_date)+'</strong>'+(late?'<span class="status-badge red">Vencida</span>':'')+'</td>'+
       '<td data-label="Descrição"><strong>'+esc(description)+'</strong><small>'+esc(type+frequency+sequence)+'</small></td>'+
       '<td data-label="Categoria / Responsável">'+esc(category)+'<small>'+esc(responsible)+'</small></td>'+
-      '<td data-label="Previsto"><strong>'+money(item.planned_value)+'</strong><small>'+(mode==="fixed"?"Valor fixo":"Valor estimado")+'</small></td>'+
+      '<td data-label="Previsto"><strong>'+provisionEstimate(item)+'</strong><small>'+
+      (mode==="fixed"?"Valor fixo":(rule.last_paid_value!=null && item.planned_value!=null &&
+        Number(rule.last_paid_value)===Number(item.planned_value)?"Referência: último pagamento":"Valor variável / estimado"))+'</small></td>'+
       '<td data-label="Ação"><div class="provision-row-actions"><button type="button" class="btn primary small" data-action="pay-provision" data-id="'+id+'">Registrar pagamento</button>'+
       (paymentUrl?'<a class="btn ghost small provision-site-link" href="'+esc(paymentUrl)+'" target="_blank" rel="noopener noreferrer" title="Abrir o site de consulta ou pagamento em outra aba">Acessar site ↗</a>':'')+
       '<button type="button" class="btn ghost small" data-action="edit-provision" data-id="'+id+'">Editar</button>'+
@@ -145,6 +160,7 @@ function provisionOptions(){
   $("#provision-installments-wrap").hidden=!["until_date","installments"].includes(mode);
   $("#pv-count-label").textContent=mode==="until_date"?"Quantidade de vencimentos *":"Quantidade de parcelas *";
   f.elements.installment_count.required=["until_date","installments"].includes(mode);
+  provisionAmountOptions(f,"pv-value-label","pv-value-help");
 }
 let provisionPaymentMatches=[];
 let provisionMatchesRequest=0;
@@ -200,8 +216,10 @@ async function openPaymentDialog(id){
   if(!item)return showToast("Provisão não encontrada. Atualize a lista.",true);
   const f=$("#provision-payment-form");f.reset();f.elements.occurrence_id.value=id;
   f.elements.payment_date.value=provisionToday();
-  f.elements.amount.value=Number(item.planned_value).toFixed(2);
-  $("#provision-payment-detail").textContent=(item.rule?.description||"Conta")+" · vencimento "+dateBR(item.due_date);
+  f.elements.amount.value=item.planned_value==null?"":Number(item.planned_value).toFixed(2);
+  $("#provision-payment-detail").textContent=(item.description_override||item.rule?.description||"Conta")+
+    " · vencimento "+dateBR(item.due_date);
+  $("#provision-variable-payment-note").hidden=provisionEffective(item,"value_mode")!=="variable";
   const portal=provisionSafeUrl(item.rule?.payment_url);
   $("#provision-payment-portal").innerHTML=portal?
     '<a class="btn ghost small provision-site-link" href="'+esc(portal)+
@@ -229,8 +247,9 @@ async function openEditProvisionDialog(id){
   form.elements.category.value=provisionEffective(item,"category");
   form.elements.responsible.value=provisionEffective(item,"responsible");
   form.elements.due_date.value=item.due_date;
-  form.elements.planned_value.value=Number(item.planned_value).toFixed(2);
+  form.elements.planned_value.value=item.planned_value==null?"":Number(item.planned_value).toFixed(2);
   form.elements.value_mode.value=provisionEffective(item,"value_mode");
+  provisionAmountOptions(form,"pve-value-label","pve-value-help");
   form.elements.payment_url.value=item.rule?.payment_url||"";
   const once=item.rule?.recurrence==="once";
   for(const input of form.querySelectorAll('input[name="scope"]')){
@@ -275,6 +294,10 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#provision-edit-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-edit]"))$("#provision-edit-dialog").close()});
   $("#provision-cancel-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-cancel]"))$("#provision-cancel-dialog").close()});
   $("#provision-form").elements.recurrence.addEventListener("change",provisionOptions);
+  $("#provision-form").elements.value_mode.addEventListener("change",provisionOptions);
+  $("#provision-edit-form").elements.value_mode.addEventListener("change",()=>{
+    provisionAmountOptions($("#provision-edit-form"),"pve-value-label","pve-value-help");
+  });
   $("#page-content").addEventListener("change",e=>{
     if(e.target.id==="provision-filter"){provisionView=e.target.value;render();}
     const filters={"provision-category-filter":"category","provision-responsible-filter":"responsible",
@@ -298,7 +321,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     if(["until_date","installments"].includes(form.elements.recurrence.value)){
       values.installment_count=Number(form.elements.installment_count.value);
     }
-    values.planned_value=Number(values.planned_value);
+    values.planned_value=values.planned_value===""?null:Number(values.planned_value);
     btn.disabled=true;
     try{
       await api("/api/provisions",{method:"POST",body:JSON.stringify(values)});
@@ -312,7 +335,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     const id=Number(form.elements.occurrence_id.value);
     const values=Object.fromEntries(new FormData(form).entries());
     delete values.occurrence_id;
-    values.planned_value=Number(values.planned_value);
+    values.planned_value=values.planned_value===""?null:Number(values.planned_value);
     button.disabled=true;
     try{
       const result=await api("/api/provisions/"+id,{
