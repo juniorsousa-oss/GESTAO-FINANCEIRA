@@ -9,8 +9,8 @@ ALTER TABLE public.finance_provision_rules
   ADD CONSTRAINT axora_provision_payment_url_format CHECK (
     payment_url IS NULL OR (
       length(payment_url) BETWEEN 12 AND 2048
-      AND payment_url ~* '^https://[a-z0-9][a-z0-9.-]*\\.[a-z]{2,}(:443)?([/?#][^[:space:]]*)?$'
-      AND payment_url !~ '[[:space:]@\\]'
+      AND payment_url ~* '^https://[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(:443)?([/?#][^[:space:]]*)?$'
+      AND position(chr(92) in payment_url)=0
     )
   );
 
