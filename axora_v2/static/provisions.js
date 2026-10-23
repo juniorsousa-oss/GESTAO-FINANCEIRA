@@ -7,6 +7,14 @@ let provisionError=null;
 let provisionView="all";
 const provisionFilters={search:"",category:"",responsible:"",from:"",to:""};
 const provisionNorm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+const provisionSafeUrl=value=>{
+  if(!value)return null;
+  try{
+    const parsed=new URL(String(value));
+    return parsed.protocol==="https:" && parsed.hostname.includes(".") &&
+      !parsed.username && !parsed.password ? parsed.href : null;
+  }catch{return null;}
+};
 const provisionSixMonthEnd=today=>{
   const d=new Date(today+"T12:00:00"),day=d.getDate();
   d.setDate(1);d.setMonth(d.getMonth()+6);
@@ -76,11 +84,13 @@ function provisionsPage(){
     const category=item.category_override||rule.category||"";
     const responsible=item.responsible_override||rule.responsible||"";
     const mode=item.value_mode_override||rule.value_mode;
+    const paymentUrl=provisionSafeUrl(rule.payment_url);
     return '<tr data-provision-search="'+esc(provisionNorm([description,category,responsible].join(" ")))+'"><td data-label="Vencimento"><strong>'+dateBR(item.due_date)+'</strong>'+(late?'<span class="status-badge red">Vencida</span>':'')+'</td>'+
       '<td data-label="Descrição"><strong>'+esc(description)+'</strong><small>'+esc(type+frequency+sequence)+'</small></td>'+
       '<td data-label="Categoria / Responsável">'+esc(category)+'<small>'+esc(responsible)+'</small></td>'+
       '<td data-label="Previsto"><strong>'+money(item.planned_value)+'</strong><small>'+(mode==="fixed"?"Valor fixo":"Valor estimado")+'</small></td>'+
       '<td data-label="Ação"><div class="provision-row-actions"><button type="button" class="btn primary small" data-action="pay-provision" data-id="'+id+'">Registrar pagamento</button>'+
+      (paymentUrl?'<a class="btn ghost small provision-site-link" href="'+esc(paymentUrl)+'" target="_blank" rel="noopener noreferrer" title="Abrir o site de consulta ou pagamento em outra aba">Acessar site ↗</a>':'')+
       '<button type="button" class="btn ghost small" data-action="edit-provision" data-id="'+id+'">Editar</button>'+
       '<button type="button" class="btn ghost small provision-delete" data-action="cancel-provision" data-id="'+id+'">Excluir</button></div></td></tr>';
   }).join("");
@@ -192,6 +202,10 @@ async function openPaymentDialog(id){
   f.elements.payment_date.value=provisionToday();
   f.elements.amount.value=Number(item.planned_value).toFixed(2);
   $("#provision-payment-detail").textContent=(item.rule?.description||"Conta")+" · vencimento "+dateBR(item.due_date);
+  const portal=provisionSafeUrl(item.rule?.payment_url);
+  $("#provision-payment-portal").innerHTML=portal?
+    '<a class="btn ghost small provision-site-link" href="'+esc(portal)+
+    '" target="_blank" rel="noopener noreferrer">Acessar site para consultar a conta ↗</a>':"";
   $("#provision-payment-dialog").showModal();
   await loadPaymentMatches();
 }
@@ -217,6 +231,7 @@ async function openEditProvisionDialog(id){
   form.elements.due_date.value=item.due_date;
   form.elements.planned_value.value=Number(item.planned_value).toFixed(2);
   form.elements.value_mode.value=provisionEffective(item,"value_mode");
+  form.elements.payment_url.value=item.rule?.payment_url||"";
   const once=item.rule?.recurrence==="once";
   for(const input of form.querySelectorAll('input[name="scope"]')){
     input.closest("label").hidden=once&&input.value==="future";

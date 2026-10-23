@@ -111,3 +111,11 @@
 @media(max-width:1100px){.provision-filters{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.provision-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.provision-filters{grid-template-columns:1fr}.provision-filters .provision-filter-search{grid-column:span 1}}
+
+/* Link de consulta/pagamento por compromisso, visível na coluna Ação. */
+.provision-row-actions .provision-site-link{display:inline-flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;background:#eef9fc;border-color:#b9e2e9;color:#087889;font-weight:750;white-space:nowrap}
+.provision-row-actions .provision-site-link:hover{background:#dff5f6;border-color:#65bdc6}
+.provision-row-actions .provision-site-link:focus-visible{outline:2px solid #13aeb5;outline-offset:2px}
+.provision-link-help{display:block;font-size:11px;color:#6c8599;line-height:1.55}
+
+.provision-payment-portal{margin:-10px 0 18px}.provision-payment-portal .provision-site-link{display:inline-flex;text-decoration:none;align-items:center;gap:8px;color:#087889;border-color:#b9e2e9;background:#eef9fc}.provision-payment-portal .provision-site-link:hover{background:#dff5f6}
