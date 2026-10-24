@@ -98,6 +98,7 @@ function provisionsPage(){
     const responsible=item.responsible_override||rule.responsible||"";
     const mode=item.value_mode_override||rule.value_mode;
     const paymentUrl=provisionSafeUrl(rule.payment_url);
+    const paymentMethod=rule.payment_method||(paymentUrl?"link":"none");
     return '<tr data-provision-search="'+esc(provisionNorm([description,category,responsible].join(" ")))+'"><td data-label="Vencimento"><strong>'+dateBR(item.due_date)+'</strong>'+(late?'<span class="status-badge red">Vencida</span>':'')+'</td>'+
       '<td data-label="Descrição"><strong>'+esc(description)+'</strong><small>'+esc(type+frequency+sequence)+'</small></td>'+
       '<td data-label="Categoria / Responsável">'+esc(category)+'<small>'+esc(responsible)+'</small></td>'+
@@ -105,7 +106,8 @@ function provisionsPage(){
       (mode==="fixed"?"Valor fixo":(rule.last_paid_value!=null && item.planned_value!=null &&
         Number(rule.last_paid_value)===Number(item.planned_value)?"Referência: último pagamento":"Valor variável / estimado"))+'</small></td>'+
       '<td data-label="Ação"><div class="provision-row-actions"><button type="button" class="btn primary small" data-action="pay-provision" data-id="'+id+'">Registrar pagamento</button>'+
-      (paymentUrl?'<a class="btn ghost small provision-site-link" href="'+esc(paymentUrl)+'" target="_blank" rel="noopener noreferrer" title="Abrir o site de consulta ou pagamento em outra aba">Acessar site ↗</a>':'')+
+      (paymentMethod==="link"&&paymentUrl?'<a class="btn ghost small provision-site-link" href="'+esc(paymentUrl)+'" target="_blank" rel="noopener noreferrer" title="Abrir o site de consulta ou pagamento em outra aba">Acessar site ↗</a>':'')+
+      (paymentMethod==="pix"?'<button type="button" class="btn ghost small provision-pix-button" data-action="open-provision-pix" data-id="'+id+'">Gerar QR Code Pix</button>':'')+
       '<button type="button" class="btn ghost small" data-action="edit-provision" data-id="'+id+'">Editar</button>'+
       '<button type="button" class="btn ghost small provision-delete" data-action="cancel-provision" data-id="'+id+'">Excluir</button></div></td></tr>';
   }).join("");
@@ -140,6 +142,52 @@ async function loadProvisions({silent=false}={}){
   try{return await provisionRequest}
   finally{provisionRequest=null}
 }
+function provisionMethodOptions(form){
+  const method=form.elements.payment_method.value;
+  const kind=form.elements.pix_kind.value;
+  for(const el of form.querySelectorAll("[data-pay-method]")){
+    const field=el.dataset.payMethod;
+    el.hidden=field==="link"?method!=="link":field==="key"?(method!=="pix"||kind!=="key"):method!=="pix";
+  }
+  form.elements.payment_url.required=method==="link";
+  form.elements.pix_value.required=method==="pix";
+  form.elements.pix_receiver_name.required=method==="pix"&&kind==="key";
+  form.elements.pix_receiver_city.required=method==="pix"&&kind==="key";
+  form.elements.pix_value.placeholder=kind==="brcode"?
+    "Cole o Pix Copia e Cola completo, iniciado por 000201":"Informe a chave Pix do recebedor";
+}
+
+
+async function openPixDialog(id){
+  const item=findOpenProvision(Number(id));
+  if(item.rule?.payment_method!=="pix")throw Error("Esta previsão não possui Pix cadastrado.");
+  const dialog=$("#provision-pix-dialog");
+  $("#provision-pix-result").hidden=true;
+  $("#provision-pix-copy-button").disabled=true;
+  $("#provision-pix-loading").hidden=false;
+  $("#provision-pix-loading").textContent="Gerando QR Code com segurança...";
+  $("#provision-pix-description").textContent=provisionEffective(item,"description")+
+    " · vencimento "+dateBR(item.due_date);
+  dialog.showModal();
+  try{
+    const result=await api("/api/provisions/"+Number(id)+"/pix");
+    if(!dialog.open)return;
+    $("#provision-pix-image").src=result.image_data;
+    $("#provision-pix-copy-text").value=result.copy_paste;
+    $("#provision-pix-warning").textContent=
+      (result.kind==="key"?
+       "QR Code de chave Pix, sem valor pré-definido. Confirme o valor e o beneficiário no banco.":
+       "Código Pix Copia e Cola fornecido. Ele pode ter valor ou validade próprios; confira tudo no banco.")+
+      " O QR Code não realiza nem confirma pagamentos.";
+    $("#provision-pix-loading").hidden=true;
+    $("#provision-pix-result").hidden=false;
+    $("#provision-pix-copy-button").disabled=false;
+  }catch(err){
+    if(dialog.open)$("#provision-pix-loading").textContent=
+      "Não foi possível gerar o QR Code: "+err.message;
+  }
+}
+
 async function openProvisionDialog(){
   await loadFinanceCatalogs(true);
   const d=$("#provision-dialog"),f=$("#provision-form");
@@ -152,6 +200,7 @@ async function openProvisionDialog(){
   f.elements.start_due_date.value=provisionToday();
   f.elements.recurrence.value="unlimited";f.elements.frequency.value="monthly";
   f.elements.value_mode.value="fixed";provisionOptions();
+  f.elements.payment_method.value="none";provisionMethodOptions(f);
   d.showModal();f.elements.description.focus();
 }
 function provisionOptions(){
@@ -221,9 +270,14 @@ async function openPaymentDialog(id){
     " · vencimento "+dateBR(item.due_date);
   $("#provision-variable-payment-note").hidden=provisionEffective(item,"value_mode")!=="variable";
   const portal=provisionSafeUrl(item.rule?.payment_url);
-  $("#provision-payment-portal").innerHTML=portal?
-    '<a class="btn ghost small provision-site-link" href="'+esc(portal)+
-    '" target="_blank" rel="noopener noreferrer">Acessar site para consultar a conta ↗</a>':"";
+  const method=item.rule?.payment_method||(portal?"link":"none");
+  $("#provision-payment-portal").innerHTML=
+    method==="link"&&portal?
+      '<a class="btn ghost small provision-site-link" href="'+esc(portal)+
+      '" target="_blank" rel="noopener noreferrer">Acessar site para consultar a conta ↗</a>':
+    method==="pix"?
+      '<button type="button" class="btn ghost small provision-pix-button" data-action="open-provision-pix" data-id="'+
+      Number(id)+'">Gerar QR Code Pix</button>':"";
   $("#provision-payment-dialog").showModal();
   await loadPaymentMatches();
 }
@@ -250,7 +304,14 @@ async function openEditProvisionDialog(id){
   form.elements.planned_value.value=item.planned_value==null?"":Number(item.planned_value).toFixed(2);
   form.elements.value_mode.value=provisionEffective(item,"value_mode");
   provisionAmountOptions(form,"pve-value-label","pve-value-help");
+  form.elements.payment_method.value=item.rule?.payment_method||
+    (item.rule?.payment_url?"link":"none");
   form.elements.payment_url.value=item.rule?.payment_url||"";
+  form.elements.pix_kind.value=item.rule?.pix_kind||"key";
+  form.elements.pix_value.value=item.rule?.pix_value||"";
+  form.elements.pix_receiver_name.value=item.rule?.pix_receiver_name||"";
+  form.elements.pix_receiver_city.value=item.rule?.pix_receiver_city||"";
+  provisionMethodOptions(form);
   const once=item.rule?.recurrence==="once";
   for(const input of form.querySelectorAll('input[name="scope"]')){
     input.closest("label").hidden=once&&input.value==="future";
@@ -275,6 +336,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     const action=e.target.closest("[data-action]")?.dataset.action;
     if(action==="new-provision")openProvisionDialog().catch(err=>showToast(err.message,true));
     if(action==="pay-provision")openPaymentDialog(e.target.closest("[data-id]").dataset.id).catch(err=>showToast(err.message,true));
+    if(action==="open-provision-pix")openPixDialog(e.target.closest("[data-id]").dataset.id).catch(err=>showToast(err.message,true));
     if(action==="clear-provision-filters"){
       provisionView="all";for(const key of Object.keys(provisionFilters))provisionFilters[key]="";render();
     }
@@ -282,6 +344,20 @@ document.addEventListener("DOMContentLoaded",()=>{
     if(action==="cancel-provision")openCancelProvisionDialog(e.target.closest("[data-id]").dataset.id);
   });
   $("#provision-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-provision]"))$("#provision-dialog").close()});
+  $("#provision-pix-dialog").addEventListener("click",e=>{
+    if(e.target.closest("[data-dismiss-pix]"))$("#provision-pix-dialog").close();
+  });
+  $("#provision-pix-copy-button").addEventListener("click",async()=>{
+    const value=$("#provision-pix-copy-text").value;
+    if(!value)return;
+    try{
+      await navigator.clipboard.writeText(value);
+      showToast("Pix Copia e Cola copiado. Confira os dados no banco antes de pagar.");
+    }catch(err){
+      $("#provision-pix-copy-text").select();
+      showToast("Selecione e copie o código Pix manualmente.");
+    }
+  });
   $("#provision-payment-dialog").addEventListener("click",e=>{
     if(e.target.closest("[data-dismiss-payment]")){
       provisionMatchesRequest++;$("#provision-payment-dialog").close();
@@ -294,6 +370,10 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#provision-edit-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-edit]"))$("#provision-edit-dialog").close()});
   $("#provision-cancel-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-cancel]"))$("#provision-cancel-dialog").close()});
   $("#provision-form").elements.recurrence.addEventListener("change",provisionOptions);
+  for(const form of [$("#provision-form"),$("#provision-edit-form")]){
+    form.elements.payment_method.addEventListener("change",()=>provisionMethodOptions(form));
+    form.elements.pix_kind.addEventListener("change",()=>provisionMethodOptions(form));
+  }
   $("#provision-form").elements.value_mode.addEventListener("change",provisionOptions);
   $("#provision-edit-form").elements.value_mode.addEventListener("change",()=>{
     provisionAmountOptions($("#provision-edit-form"),"pve-value-label","pve-value-help");
