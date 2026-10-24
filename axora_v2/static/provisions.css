@@ -119,3 +119,17 @@
 .provision-link-help{display:block;font-size:11px;color:#6c8599;line-height:1.55}
 
 .provision-payment-portal{margin:-10px 0 18px}.provision-payment-portal .provision-site-link{display:inline-flex;text-decoration:none;align-items:center;gap:8px;color:#087889;border-color:#b9e2e9;background:#eef9fc}.provision-payment-portal .provision-site-link:hover{background:#dff5f6}
+
+/* Métodos de pagamento: somente o campo correspondente aparece. */
+.provision-pay-method-group[hidden],#provision-pix-result[hidden],#provision-pix-loading[hidden]{display:none!important}
+.provision-form-grid textarea[name="pix_value"]{width:100%;min-height:86px;resize:vertical;border:1px solid #dce6ee;border-radius:12px;padding:12px;color:#23465c;background:#fbfcff;font:inherit;font-size:13px;box-sizing:border-box;overflow-wrap:anywhere}
+.provision-row-actions .provision-pix-button,.provision-payment-portal .provision-pix-button{background:#e9f8f7;border-color:#9adbd5;color:#077b79;font-weight:750}
+.provision-row-actions .provision-pix-button:hover,.provision-payment-portal .provision-pix-button:hover{background:#d9f4f1}
+.provision-pix-content{padding:26px;display:grid;gap:15px}
+.provision-pix-content .dialog-heading{margin:0}
+.provision-pix-content #provision-pix-result{display:grid;gap:12px;min-width:0}
+.provision-pix-content #provision-pix-image{display:block;margin:0 auto;max-width:min(264px,100%);height:auto;aspect-ratio:1/1;border:1px solid #e1eaf2;border-radius:12px;background:white;padding:8px;box-sizing:border-box}
+.provision-pix-label{font-size:12px;font-weight:750;color:#2f556d}
+.provision-pix-content #provision-pix-copy-text{width:100%;min-height:80px;resize:vertical;box-sizing:border-box;border:1px solid #cddfe9;border-radius:12px;padding:12px;font:12px/1.6 monospace;overflow-wrap:anywhere;color:#28475e;background:#f7fafc}
+.provision-pix-content .dialog-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+@media(max-width:640px){.provision-pix-content{padding:18px}.provision-pix-content .dialog-actions button{flex:1}}
