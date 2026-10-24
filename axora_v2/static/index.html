@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="/assets/shell-finish.css?v=exterior-network-wallpaper-r2-login-foot-v1">
   <link rel="stylesheet" href="/assets/mobile-frame-login-v2.css?v=opera-atria-card-mobile-r1">
   <link rel="stylesheet" href="/assets/mobile-scroll-stability.css?v=axora-mobile-scroll-r1">
-  <link rel="stylesheet" href="/assets/provisions.css?v=axora-variable-last-paid-r1">
+  <link rel="stylesheet" href="/assets/provisions.css?v=axora-pix-methods-r1">
   <link rel="stylesheet" href="/assets/banking.css?v=axora-balance-summary-r1">
 </head>
 <body>
@@ -101,7 +101,45 @@
       <div class="dialog-heading"><div><span class="overline">AXORA · PLANEJAMENTO</span><h2>Adicionar provisão</h2></div><button type="button" class="icon-button" data-dismiss-provision aria-label="Fechar">×</button></div>
       <div class="provision-form-grid">
         <div class="field full"><label for="pv-description">Descrição *</label><input id="pv-description" name="description" type="text" maxlength="240" placeholder="Ex.: Energia, Aluguel, Seguro" required></div>
-        <div class="field full"><label for="pv-payment-url">Site para consultar ou pagar (opcional)</label><input id="pv-payment-url" name="payment_url" type="url" maxlength="2048" inputmode="url" placeholder="https://www.site-oficial.com.br" pattern="https://.*"><small class="provision-link-help">Use o endereço HTTPS do portal oficial. O link será usado por todos os vencimentos desta provisão.</small></div>
+
+        <div class="field full">
+          <label for="pv-payment-method">Forma de pagamento</label>
+          <select id="pv-payment-method" name="payment_method">
+            <option value="none">Nenhum atalho</option>
+            <option value="link">Link — acessar site</option>
+            <option value="pix">Pix — gerar QR Code</option>
+          </select>
+        </div>
+        <div class="field full provision-pay-method-group" data-pay-method="link" hidden>
+          <label for="pv-payment-url">Link HTTPS</label>
+          <input id="pv-payment-url" name="payment_url" type="url" maxlength="2048" inputmode="url"
+                 placeholder="https://site-oficial.com.br" pattern="https://.*">
+          <small class="provision-link-help">O botão Acessar site abrirá este endereço em outra aba.</small>
+        </div>
+        <div class="field full provision-pay-method-group" data-pay-method="pix" hidden>
+          <label for="pv-pix-kind">Tipo do Pix</label>
+          <select id="pv-pix-kind" name="pix_kind">
+            <option value="key">Chave Pix — CPF/CNPJ, e-mail, celular ou aleatória</option>
+            <option value="brcode">Pix Copia e Cola — código completo</option>
+          </select>
+        </div>
+        <div class="field full provision-pay-method-group" data-pay-method="pix" hidden>
+          <label for="pv-pix-value">Chave ou código Pix</label>
+          <textarea id="pv-pix-value" name="pix_value" rows="3" maxlength="1200"
+                    placeholder="Informe a chave Pix do recebedor ou o código Pix Copia e Cola"></textarea>
+        </div>
+        <div class="field full provision-pay-method-group" data-pay-method="key" hidden>
+          <label for="pv-pix-receiver">Nome do recebedor</label>
+          <input id="pv-pix-receiver" name="pix_receiver_name" maxlength="100"
+                 placeholder="Nome como aparece na conta bancária">
+        </div>
+        <div class="field full provision-pay-method-group" data-pay-method="key" hidden>
+          <label for="pv-pix-city">Cidade do recebedor</label>
+          <input id="pv-pix-city" name="pix_receiver_city" maxlength="80"
+                 placeholder="Ex.: Patos de Minas">
+          <small class="provision-link-help">Chaves Pix geram QR sem valor fixo. Confira beneficiário e valor no app do banco. Códigos Copia e Cola podem expirar e precisar de atualização.</small>
+        </div>
+
         <div class="field"><label for="pv-category">Categoria *</label><select id="pv-category" name="category" required><option value="">Selecione uma categoria</option></select></div>
         <div class="field"><label for="pv-responsible">Responsável *</label><select id="pv-responsible" name="responsible" required><option value="">Selecione um responsável</option></select></div>
         <div class="field"><label for="pv-due">Primeiro vencimento *</label><input id="pv-due" name="start_due_date" type="date" required></div>
@@ -134,6 +172,26 @@
       <div class="dialog-actions"><button type="button" class="btn ghost" data-dismiss-payment>Cancelar</button><button type="submit" class="btn primary">Confirmar pagamento</button></div>
     </form>
   </dialog>
+  <dialog id="provision-pix-dialog" class="provision-dialog provision-pix-dialog">
+    <div class="provision-pix-content">
+      <div class="dialog-heading">
+        <div><span class="overline">AXORA · PAGAMENTO VIA PIX</span><h2>QR Code Pix</h2></div>
+        <button type="button" class="icon-button" data-dismiss-pix aria-label="Fechar">×</button>
+      </div>
+      <p id="provision-pix-description" class="provision-payment-description"></p>
+      <div id="provision-pix-loading" class="panel-copy">Gerando QR Code no AXORA...</div>
+      <div id="provision-pix-result" hidden>
+        <img id="provision-pix-image" src="" alt="QR Code Pix para conferência no aplicativo do banco" width="264" height="264">
+        <label class="provision-pix-label" for="provision-pix-copy-text">Pix Copia e Cola</label>
+        <textarea id="provision-pix-copy-text" readonly rows="3" spellcheck="false" aria-label="Código Pix Copia e Cola"></textarea>
+        <p id="provision-pix-warning" class="provision-warning">Confira o recebedor e o valor no aplicativo do banco antes de pagar. Gerar o QR não registra a quitação.</p>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-dismiss-pix>Fechar</button>
+        <button type="button" class="btn primary" id="provision-pix-copy-button" disabled>Copiar Pix</button>
+      </div>
+    </div>
+  </dialog>
   <dialog id="provision-edit-dialog" class="provision-dialog">
     <form id="provision-edit-form">
       <div class="dialog-heading"><div><span class="overline">AXORA · AJUSTE DE PLANEJAMENTO</span><h2>Editar provisão</h2></div><button type="button" class="icon-button" data-dismiss-edit aria-label="Fechar">×</button></div>
@@ -141,7 +199,45 @@
       <input type="hidden" name="occurrence_id">
       <div class="provision-form-grid">
         <div class="field full"><label for="pve-description">Descrição *</label><input id="pve-description" name="description" maxlength="240" required></div>
-        <div class="field full"><label for="pve-payment-url">Site para consultar ou pagar (opcional)</label><input id="pve-payment-url" name="payment_url" type="url" maxlength="2048" inputmode="url" placeholder="https://www.site-oficial.com.br" pattern="https://.*"><small class="provision-link-help">Alterar ou limpar este link atualiza o endereço para toda a série. Não modifica valores ou pagamentos já registrados.</small></div>
+
+        <div class="field full">
+          <label for="pve-payment-method">Forma de pagamento</label>
+          <select id="pve-payment-method" name="payment_method">
+            <option value="none">Nenhum atalho</option>
+            <option value="link">Link — acessar site</option>
+            <option value="pix">Pix — gerar QR Code</option>
+          </select>
+        </div>
+        <div class="field full provision-pay-method-group" data-pay-method="link" hidden>
+          <label for="pve-payment-url">Link HTTPS</label>
+          <input id="pve-payment-url" name="payment_url" type="url" maxlength="2048" inputmode="url"
+                 placeholder="https://site-oficial.com.br" pattern="https://.*">
+          <small class="provision-link-help">O botão Acessar site abrirá este endereço em outra aba.</small>
+        </div>
+        <div class="field full provision-pay-method-group" data-pay-method="pix" hidden>
+          <label for="pve-pix-kind">Tipo do Pix</label>
+          <select id="pve-pix-kind" name="pix_kind">
+            <option value="key">Chave Pix — CPF/CNPJ, e-mail, celular ou aleatória</option>
+            <option value="brcode">Pix Copia e Cola — código completo</option>
+          </select>
+        </div>
+        <div class="field full provision-pay-method-group" data-pay-method="pix" hidden>
+          <label for="pve-pix-value">Chave ou código Pix</label>
+          <textarea id="pve-pix-value" name="pix_value" rows="3" maxlength="1200"
+                    placeholder="Informe a chave Pix do recebedor ou o código Pix Copia e Cola"></textarea>
+        </div>
+        <div class="field full provision-pay-method-group" data-pay-method="key" hidden>
+          <label for="pve-pix-receiver">Nome do recebedor</label>
+          <input id="pve-pix-receiver" name="pix_receiver_name" maxlength="100"
+                 placeholder="Nome como aparece na conta bancária">
+        </div>
+        <div class="field full provision-pay-method-group" data-pay-method="key" hidden>
+          <label for="pve-pix-city">Cidade do recebedor</label>
+          <input id="pve-pix-city" name="pix_receiver_city" maxlength="80"
+                 placeholder="Ex.: Patos de Minas">
+          <small class="provision-link-help">Chaves Pix geram QR sem valor fixo. Confira beneficiário e valor no app do banco. Códigos Copia e Cola podem expirar e precisar de atualização.</small>
+        </div>
+
         <div class="field"><label for="pve-category">Categoria *</label><select id="pve-category" name="category" required><option value="">Selecione uma categoria</option></select></div>
         <div class="field"><label for="pve-responsible">Responsável *</label><select id="pve-responsible" name="responsible" required><option value="">Selecione um responsável</option></select></div>
         <div class="field"><label for="pve-due-date">Vencimento *</label><input id="pve-due-date" name="due_date" type="date" required></div>
@@ -274,7 +370,7 @@
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/assets/app.js?v=axora-banking-mvp-r1" defer></script>
-  <script src="/assets/provisions.js?v=axora-variable-last-paid-r1" defer></script>
+  <script src="/assets/provisions.js?v=axora-pix-methods-r1" defer></script>
   <script src="/assets/catalogs.js?v=axora-revisions-r1" defer></script>
   <script src="/assets/auto-sync.js?v=axora-complete-obligations-r1" defer></script>
   <script src="/assets/banking.js?v=axora-balance-summary-r1" defer></script>
