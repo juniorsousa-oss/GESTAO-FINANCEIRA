@@ -75,4 +75,4 @@ def test_ui_shows_undefined_value_and_protects_history():
     assert "provisionUnknown" in js
     assert 'item.planned_value==null?"":Number(item.planned_value).toFixed(2)' in js
     assert 'values.planned_value===""?null:Number(values.planned_value)' in js
-    assert 'v=axora-variable-last-paid-r1' in html
+    assert 'v=axora-pix-methods-r1' in html
