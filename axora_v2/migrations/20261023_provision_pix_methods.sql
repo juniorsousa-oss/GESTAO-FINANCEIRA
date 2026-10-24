@@ -99,6 +99,6 @@ GRANT EXECUTE ON FUNCTION public.axora_create_provision_with_method(
  uuid,text,text,text,date,numeric,text,text,text,date,integer,text,text,text,text,text,text
 ) TO service_role;
 GRANT EXECUTE ON FUNCTION public.axora_edit_provision_with_method(
- uuid,bigint,text,date,text,text,text,numeric,text,text,text,text,text
+ uuid,bigint,text,date,text,text,text,numeric,text,text,text,text,text,text,text
 ) TO service_role;
 NOTIFY pgrst,'reload schema';
