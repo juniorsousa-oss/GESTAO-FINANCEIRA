@@ -103,7 +103,9 @@ def test_pix_read_protected_by_login_workspace_and_no_payment(monkeypatch):
     monkeypatch.setenv("COOKIE_SECURE","0")
     auth_enabled=[True]
     def current(req):
-        return {"id":9,"csrf":"csrf","is_admin":True} if auth_enabled[0] else None
+        if not auth_enabled[0]:
+            raise HTTPException(401,"Sessão não autenticada.")
+        return {"id":9,"csrf":"csrf","is_admin":True}
     monkeypatch.setattr(security,"current",current)
     def csrf(req,_user):
         if req.headers.get("x-csrf-token")!="csrf":raise HTTPException(403,"CSRF")
