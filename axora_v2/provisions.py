@@ -62,11 +62,35 @@ def clean_payment_url(value):
     return value
 
 
+def clean_payment_method(payload):
+    """Meios mutuamente exclusivos. Sem envio de chave ao provedor de QR externo."""
+    from axora_v2 import pix_payments
+    method=payload.get("payment_method")
+    if method not in {"none", "link", "pix"}:
+        raise HTTPException(422, "Escolha sem atalho, Link ou Pix.")
+    extras={"p_payment_method":method,"p_payment_url":None,"p_pix_kind":None,
+            "p_pix_value":None,"p_pix_receiver_name":None,"p_pix_receiver_city":None}
+    if method=="link":
+        address=clean_payment_url(payload.get("payment_url"))
+        if not address:
+            raise HTTPException(422, "Informe o endereço HTTPS da conta.")
+        extras["p_payment_url"]=address
+    elif method=="pix":
+        cleaned=pix_payments.clean_pix(
+            payload.get("pix_kind"),payload.get("pix_value"),
+            payload.get("pix_receiver_name"),payload.get("pix_receiver_city"))
+        extras.update({"p_pix_kind":cleaned["kind"],"p_pix_value":cleaned["value"],
+                       "p_pix_receiver_name":cleaned["receiver_name"],
+                       "p_pix_receiver_city":cleaned["receiver_city"]})
+    return extras
+
+
 def clean_provision(payload):
     if not isinstance(payload, dict):
         raise HTTPException(422, "Cadastro de provisão inválido.")
     allowed = {"description", "category", "responsible", "start_due_date", "planned_value",
-               "value_mode", "recurrence", "frequency", "end_date", "installment_count", "payment_url"}
+               "value_mode", "recurrence", "frequency", "end_date", "installment_count", "payment_url",
+               "payment_method", "pix_kind", "pix_value", "pix_receiver_name", "pix_receiver_city"}
     if set(payload) - allowed:
         raise HTTPException(422, "Campos não reconhecidos para provisões.")
 
@@ -100,7 +124,9 @@ def clean_provision(payload):
         if isinstance(value, bool) or not str(value).isdigit() or not (1 <= int(value) <= 360):
             raise HTTPException(422, "Informe de 1 a 360 vencimentos ou parcelas.")
         result["p_installment_count"] = int(value)
-    if "payment_url" in payload:
+    if "payment_method" in payload:
+        result.update(clean_payment_method(payload))
+    elif "payment_url" in payload:
         result["p_payment_url"] = clean_payment_url(payload["payment_url"])
     return result
 
@@ -120,7 +146,7 @@ def clean_scope(value):
 
 def clean_edit_provision(payload):
     if not isinstance(payload, dict) or (
-        set(payload) - {"scope", "due_date", "description", "category", "responsible", "planned_value", "value_mode", "payment_url"}
+        set(payload) - {"scope", "due_date", "description", "category", "responsible", "planned_value", "value_mode", "payment_url", "payment_method", "pix_kind", "pix_value", "pix_receiver_name", "pix_receiver_city"}
         or not {"scope", "due_date", "description", "category", "responsible", "planned_value", "value_mode"} <= set(payload)
     ):
         raise HTTPException(422, "Informe todos os campos da edição e seu alcance.")
@@ -137,7 +163,9 @@ def clean_edit_provision(payload):
               "p_due_date": valid_date(payload["due_date"], "Vencimento"),
               "p_planned_value": planned_money(payload["planned_value"], payload["value_mode"]),
               "p_value_mode": payload["value_mode"], **details}
-    if "payment_url" in payload:
+    if "payment_method" in payload:
+        result.update(clean_payment_method(payload))
+    elif "payment_url" in payload:
         result["p_payment_url"] = clean_payment_url(payload["payment_url"])
     return result
 
