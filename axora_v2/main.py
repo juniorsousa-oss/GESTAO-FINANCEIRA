@@ -372,8 +372,9 @@ def edit_provision(pk: int, payload: dict, user=Depends(authorized)):
 
 
 @app.get("/api/provisions/{pk}/pix")
-def provision_pix_qr(pk: int, user=Depends(auth)):
+def provision_pix_qr(pk: int, response: Response, user=Depends(auth)):
     """Renderiza o QR Code localmente; nunca envia chave nem copia-e-cola a terceiros."""
+    response.headers["Cache-Control"]="private, no-store"
     positive_id(pk)
     workspace = user_workspace(user)
     records=db.call("GET","finance_provision_occurrences",params={
