@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from axora_v2 import db, metrics, security, branding, provisions, catalogs, banking, meu_pluggy, meu_pluggy_sync
+from axora_v2 import db, metrics, security, branding, provisions, catalogs, banking, meu_pluggy, meu_pluggy_sync, pix_payments
 from services.importer import parse_excel
 from services.profile import clean_display_name, avatar_data_uri
 
@@ -332,7 +332,7 @@ def list_provisions(user=Depends(auth)):
     page_size = 500
     while True:
         rows = db.call("GET", "finance_provision_occurrences", params={
-            "select": "id,rule_id,sequence_no,due_date,planned_value,status,description_override,category_override,responsible_override,value_mode_override,rule:finance_provision_rules(description,category,responsible,value_mode,recurrence,frequency,planned_value,last_paid_value,last_paid_at,end_date,installment_count,payment_url)",
+            "select": "id,rule_id,sequence_no,due_date,planned_value,status,description_override,category_override,responsible_override,value_mode_override,rule:finance_provision_rules(description,category,responsible,value_mode,recurrence,frequency,planned_value,last_paid_value,last_paid_at,end_date,installment_count,payment_url,payment_method,pix_kind,pix_value,pix_receiver_name,pix_receiver_city)",
             "workspace_id": "eq." + workspace,
             "status": "eq.open", "order": "due_date.asc,id.asc",
             "limit": page_size, "offset": len(items),
@@ -351,8 +351,9 @@ def add_provision(payload: dict, user=Depends(authorized)):
     values = provisions.clean_provision(payload)
     catalogs.canonicalize_provision(values, finance_catalog_items(workspace))
     values["p_workspace_id"] = workspace
-    endpoint = ("rpc/axora_create_provision_with_link" if "p_payment_url" in values
-                else "rpc/axora_create_provision")
+    endpoint = ("rpc/axora_create_provision_with_method" if "p_payment_method" in values
+                else ("rpc/axora_create_provision_with_link" if "p_payment_url" in values
+                      else "rpc/axora_create_provision"))
     new_id = db.call("POST", endpoint, data=values)
     return {"id": new_id, "ok": True}
 
@@ -363,10 +364,34 @@ def edit_provision(pk: int, payload: dict, user=Depends(authorized)):
     workspace = user_workspace(user)
     values = provisions.clean_edit_provision(payload)
     catalogs.canonicalize_provision(values, finance_catalog_items(workspace))
-    endpoint = ("rpc/axora_edit_provision_with_link" if "p_payment_url" in values
-                else "rpc/axora_edit_provision")
+    endpoint = ("rpc/axora_edit_provision_with_method" if "p_payment_method" in values
+                else ("rpc/axora_edit_provision_with_link" if "p_payment_url" in values
+                      else "rpc/axora_edit_provision"))
     return db.call("POST", endpoint,
                    data={"p_workspace_id": workspace, "p_occurrence_id": pk, **values})
+
+
+@app.get("/api/provisions/{pk}/pix")
+def provision_pix_qr(pk: int, user=Depends(auth)):
+    """Renderiza o QR Code localmente; nunca envia chave nem copia-e-cola a terceiros."""
+    positive_id(pk)
+    workspace = user_workspace(user)
+    records=db.call("GET","finance_provision_occurrences",params={
+        "workspace_id":"eq."+workspace,"id":"eq."+str(pk),
+        "status":"eq.open","limit":1,
+        "select":"id,rule:finance_provision_rules(description,payment_method,pix_kind,pix_value,pix_receiver_name,pix_receiver_city)"
+    })
+    if not records or not records[0].get("rule"):
+        raise HTTPException(404,"Previsão não encontrada ou já quitada.")
+    rule=records[0]["rule"]
+    if rule.get("payment_method")!="pix" or not rule.get("pix_value"):
+        raise HTTPException(409,"Esta previsão não possui Pix configurado.")
+    qr=pix_payments.pix_qr(rule["pix_kind"],rule["pix_value"],
+        rule.get("pix_receiver_name"),rule.get("pix_receiver_city"))
+    return {**qr,"description":rule.get("description") or "",
+            "receiver":rule.get("pix_receiver_name") or None,
+            "notice":("Confira o beneficiário e o valor no aplicativo do banco antes de confirmar. "
+                      "Este QR Code não registra nem confirma pagamento.")}
 
 
 @app.post("/api/provisions/{pk}/cancel")
