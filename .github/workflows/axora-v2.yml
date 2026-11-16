@@ -45,8 +45,25 @@ jobs:
       - run: node --check axora_v2/static/banking.js
       - run: node --check axora_v2/static/family.js
       - run: node --check axora_v2/static/brand-kit.js
+      - run: node --check axora_v2/static/ios-pwa-stability.js
+      - run: node axora_v2/tests/ios_pwa_keyboard_runtime.cjs
       - run: node axora_v2/tests/ui_runtime.cjs
       - run: node axora_v2/tests/mobile_drawer_runtime.cjs
+      - name: Validar layout mobile e teclado com navegador Chromium real
+        run: |
+          python -m pip install playwright
+          export SUPABASE_URL=https://example.supabase.co
+          export SUPABASE_KEY=chave-de-testes-sem-acesso
+          export SESSION_SECRET=teste-aleatorio-de-mais-de-trinta-e-dois-caracteres
+          export COOKIE_SECURE=0
+          python -m uvicorn axora_v2.main:app --host 127.0.0.1 --port 18081 > /tmp/axora-ios.log 2>&1 &
+          APP_PID=$!
+          trap 'cat /tmp/axora-ios.log; kill "$APP_PID" 2>/dev/null || true' EXIT
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:18081/health >/dev/null; then break; fi
+            sleep 1
+          done
+          AXORA_SMOKE_URL=http://127.0.0.1:18081/ python axora_v2/tests/ios_pwa_browser_smoke.py
       - run: docker build --tag axora-v2-ci .
       - name: Testar inicialização real da imagem
         run: |

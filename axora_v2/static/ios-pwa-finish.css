@@ -1,0 +1,121 @@
+/* AXORA · iOS PWA 2026-11-16
+   Última camada mobile. Não altera o layout desktop aprovado.
+   Corrige safe areas, teclado e acabamento da moldura em standalone. */
+
+@media (max-width:900px) {
+  html,body{
+    background-color:#062C45;
+    min-width:0;
+  }
+  /* A cor por trás da status bar e do home indicator pertence ao AXORA,
+     inclusive quando a barra do iOS é transparente (black-translucent). */
+  body{
+    background-color:#062C45;
+    background-image:url("/assets/login-atmosphere.svg");
+    background-position:center top;
+    background-repeat:no-repeat;
+    background-size:cover;
+  }
+  #login.login-screen{
+    /* 100svh é fallback; a altura de abertura é fixada pelo controlador
+       antes do teclado e NÃO muda nos eventos de resize do teclado. */
+    height:var(--axora-login-stage-height,100svh);
+    min-height:var(--axora-login-stage-height,100svh);
+    max-height:none;
+    width:100%;
+    margin:0;
+    padding:calc(15px + env(safe-area-inset-top,0px)) 12px
+            calc(18px + env(safe-area-inset-bottom,0px));
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    justify-content:safe center;
+    /* O conteúdo segue acessível por rolagem se a tela for realmente baixa.
+       O teclado não reposiciona nem altera o tamanho do cartão. */
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior-y:contain;
+    -webkit-overflow-scrolling:touch;
+    background-color:#062C45;
+    background-image:url("/assets/login-atmosphere.svg");
+    background-position:center top;
+    background-size:cover;
+  }
+  #login .login-card{
+    flex:0 0 auto;
+    max-width:100%;
+    /* O cartão mantém sua geometria estável durante focus/blur. */
+    transform:none!important;
+    transition:box-shadow .2s ease,border-color .2s ease;
+  }
+  #login .login-form-wrap,
+  #login .password-wrap,
+  #login .login-form{min-width:0;}
+  #login #login-password{
+    font-size:16px!important;
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+  }
+}
+@media (max-width:900px) and (max-height:660px){
+  /* Sob teclado o viewport visual pode ficar baixo, mas o card continua
+     na mesma posição, porque usamos a altura estável, não 100dvh. */
+  #login.login-screen{justify-content:safe center;}
+}
+@media (max-width:850px){
+  :root{--axora-mobile-top:calc(var(--ax-mobile-gutter,11px) + env(safe-area-inset-top,0px));}
+  body:has(#workspace:not(.hidden)){
+    background-color:#062C45;
+    background-image:url("/assets/login-atmosphere.svg");
+    background-position:center top;
+    background-size:cover;
+    background-repeat:no-repeat;
+    background-attachment:scroll;
+  }
+  #workspace.workspace:not(.hidden){
+    height:100dvh;
+    min-height:0;
+    max-height:100dvh;
+    /* A área inferior chega até a borda; não há uma segunda curva
+       escondida pela home bar ou uma faixa de wallpaper cortada. */
+    padding:var(--axora-mobile-top) var(--ax-mobile-gutter,11px) 0;
+    background:transparent;
+  }
+  #workspace.workspace:not(.hidden) .app-column{
+    height:calc(100dvh - var(--axora-mobile-top));
+    min-height:0;
+    max-height:calc(100dvh - var(--axora-mobile-top));
+    overflow:hidden;
+    border-radius:var(--ax-mobile-radius,24px) var(--ax-mobile-radius,24px) 0 0;
+    border-bottom:0;
+    background:linear-gradient(156deg,#F9FCFE 0%,#F1F7FA 58%,#F6FAFC 100%);
+  }
+  #workspace.workspace:not(.hidden) .topbar{
+    border-radius:calc(var(--ax-mobile-radius,24px) - 1px)
+                  calc(var(--ax-mobile-radius,24px) - 1px) 0 0;
+    background:#FFFFFF;
+    box-shadow:0 3px 16px rgba(16,47,80,.035);
+  }
+  #workspace.workspace:not(.hidden) .main-area{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-x:hidden;
+    overflow-y:auto;
+    padding-bottom:calc(28px + env(safe-area-inset-bottom,0px));
+  }
+}
+@media (max-width:850px) and (orientation:landscape){
+  /* Safe area lateral em iPhones com notch no modo paisagem. */
+  #workspace.workspace:not(.hidden){
+    padding-left:calc(var(--ax-mobile-gutter,11px) + env(safe-area-inset-left,0px));
+    padding-right:calc(var(--ax-mobile-gutter,11px) + env(safe-area-inset-right,0px));
+  }
+  #login.login-screen{
+    padding-left:calc(12px + env(safe-area-inset-left,0px));
+    padding-right:calc(12px + env(safe-area-inset-right,0px));
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #login .login-card{transition:none!important;}
+}
