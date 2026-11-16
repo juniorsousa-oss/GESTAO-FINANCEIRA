@@ -130,10 +130,15 @@ function bankingAccountsPage(){
       '<span class="bank-person-chevron" aria-hidden="true">'+interfaceIcon("chevron-down")+'</span></summary>'+
       '<div class="bank-person-detail">'+rows+'</div></details>';
   }).join("");
-  const owners=restricted?"":holders.map(h=>'<div class="bank-entity"><div><strong>'+esc(h.name)+'</strong>'+
-    '<small>'+esc(holderRelations[h.relationship]||"Outro")+'</small></div>'+
-    '<div class="bank-entity-actions"><button type="button" class="btn ghost small" data-action="bank-edit-holder" data-id="'+Number(h.id)+'">Editar</button>'+
-    '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-holder" data-id="'+Number(h.id)+'">Excluir</button></div></div>').join("");
+  const owners=restricted?"":holders.map(h=>'<article class="bank-entity">'+
+    '<div class="bank-entity-details">'+
+      '<span class="bank-entity-avatar" aria-hidden="true">'+esc((h.name||"T").trim().charAt(0).toUpperCase()||"T")+'</span>'+
+      '<div class="bank-entity-copy"><strong>'+esc(h.name)+'</strong>'+
+        '<small>'+esc(holderRelations[h.relationship]||"Outro")+'</small></div></div>'+
+    '<div class="bank-entity-actions" role="group" aria-label="Ações do titular '+esc(h.name)+'">'+
+      '<button type="button" class="btn ghost small bank-edit" data-action="bank-edit-holder" data-id="'+Number(h.id)+'">Editar</button>'+
+      '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-holder" data-id="'+Number(h.id)+'">Excluir</button>'+
+    '</div></article>').join("");
   return '<div class="stack bank-module">'+
     (restricted?"":bankBalancePanel())+
     bankInfoBanner()+
