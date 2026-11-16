@@ -49,11 +49,47 @@ with sync_playwright() as p:
     shell = page.locator("#workspace .app-column")
     rect = shell.bounding_box()
     assert rect is not None
-    assert abs(rect["y"] + rect["height"] - 844) <= 2, rect
+    # A moldura deve TERMINAR antes da borda inferior, com canto arredondado.
+    shell_bottom = rect["y"] + rect["height"]
+    assert 8 <= 844 - shell_bottom <= 60, (rect, shell_bottom)
     radius = shell.evaluate("(el)=>getComputedStyle(el).borderBottomLeftRadius")
-    assert radius == "0px", radius
+    assert radius.endswith("px") and float(radius[:-2]) >= 18, radius
     main = page.locator("#workspace .main-area")
     assert main.evaluate("(el)=>getComputedStyle(el).overflowY") == "auto"
     assert page.locator("#workspace .topbar").is_visible()
-    print("AXORA iPhone viewport browser smoke: OK")
+
+    # Conteúdo curto: nenhum espaço branco grande após a assinatura.
+    page.locator("#page-content").evaluate("(el)=>el.replaceChildren()")
+    page.locator(".page-heading").evaluate("(el)=>el.style.display='none'")
+    page.wait_for_timeout(100)
+    viewport = main.bounding_box()
+    foot = page.locator("#workspace .app-footer").bounding_box()
+    assert viewport and foot
+    short_gap = viewport["y"] + viewport["height"] - (foot["y"] + foot["height"])
+    assert 8 <= short_gap <= 45, ("footer gap", short_gap, viewport, foot)
+
+    # Conteúdo longo: somente o painel interno rola e o rodapé continua
+    # depois do último cartão, sem lacuna artificial no final do scroll.
+    page.locator("#page-content").evaluate("""(container)=>{
+      for(let i=0;i<24;i++){
+        const item=document.createElement("div");
+        item.className="panel";
+        item.textContent="Conteúdo financeiro de teste "+i;
+        item.style.minHeight="130px";
+        item.style.marginBottom="15px";
+        container.append(item);
+      }
+    }""")
+    page.wait_for_timeout(80)
+    lengths=main.evaluate("(el)=>[el.scrollHeight,el.clientHeight]")
+    assert lengths[0] > lengths[1] + 1000, lengths
+    main.evaluate("(el)=>{el.scrollTop=el.scrollHeight;}")
+    page.wait_for_timeout(100)
+    last_foot = page.locator("#workspace .app-footer").bounding_box()
+    last_view = main.bounding_box()
+    assert last_foot and last_view
+    long_gap = last_view["y"] + last_view["height"] - (last_foot["y"] + last_foot["height"])
+    assert 8 <= long_gap <= 45, ("long footer gap", long_gap, last_view, last_foot)
+    assert abs(shell.bounding_box()["y"] + shell.bounding_box()["height"] - shell_bottom) <= 2
+    print("AXORA iPhone viewport + rodapé curto/longo: OK")
     browser.close()

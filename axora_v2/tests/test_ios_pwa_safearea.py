@@ -66,16 +66,19 @@ def test_keyboard_does_not_resize_or_recenter_card_when_visual_viewport_shrinks(
     assert "document.activeElement?.id" in js
 
 
-def test_safe_area_and_square_bottom_without_screen_clipping():
+def test_safe_area_and_rounded_bottom_without_infinite_foot_space():
     css = (STATIC / "ios-pwa-finish.css").read_text()
     assert "env(safe-area-inset-top,0px)" in css
     assert "env(safe-area-inset-bottom,0px)" in css
     assert "env(safe-area-inset-left,0px)" in css
     assert "env(safe-area-inset-right,0px)" in css
-    assert "border-bottom:0" in css
-    assert "0 0;" in css
-    assert "height:calc(100dvh - var(--axora-mobile-top))" in css
+    assert "var(--axora-mobile-bottom)" in css
+    assert "border-radius:var(--ax-mobile-radius,24px);" in css
+    assert "height:calc(100dvh - var(--axora-mobile-top) - var(--axora-mobile-bottom))" in css
     assert "overflow-y:auto" in css
+    assert "padding-bottom:16px" in css
+    assert "margin-top:auto" in css
+    assert "flex-shrink:0" in css
     assert "#workspace.workspace:not(.hidden) .main-area" in css
 
 

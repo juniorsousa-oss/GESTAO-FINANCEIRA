@@ -64,7 +64,10 @@
   #login.login-screen{justify-content:safe center;}
 }
 @media (max-width:850px){
-  :root{--axora-mobile-top:calc(var(--ax-mobile-gutter,11px) + env(safe-area-inset-top,0px));}
+  :root{
+    --axora-mobile-top:calc(var(--ax-mobile-gutter,11px) + env(safe-area-inset-top,0px));
+    --axora-mobile-bottom:calc(11px + env(safe-area-inset-bottom,0px));
+  }
   body:has(#workspace:not(.hidden)){
     background-color:#062C45;
     background-image:url("/assets/login-atmosphere.svg");
@@ -77,18 +80,20 @@
     height:100dvh;
     min-height:0;
     max-height:100dvh;
-    /* A área inferior chega até a borda; não há uma segunda curva
-       escondida pela home bar ou uma faixa de wallpaper cortada. */
-    padding:var(--axora-mobile-top) var(--ax-mobile-gutter,11px) 0;
+    /* Mantém uma pequena margem azul de verdade antes da borda inferior.
+       A safe area do home indicator fica FORA do cartão, não como um
+       prolongamento branco vazio após a assinatura Nexon Labs. */
+    padding:var(--axora-mobile-top) var(--ax-mobile-gutter,11px)
+            var(--axora-mobile-bottom);
     background:transparent;
   }
   #workspace.workspace:not(.hidden) .app-column{
-    height:calc(100dvh - var(--axora-mobile-top));
+    height:calc(100dvh - var(--axora-mobile-top) - var(--axora-mobile-bottom));
     min-height:0;
-    max-height:calc(100dvh - var(--axora-mobile-top));
+    max-height:calc(100dvh - var(--axora-mobile-top) - var(--axora-mobile-bottom));
     overflow:hidden;
-    border-radius:var(--ax-mobile-radius,24px) var(--ax-mobile-radius,24px) 0 0;
-    border-bottom:0;
+    border-radius:var(--ax-mobile-radius,24px);
+    border-bottom:1px solid rgba(202,221,232,.9);
     background:linear-gradient(156deg,#F9FCFE 0%,#F1F7FA 58%,#F6FAFC 100%);
   }
   #workspace.workspace:not(.hidden) .topbar{
@@ -98,11 +103,24 @@
     box-shadow:0 3px 16px rgba(16,47,80,.035);
   }
   #workspace.workspace:not(.hidden) .main-area{
+    display:flex;
+    flex-direction:column;
     flex:1 1 auto;
     min-height:0;
     overflow-x:hidden;
     overflow-y:auto;
-    padding-bottom:calc(28px + env(safe-area-inset-bottom,0px));
+    /* Sem duplicar a safe area, que já foi reservada fora da moldura. */
+    padding-bottom:16px;
+  }
+  #workspace.workspace:not(.hidden) .main-area>.page-heading,
+  #workspace.workspace:not(.hidden) .main-area>#page-content,
+  #workspace.workspace:not(.hidden) .main-area>.app-footer{
+    flex-shrink:0;
+  }
+  #workspace.workspace:not(.hidden) .main-area>.app-footer{
+    /* Conteúdo curto: rodapé encostado no fim útil da moldura.
+       Conteúdo longo: rodapé continua após o último cartão. */
+    margin-top:auto;
   }
 }
 @media (max-width:850px) and (orientation:landscape){
