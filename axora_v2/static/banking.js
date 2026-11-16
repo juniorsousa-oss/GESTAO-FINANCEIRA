@@ -109,7 +109,7 @@ function bankingAccountsPage(){
         '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-account" data-id="'+Number(a.id)+'">Excluir</button>'+
         labelAction+
         '</div></div>';
-      return canManage?rendered:rendered.replace(/<div class="bank-account-actions">[\\s\\S]*?<\\/div>/,"");
+      return canManage?rendered:rendered.split('<div class="bank-account-actions">')[0]+'</div>';
     }).join("");
     return '<details class="bank-person-card">'+
       '<summary class="bank-person-summary"><span class="bank-person-avatar" aria-hidden="true">'+esc(holder.name.charAt(0).toUpperCase())+'</span>'+
