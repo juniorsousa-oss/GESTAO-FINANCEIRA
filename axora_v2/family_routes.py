@@ -130,7 +130,8 @@ def install(app, auth, authorized):
 
     @app.post("/api/family/visibility")
     def set_visibility(payload: dict, user=Depends(authorized)):
-        ctx = _context(user)
+        # A conta principal autoriza alterações em dados já existentes.
+        ctx = family_service.require_principal(user)
         if not isinstance(payload, dict) or set(payload) != {"resource_type", "resource_id", "label", "viewers"}:
             raise HTTPException(422, "Visibilidade inválida.")
         kind, rid, label, viewers = (payload[x] for x in
