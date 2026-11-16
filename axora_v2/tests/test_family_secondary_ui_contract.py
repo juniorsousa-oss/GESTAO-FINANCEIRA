@@ -9,7 +9,7 @@ def test_bank_cards_do_not_have_hidden_balance_notices():
     assert "Contas autorizadas" not in source
     assert "Somente os saldos" not in source
     assert "Os rótulos de visibilidade familiar serão ativados" not in source
-    assert "return '<section class=\"panel bank-balance-panel" not in source
+    assert "if(me?.family_enabled && me.family_role!==\"principal\")return \"\";" in source
     assert "bank-person-detail" in source
     assert "bank-account-currency" in source
 
