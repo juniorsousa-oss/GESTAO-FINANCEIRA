@@ -28,3 +28,15 @@ def test_unknown_schema_cannot_fall_back_to_production(monkeypatch):
     with pytest.raises(HTTPException) as e:
         db.headers()
     assert e.value.status_code==503
+
+
+def test_db_verify_uses_brand_key_not_id(monkeypatch):
+    calls = []
+    def fake_select(kind, *, fields="*", params=None):
+        calls.append((kind, fields, params))
+        return []
+    monkeypatch.setattr(db, "select", fake_select)
+    assert db.verify() is True
+    assert len(calls) == len(db.TABLES)
+    assert ("branding", "key", {"limit": "1"}) in calls
+    assert ("users", "id", {"limit": "1"}) in calls
