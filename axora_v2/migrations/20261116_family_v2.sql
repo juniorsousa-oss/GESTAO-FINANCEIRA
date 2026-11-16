@@ -197,7 +197,26 @@ BEGIN
   PERFORM public.axora_family_validate_actor(p_workspace_id,p_actor_id);
   IF p_label NOT IN ('privado','casal','familia') THEN
     RAISE EXCEPTION 'Visibilidade inválida'; END IF;
-  -- A autorização individual da regra deve ser validada no servidor ANTES da RPC.
+  -- Revalidar sob a transação SQL: mudanças de rótulo concorrentes não
+  -- podem autorizar uma quitação pela chave privada do servidor.
+  IF NOT EXISTS(SELECT 1 FROM public.finance_workspaces
+    WHERE id=p_workspace_id AND created_by=p_actor_id)
+    AND NOT EXISTS(
+      SELECT 1 FROM public.finance_provision_occurrences o
+      JOIN public.finance_family_visibility v ON v.workspace_id=o.workspace_id
+        AND v.resource_type='provisao' AND v.resource_id=o.rule_id
+      JOIN public.finance_family_profiles f ON f.workspace_id=o.workspace_id
+        AND f.linked_user_id=p_actor_id AND f.active
+      WHERE o.id=p_occurrence_id AND o.workspace_id=p_workspace_id AND
+      (v.creator_user_id=p_actor_id OR
+        (v.label='casal' AND f.relationship='conjuge') OR
+        (v.label='familia' AND f.relationship IN ('conjuge','filho')) OR
+        (v.label='selecionados' AND EXISTS(
+          SELECT 1 FROM public.finance_family_visibility_grants g
+          WHERE g.visibility_id=v.id AND g.workspace_id=v.workspace_id
+            AND g.user_id=p_actor_id)))
+    )
+  THEN RAISE EXCEPTION 'Provisão não autorizada'; END IF;
   v_result := public.axora_pay_provision(p_workspace_id,p_occurrence_id,p_payment_date,p_amount);
   v_movement_id := (v_result->>'movement_id')::bigint;
   PERFORM public.axora_family_allocate(p_workspace_id,v_movement_id,p_costs,p_payments);
@@ -207,6 +226,38 @@ BEGIN
   RETURN v_result;
 END;
 $$;
+
+CREATE FUNCTION public.axora_family_link_user(
+  p_workspace_id uuid,p_actor_id bigint,p_profile_id bigint,p_user_id bigint)
+RETURNS jsonb LANGUAGE plpgsql SET search_path TO 'public' AS $
+DECLARE v_owner bigint; v_count integer;
+BEGIN
+  PERFORM public.axora_family_validate_actor(p_workspace_id,p_actor_id);
+  SELECT created_by INTO v_owner FROM public.finance_workspaces
+    WHERE id=p_workspace_id FOR UPDATE;
+  IF v_owner IS DISTINCT FROM p_actor_id OR p_user_id=p_actor_id
+  THEN RAISE EXCEPTION 'Somente o proprietário pode conceder login'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.finance_users
+    WHERE id=p_user_id AND is_active AND NOT is_admin)
+  THEN RAISE EXCEPTION 'Usuário não elegível'; END IF;
+  IF EXISTS (SELECT 1 FROM public.finance_workspace_members
+    WHERE user_id=p_user_id AND workspace_id<>p_workspace_id)
+  THEN RAISE EXCEPTION 'Usuário possui outro espaço financeiro'; END IF;
+  IF EXISTS(SELECT 1 FROM public.finance_family_profiles
+    WHERE linked_user_id=p_user_id AND active)
+  THEN RAISE EXCEPTION 'Usuário já está vinculado'; END IF;
+  UPDATE public.finance_family_profiles SET linked_user_id=p_user_id
+    WHERE id=p_profile_id AND workspace_id=p_workspace_id AND linked_user_id IS NULL
+      AND active AND relationship<>'principal';
+  GET DIAGNOSTICS v_count=ROW_COUNT;
+  IF v_count<>1 THEN RAISE EXCEPTION 'Perfil inexistente ou já vinculado'; END IF;
+  INSERT INTO public.finance_workspace_members(workspace_id,user_id,role)
+    SELECT p_workspace_id,p_user_id,'viewer'
+    WHERE NOT EXISTS(SELECT 1 FROM public.finance_workspace_members
+      WHERE workspace_id=p_workspace_id AND user_id=p_user_id);
+  RETURN jsonb_build_object('ok',true,'linked_user_id',p_user_id);
+END;
+$;
 
 CREATE FUNCTION public.axora_family_set_visibility(
   p_workspace_id uuid,p_actor_id bigint,p_resource_type text,
@@ -282,14 +333,16 @@ REVOKE ALL ON FUNCTION
   public.axora_family_allocate(uuid,bigint,jsonb,jsonb),
   public.axora_family_record(uuid,bigint,date,text,numeric,text,text,text,jsonb,jsonb),
   public.axora_family_pay_provision(uuid,bigint,bigint,date,numeric,text,jsonb,jsonb),
-  public.axora_family_set_visibility(uuid,bigint,text,bigint,text,bigint[])
+  public.axora_family_set_visibility(uuid,bigint,text,bigint,text,bigint[]),
+  public.axora_family_link_user(uuid,bigint,bigint,bigint)
   FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION
   public.axora_family_validate_actor(uuid,bigint),
   public.axora_family_allocate(uuid,bigint,jsonb,jsonb),
   public.axora_family_record(uuid,bigint,date,text,numeric,text,text,text,jsonb,jsonb),
   public.axora_family_pay_provision(uuid,bigint,bigint,date,numeric,text,jsonb,jsonb),
-  public.axora_family_set_visibility(uuid,bigint,text,bigint,text,bigint[])
+  public.axora_family_set_visibility(uuid,bigint,text,bigint,text,bigint[]),
+  public.axora_family_link_user(uuid,bigint,bigint,bigint)
   TO service_role;
 
 COMMIT;
