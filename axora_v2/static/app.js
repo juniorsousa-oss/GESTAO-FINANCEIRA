@@ -101,7 +101,14 @@ function releaseInstitutionalPreview(){
   if(institutionalPreviewUrl){URL.revokeObjectURL(institutionalPreviewUrl);institutionalPreviewUrl=null}
 }
 function showToast(message,error=false){const t=$("#toast");t.textContent=message;t.className="toast show"+(error?" error":"");clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>t.className="toast",4300)}
-function logoutVisual(){if(window.AxoraFamily)AxoraFamily.reset();if(typeof resetFinancialCatalogs==="function")resetFinancialCatalogs();document.title="AXORA | Acesso";me=null;snapshot=null;$("#workspace").classList.add("hidden");$("#login").classList.remove("hidden");$("#login-password").value="";$("#login-password").focus()}
+function logoutVisual(){if(window.AxoraFamily)AxoraFamily.reset();
+  // Dados de outra sessão não podem persistir em variáveis do navegador.
+  if(typeof bankingData!=="undefined")bankingData=null;
+  if(typeof bankingError!=="undefined")bankingError=null;
+  if(typeof bankingHistory!=="undefined")bankingHistory=null;
+  if(typeof provisionItems!=="undefined")provisionItems=null;
+  if(typeof provisionError!=="undefined")provisionError=null;
+  if(typeof resetFinancialCatalogs==="function")resetFinancialCatalogs();document.title="AXORA | Acesso";me=null;snapshot=null;$("#workspace").classList.add("hidden");$("#login").classList.remove("hidden");$("#login-password").value="";$("#login-password").focus()}
 function enterVisual(){if(window.AxoraFamily)AxoraFamily.reset();document.title="AXORA | Gestão Financeira"; $("#login").classList.add("hidden");$("#workspace").classList.remove("hidden");$("#user-name").textContent=me.display_name;const a=$("#avatar");a.replaceChildren();if(me.avatar_data_uri){const i=document.createElement("img");i.src=me.avatar_data_uri;i.alt="";a.append(i)}else a.textContent=(me.display_name||"A")[0].toUpperCase();document.querySelectorAll("[data-family-nav]").forEach(n=>n.hidden=!me.family_enabled);document.querySelectorAll('[data-page="reconciliation"]').forEach(n=>n.hidden=Boolean(me.family_enabled&&me.family_role!=="principal"));}
 async function start(){try{me=await api("/api/me");enterVisual();await refresh()}catch{logoutVisual()}}
 function updateSyncStatus(status){
@@ -139,6 +146,9 @@ async function refresh({silent=false}={}){
         if(previousPosition!==null && scroll)scroll.scrollTop=previousPosition;
       }
       updateSyncStatus("ready");
+      // Pré-carrega perfis para o botão "Acesso" de registros e contas.
+      if(me?.family_enabled && window.AxoraFamily)
+        AxoraFamily.load().catch(()=>{ /* A página familiar exibirá erro seguro. */ });
     }catch(error){
       if(me)updateSyncStatus("error");
       throw error;
