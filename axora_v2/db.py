@@ -122,6 +122,9 @@ def save_settings(changes, workspace_id):
 
 
 def verify():
-    for table in TABLES:
-        select(table, fields="id", params={"limit": "1"})
+    # Branding utiliza 'key' como identificador, não 'id'.
+    # Verificação somente de leitura; não altera dados em nenhum schema.
+    for kind in TABLES:
+        identifier = "key" if kind == "branding" else "id"
+        select(kind, fields=identifier, params={"limit": "1"})
     return True
