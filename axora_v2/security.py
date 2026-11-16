@@ -15,6 +15,13 @@ COOKIE = "axora_session"
 MAX_AGE = 8 * 60 * 60
 FAILURES = defaultdict(list)
 ROUNDS = 390_000
+PASSWORD_FAILURES = defaultdict(list)
+
+
+def password_revision(encoded):
+    # Um hash revogado não pode reutilizar cookies de sessões anteriores.
+    return hashlib.sha256(str(encoded).encode("utf-8")).hexdigest()
+
 
 
 def signer():
@@ -84,12 +91,16 @@ def current(request: Request):
         raise HTTPException(401, "Sua sessão expirou. Faça login novamente.") from None
     users = db.select(
         "users",
-        fields="id,display_name,is_admin,is_active",
+        fields="id,display_name,is_admin,is_active,password_hash",
         params={"id": "eq." + str(uid), "limit": 1},
     )
     if not users or not users[0].get("is_active"):
         raise HTTPException(401, "Usuário desativado ou sessão inválida.")
     user = users[0]
+    revision = data.get("rev", "")
+    if not revision or not hmac.compare_digest(revision, password_revision(user["password_hash"])):
+        raise HTTPException(401, "Acesso atualizado. Faça login novamente.")
+    user.pop("password_hash", None)
     user["csrf"] = data["csrf"]
     return user
 
@@ -101,7 +112,17 @@ def require_csrf(request: Request, user):
 
 
 def create_session(response, user):
-    token = signer().dumps({"uid": int(user["id"]), "csrf": secrets.token_urlsafe(32)})
+    hashed = user.get("password_hash")
+    if not hashed:
+        found = db.select("users", fields="password_hash",
+                          params={"id": "eq." + str(user["id"]), "limit": 1})
+        if not found:
+            raise HTTPException(401, "Usuário não encontrado.")
+        hashed = found[0]["password_hash"]
+    token = signer().dumps({
+        "uid": int(user["id"]), "csrf": secrets.token_urlsafe(32),
+        "rev": password_revision(hashed)
+    })
     response.set_cookie(
         COOKIE, token, max_age=MAX_AGE, path="/",
         httponly=True, secure=os.getenv("COOKIE_SECURE", "1") != "0",
@@ -111,3 +132,16 @@ def create_session(response, user):
 
 def clear_session(response):
     response.delete_cookie(COOKIE, path="/", secure=os.getenv("COOKIE_SECURE", "1") != "0", samesite="lax")
+
+
+def verify_current_password(user_id, candidate, encoded):
+    """Confirma senha atual com limite de tentativas por conta."""
+    now = time.monotonic()
+    attempts = [t for t in PASSWORD_FAILURES[user_id] if now - t < 300]
+    PASSWORD_FAILURES[user_id] = attempts
+    if len(attempts) >= 5:
+        raise HTTPException(429, "Muitas tentativas. Tente novamente em cinco minutos.")
+    if not matches(candidate, encoded):
+        attempts.append(now)
+        raise HTTPException(401, "Senha atual incorreta.")
+    PASSWORD_FAILURES.pop(user_id, None)

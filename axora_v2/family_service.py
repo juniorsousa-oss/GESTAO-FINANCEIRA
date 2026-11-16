@@ -96,7 +96,8 @@ def restricted_route(method, path):
         "/api/brand-kit", "/api/multiuser/status"
     }:
         return True
-    if method == "POST" and path in {"/api/logout", "/api/family/transactions"}:
+    if method == "POST" and path in {"/api/logout", "/api/family/transactions",
+                                    "/api/profile/password"}:
         return True
     if method == "POST" and re.fullmatch(r"/api/family/provisions/[1-9]\d*/pay", path):
         return True

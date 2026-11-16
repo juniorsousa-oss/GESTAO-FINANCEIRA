@@ -875,6 +875,32 @@ def settings(payload: dict, user=Depends(authorized)):
     return {"ok": True}
 
 
+@app.post("/api/profile/password")
+def change_password(payload: dict, response: Response, user=Depends(authorized)):
+    """Troca protegida por sessão e CSRF; invalida outras sessões ativas."""
+    if not isinstance(payload, dict) or set(payload) != {"current_password", "new_password"}:
+        raise HTTPException(422, "Informe sua senha atual e a nova senha.")
+    current, new = payload["current_password"], payload["new_password"]
+    if not isinstance(current, str) or not isinstance(new, str):
+        raise HTTPException(422, "Senha inválida.")
+    if not (12 <= len(new) <= 500):
+        raise HTTPException(422, "A senha deve ter entre 12 e 500 caracteres.")
+    previous = db.select("users", fields="password_hash",
+                         params={"id": "eq." + str(user["id"]), "limit": 1})
+    if not previous:
+        raise HTTPException(401, "Sessão inválida.")
+    security.verify_current_password(int(user["id"]), current, previous[0]["password_hash"])
+    if security.matches(new, previous[0]["password_hash"]):
+        raise HTTPException(422, "Escolha uma senha diferente da anterior.")
+    # No login atual a senha identifica o usuário, portanto deve ser única.
+    if any(security.matches(new, x["password_hash"]) for x in security.accounts()
+           if int(x["id"]) != int(user["id"])):
+        raise HTTPException(422, "Escolha outra senha.")
+    db.update("users", user["id"], {"password_hash": security.hash_password(new)})
+    security.clear_session(response)
+    return {"ok": True, "reauthenticate": True}
+
+
 @app.post("/api/profile")
 def change_profile(payload: dict, user=Depends(authorized)):
     if set(payload) != {"display_name"}:

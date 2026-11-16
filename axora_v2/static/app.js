@@ -380,11 +380,21 @@ function importPage(){return '<div class="stack">'+panel("Importar planilha","Mo
    panel("Exportar dados","Baixe as quatro bases financeiras em um único arquivo Excel.",'<p class="panel-copy">Exportação de movimentações, previsões, contas e dívidas. Recomendado antes de mudanças importantes.</p><button class="btn primary" data-action="export">'+interfaceIcon("download")+'<span>Exportar Excel</span></button>')+'</div>'}
 async function loadUsers(){try{const users=await api("/api/users");const el=$("#users-table");if(el)el.innerHTML=table(["Nome","Perfil","Situação"],users.map(u=>[u.display_name,u.is_admin?"Administrador":"Usuário",u.is_active?"Ativo":"Inativo"]),false)}catch(e){showToast(e.message,true)}}
 function settingsPage(){
+  const passwordPanel='<form id="password-change-form" class="settings-form">'+
+    '<div class="field"><label for="password-current">Senha atual</label>'+
+    '<input id="password-current" name="current_password" type="password" autocomplete="current-password" required></div>'+
+    '<div class="field"><label for="password-new">Nova senha (mínimo 12 caracteres)</label>'+
+    '<input id="password-new" name="new_password" type="password" minlength="12" maxlength="500" autocomplete="new-password" required></div>'+
+    '<div class="field"><label for="password-confirm">Confirmar nova senha</label>'+
+    '<input id="password-confirm" name="confirm_password" type="password" minlength="12" maxlength="500" autocomplete="new-password" required></div>'+
+    '<button class="btn primary" type="submit">Alterar senha</button>'+
+    '<p class="panel-copy">Após a alteração, você entrará novamente com a nova senha.</p></form>';
   if(me?.family_enabled && me.family_role!=="principal"){
     return panel("Meu perfil","Acompanhe seu perfil e suas preferências.",
       '<p><strong>'+esc(me.display_name)+'</strong> · Perfil '+esc(me.family_role)+'</p>'+
       '<button class="btn primary" type="button" data-family-action="navigate-family">Família e rateios</button>'+
-      '<button class="btn ghost" type="button" data-action="logout">Sair / trocar usuário</button>');
+      '<button class="btn ghost" type="button" data-action="logout">Sair / trocar usuário</button>')+
+      panel("Segurança da conta","Altere sua senha de acesso.",passwordPanel);
   }
   const s=snapshot.settings;
   let goalInputs=[["gross_income","Renda bruta mensal (R$)"],["net_income","Renda líquida mensal (R$)"],["emergency_months","Reserva de emergência (meses)"],["investment_pct","Investimento mensal (%)"],["fixed_pct","Contas fixas (%)"],["leisure_pct","Lazer (%)"],["investment_multiple","Meta de patrimônio (x renda)"]];
@@ -398,7 +408,7 @@ function settingsPage(){
     '<div class="workspace-roles"><span>Principal</span><span>Cônjuge</span><span>Filho(a)</span><span>Outro</span></div>'+
     '<div class="page-actions"><button type="button" class="btn primary" data-family-action="navigate-family">Administrar família e rateios</button></div>':
     '<div class="notice"><b>Espaços financeiros isolados:</b> cada usuário possui um espaço próprio, vinculado às suas Provisões e aos seus Registros.</div><div class="workspace-roles"><span>Proprietário</span><span>Administrador</span><span>Editor</span><span>Leitor</span></div>';
-  return '<div class="settings-grid"><div class="stack">'+panel("Meu perfil","Personalize a identificação associada à sua senha.",profile)+panel("Padrão visual de logos","Logo principal, versão compacta, ícone e favicon, com download PNG.",typeof brandKitPanel==="function"?brandKitPanel():"")+panel("Identidade institucional","Assinatura institucional Nexon Labs usada no login e no rodapé.",signaturePanel)+panel("Base multiusuário","Estrutura de espaços e níveis de acesso — fase de preparação.",multiuserPanel)+panel("Padronização de lançamentos","Categorias e responsáveis usados nas Provisões, com exportação para Excel.",typeof financialCatalogPanel==="function"?financialCatalogPanel():"")+(me.is_admin&&!me.family_enabled?panel("Usuários e permissões","Criação de contas e acesso à base compartilhada.",adminForm):"")+'</div><div class="stack">'+panel("Metas financeiras","Defina renda, reserva, percentuais e patrimônio.",goalForm)+panel("Conectividade","Informações sobre os serviços do AXORA.",'<div class="notice"><span class="online-dot"></span> <span id="settings-connection-status">'+(syncStatus==="ready"?"Dados financeiros sincronizados":syncStatus==="loading"?"Atualizando informações financeiras":"Falha ao atualizar informações financeiras")+'</span> · FastAPI · Hospedagem web</div><p class="panel-copy">AXORA by Nexon Labs. A versão web não utiliza a interface ou infraestrutura Streamlit.</p>')+'</div></div>';
+  return '<div class="settings-grid"><div class="stack">'+panel("Meu perfil","Personalize a identificação associada à sua senha.",profile)+panel("Segurança da conta","Atualize sua senha quando necessário.",passwordPanel)+panel("Padrão visual de logos","Logo principal, versão compacta, ícone e favicon, com download PNG.",typeof brandKitPanel==="function"?brandKitPanel():"")+panel("Identidade institucional","Assinatura institucional Nexon Labs usada no login e no rodapé.",signaturePanel)+panel("Base multiusuário","Estrutura de espaços e níveis de acesso — fase de preparação.",multiuserPanel)+panel("Padronização de lançamentos","Categorias e responsáveis usados nas Provisões, com exportação para Excel.",typeof financialCatalogPanel==="function"?financialCatalogPanel():"")+(me.is_admin&&!me.family_enabled?panel("Usuários e permissões","Criação de contas e acesso à base compartilhada.",adminForm):"")+'</div><div class="stack">'+panel("Metas financeiras","Defina renda, reserva, percentuais e patrimônio.",goalForm)+panel("Conectividade","Informações sobre os serviços do AXORA.",'<div class="notice"><span class="online-dot"></span> <span id="settings-connection-status">'+(syncStatus==="ready"?"Dados financeiros sincronizados":syncStatus==="loading"?"Atualizando informações financeiras":"Falha ao atualizar informações financeiras")+'</span> · FastAPI · Hospedagem web</div><p class="panel-copy">AXORA by Nexon Labs. A versão web não utiliza a interface ou infraestrutura Streamlit.</p>')+'</div></div>';
 }
 async function doExport(){try{const res=await api("/api/export");const blob=await res.blob();const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="axora_export.xlsx";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);showToast("Planilha exportada.")}catch(e){showToast(e.message,true)}}
 async function uploadExcel(endpoint){
@@ -485,9 +495,17 @@ function bind(){
     }catch(err){showToast(err.message,true)}
   });
   $("#page-content").addEventListener("submit",async e=>{
-    if(!["goal-form","profile-form","new-user-form"].includes(e.target.id))return;
+    if(!["goal-form","profile-form","new-user-form","password-change-form"].includes(e.target.id))return;
     e.preventDefault();const form=e.target,values=Object.fromEntries(new FormData(form));
     try{
+      if(form.id==="password-change-form"){
+        if(values.new_password!==values.confirm_password)throw Error("As senhas não coincidem.");
+        if(values.current_password===values.new_password)throw Error("Escolha uma senha diferente da atual.");
+        await api("/api/profile/password",{method:"POST",body:JSON.stringify({
+          current_password:values.current_password,new_password:values.new_password})});
+        form.reset();logoutVisual();showToast("Senha alterada. Entre novamente com a nova senha.");
+        return;
+      }
       if(form.id==="goal-form"){Object.keys(values).forEach(k=>values[k]=Number(values[k]));await api("/api/settings",{method:"POST",body:JSON.stringify(values)})}
       if(form.id==="profile-form"){await api("/api/profile",{method:"POST",body:JSON.stringify(values)});me=await api("/api/me");enterVisual()}
       if(form.id==="new-user-form"){await api("/api/users",{method:"POST",body:JSON.stringify(values)});form.reset()}
