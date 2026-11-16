@@ -29,6 +29,7 @@ doc.activeElement=null;
 listeners.resize();
 assert.equal(props.get(key),"844px","Keyboard close must not jitter login card.");
 // Actual orientation change is allowed to rebuild the stage.
+doc.activeElement={id:"login-password"};
 win.innerWidth=844;
 win.innerHeight=390;
 root.clientHeight=390;
