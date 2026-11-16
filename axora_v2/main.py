@@ -932,11 +932,18 @@ def get_square_brand_icon(prefer: str = "favicon"):
     if prefer not in ("favicon", "icon"):
         raise HTTPException(422, "Tipo de ícone inválido.")
     keys = ("axora_favicon", "axora_icon") if prefer == "favicon" else ("axora_icon", "axora_favicon")
-    rows = db.select(
-        "branding",
-        fields="key,image_data_uri",
-        params={"key": "in.(axora_favicon,axora_icon)"},
-    )
+    try:
+        rows = db.select(
+            "branding",
+            fields="key,image_data_uri",
+            params={"key": "in.(axora_favicon,axora_icon)"},
+        )
+    except HTTPException as error:
+        # O ícone do navegador deve funcionar mesmo quando o banco estiver indisponível.
+        # A falha de conectividade não substitui a marca AXORA por um ícone genérico.
+        if error.status_code not in (502, 503, 504):
+            raise
+        rows = []
     by_key = {r["key"]: r["image_data_uri"] for r in rows}
     for key in keys:
         if key not in by_key:
