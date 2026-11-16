@@ -47,3 +47,20 @@
 .family-person-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
 .family-person-metrics b{font-size:clamp(13px,1.45vw,18px)}
 @media(max-width:380px){.family-person-metrics{grid-template-columns:1fr}}
+
+/* Gestão de hierarquia por família — desktop e mobile */
+.family-member-tools{border-top:1px solid #dceaf0;padding-top:13px;display:grid;gap:12px}
+.family-member-role{display:flex;align-items:center;flex-wrap:wrap;gap:9px}
+.family-member-role label{font-size:11px;color:#52758e;font-weight:700}
+.family-member-role select{min-width:115px;flex:1;border:1px solid #d3e4eb;border-radius:10px;padding:9px 11px;background:#fff}
+.family-member-role .btn{min-height:36px}
+.family-access-status{display:inline-flex;align-items:center;color:#167974;font-size:12px;font-weight:700}
+.family-profile-form .family-access-fields{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.family-access-fields small{grid-column:1/-1;color:#6c8397;line-height:1.5}
+[data-family-credentials][hidden]{display:none!important}
+.family-person-summary .family-member-tools .btn{white-space:normal}
+@media(max-width:600px){
+ .family-profile-form .family-access-fields{grid-template-columns:1fr}
+ .family-member-role{align-items:stretch}
+ .family-member-role label{flex:1 1 100%}
+}

@@ -2,14 +2,14 @@
    Nenhum rótulo é aplicado como permissão apenas no frontend. */
 "use strict";
 const AxoraFamily = (() => {
-  let family=null,summary=null,users=[],lastError="",loading=false;
+  let family=null,summary=null,lastError="",loading=false;
   const roleName={principal:"Principal",conjuge:"Cônjuge",filho:"Filho(a)",outro:"Outro"};
   const labels={privado:"Privado",casal:"Casal",familia:"Família",selecionados:"Selecionados"};
   const hasAccess=()=>Boolean(me?.family_enabled);
   const own=()=>me?.family_role==="principal";
   const people=()=>family?.profiles?.filter(p=>p.active)||[];
   const current=()=>Number(family?.my_profile_id||0);
-  function reset(){family=null;summary=null;users=[];lastError="";loading=false;}
+  function reset(){family=null;summary=null;lastError="";loading=false;}
   const visOpts=()=>Object.entries(labels).map(([key,title])=>
     '<option value="'+key+'">'+title+'</option>').join("");
   function labelSelect(name="label",value="privado"){
@@ -23,7 +23,7 @@ const AxoraFamily = (() => {
     try{
       const [f,s]=await Promise.all([api("/api/family"),api("/api/family/summary")]);
       family=f;summary=s;
-      users=own()?await api("/api/users"):[];
+      // Nunca consulta /api/users: a lista global não pertence ao núcleo familiar.
     }catch(err){lastError=err.message}
     finally{loading=false;if(page==="family")render()}
   }
@@ -77,25 +77,43 @@ const AxoraFamily = (() => {
       '<div class="family-person-metrics"><div><span>Entradas</span><b>'+money(metrics.entradas||0)+'</b></div>'+
       '<div><span>Despesas atribuídas</span><b>'+money(metrics.despesas||0)+'</b></div>'+
       '<div><span>Efetivamente pago</span><b>'+money(metrics.pagamentos||0)+'</b></div>'+
-      '<div><span>Saldo pessoal</span><b>'+money(metrics.saldo||0)+'</b></div></div></article>';
+      '<div><span>Saldo pessoal</span><b>'+money(metrics.saldo||0)+'</b></div></div>'+
+      (own()&&p.relationship!=="principal"?memberTools(p):"")+'</article>';
+  }
+  function relationshipOptions(current){
+    return [["conjuge","Cônjuge"],["filho","Filho(a)"],["outro","Outro"]]
+      .map(([value,label])=>'<option value="'+value+'" '+(value===current?'selected':'')+'>'+label+'</option>').join("");
+  }
+  function memberTools(p){
+    const uid=Number(p.id);
+    return '<div class="family-member-tools"><div class="family-member-role">'+
+      '<label for="family-role-'+uid+'">Vínculo familiar</label>'+
+      '<select id="family-role-'+uid+'" data-family-role="'+uid+'">'+
+      relationshipOptions(p.relationship)+'</select>'+
+      '<button type="button" class="btn ghost small" data-family-action="save-relationship" data-id="'+uid+'">Salvar</button></div>'+
+      (p.linked_user_id?
+       '<span class="family-access-status">Acesso individual ativo</span>':
+       '<button type="button" class="btn ghost small" data-family-action="enable-login" data-id="'+uid+'">Criar acesso com senha</button>')+
+      '</div>';
   }
   function newProfileForm(){
-    return '<form id="family-profile-form" class="family-profile-form"><div class="field"><label>Nome</label>'+
-      '<input name="display_name" type="text" maxlength="80" required placeholder="Nome da pessoa"></div>'+
-      '<div class="field"><label>Vínculo</label><select name="relationship" required>'+
-      '<option value="conjuge">Cônjuge</option><option value="filho">Filho(a)</option>'+
-      '<option value="outro">Outro</option></select></div>'+
-      '<div class="field full"><label>Tipo de acesso</label><select name="access_mode">'+
-      '<option value="sem">Perfil financeiro sem login</option>'+
-      '<option value="existente">Vincular usuário já cadastrado</option>'+
-      '<option value="novo">Criar login com senha própria</option></select>'+
-      '<small>Filhos podem ter os custos registrados sem acessar suas informações bancárias.</small></div>'+
-      '<div class="field full" data-family-existing hidden><label>Usuário existente</label><select name="user_id">'+
-      '<option value="">Selecione</option>'+users.filter(u=>u.is_active&&!u.is_admin).map(
-        u=>'<option value="'+Number(u.id)+'">'+esc(u.display_name)+'</option>').join("")+'</select></div>'+
-      '<div class="field full" data-family-new hidden><label>Senha exclusiva (mínimo 12 caracteres)</label>'+
-      '<input type="password" name="password" minlength="12" maxlength="500" autocomplete="new-password"></div>'+
-      '<button class="btn primary" type="submit">Adicionar pessoa</button></form>';
+    return '<form id="family-profile-form" class="family-profile-form">'+
+      '<div class="field"><label for="family-new-name">Nome da pessoa</label>'+
+      '<input id="family-new-name" name="display_name" type="text" maxlength="80" required placeholder="Nome do familiar"></div>'+
+      '<div class="field"><label for="family-new-role">Vínculo</label><select id="family-new-role" name="relationship" required>'+
+      relationshipOptions("conjuge")+'</select></div>'+
+      '<div class="field full"><label for="family-new-mode">Tipo de cadastro</label>'+
+      '<select id="family-new-mode" name="access_mode">'+
+      '<option value="login">Subusuário com acesso próprio</option>'+
+      '<option value="perfil">Apenas perfil financeiro, sem login</option></select>'+
+      '<small>Uma pessoa sem login pode receber despesas atribuídas a ela, mas não entra no aplicativo.</small></div>'+
+      '<div class="field full family-access-fields" data-family-credentials>'+
+      '<div class="field"><label for="family-member-password">Senha exclusiva (mínimo 12 caracteres)</label>'+
+      '<input id="family-member-password" name="password" type="password" minlength="12" maxlength="500" autocomplete="new-password" required></div>'+
+      '<div class="field"><label for="family-member-confirm">Confirmar senha</label>'+
+      '<input id="family-member-confirm" name="confirm_password" type="password" minlength="12" maxlength="500" autocomplete="new-password" required></div>'+
+      '<small>O subusuário entra apenas com a própria senha e recebe somente informações autorizadas por rótulo.</small></div>'+
+      '<button class="btn primary" type="submit">Cadastrar na minha família</button></form>';
   }
   function pageHtml(){
     if(!hasAccess())return '<section class="panel"><h2>Gestão familiar indisponível</h2>'+
@@ -109,34 +127,64 @@ const AxoraFamily = (() => {
       ' registro(s) antigo(s) sem atribuição de custos; serão classificados manualmente, nunca automaticamente.</div>':"";
     return '<div class="stack family-page">'+
       '<section class="panel family-intro"><div><span class="eyebrow">AXORA FAMÍLIA</span>'+
-      '<h2>Quem recebe, quanto custa e quem paga.</h2>'+
-      '<p>Entradas, gastos e pagamentos organizados por pessoa.</p></div>'+
+      '<h2>'+(own()?'Minha família e usuários':'Minha organização financeira')+'</h2>'+
+      '<p>'+(own()?'Principal: '+esc(me.display_name)+' · Espaço independente'+
+        (family.workspace_name?' · '+esc(family.workspace_name):''):
+        'Entradas, gastos e pagamentos por pessoa.')+'</p></div>'+
       '<button class="btn primary" type="button" data-family-action="new-expense">Novo registro com rateio</button></section>'+
       summaryNote+
       '<div class="family-people">'+people().map(tableRow).join("")+'</div>'+
-      (own()?panel("Pessoas e usuários vinculados",
-        "Crie perfis sem login ou associe um usuário existente.",newProfileForm()):"")+
+      (own()?panel("Adicionar subusuário ou dependente",
+        "Cadastre cônjuge, filho(a) ou outra pessoa no seu próprio espaço financeiro.",newProfileForm()):"")+
       '</div>';
   }
   async function saveProfile(form){
-    const data=Object.fromEntries(new FormData(form).entries());
-    const mode=data.access_mode;
-    const profile=await api("/api/family/profiles",{
-      method:"POST",body:JSON.stringify({display_name:data.display_name,relationship:data.relationship})});
-    if(mode!=="sem"){
-      let uid=Number(data.user_id);
-      if(mode==="novo"){
-        if(!data.password||data.password.length<12)throw Error("Senha deve ter pelo menos 12 caracteres.");
-        const created=await api("/api/users",{method:"POST",body:JSON.stringify({
-          display_name:data.display_name,password:data.password})});
-        uid=Number(created.id);
-      }
-      if(!Number.isInteger(uid)||uid<=0)throw Error("Perfil criado sem login. Selecione um usuário para vincular.");
-      await api("/api/family/profiles/"+Number(profile.profile.id)+"/link",{
-        method:"POST",body:JSON.stringify({user_id:uid})});
-    }
+    if(!own())throw Error("Somente o principal pode cadastrar pessoas.");
+    const values=Object.fromEntries(new FormData(form).entries());
+    const mode=values.access_mode;
+    if(!["login","perfil"].includes(mode))throw Error("Selecione o tipo de cadastro.");
+    if(mode==="login" && (values.password.length<12||values.password!==values.confirm_password))
+      throw Error("As senhas precisam coincidir e ter pelo menos 12 caracteres.");
+    const result=await api("/api/family/members",{method:"POST",body:JSON.stringify({
+      display_name:values.display_name,relationship:values.relationship,
+      password:mode==="login"?values.password:null
+    })});
+    form.reset();
     await load(true);
-    showToast("Perfil familiar cadastrado.");
+    showToast(result.access==="login"?"Subusuário cadastrado com acesso próprio.":"Perfil financeiro cadastrado.");
+  }
+  async function saveRelationship(profileId,btn){
+    if(!own())throw Error("Ação exclusiva da conta principal.");
+    const section=btn.closest(".family-member-tools");
+    const relationship=section?.querySelector("[data-family-role]")?.value;
+    if(!relationship)throw Error("Selecione o vínculo.");
+    await api("/api/family/profiles/"+profileId+"/relationship",
+      {method:"POST",body:JSON.stringify({relationship})});
+    await load(true);
+    showToast("Vínculo familiar atualizado.");
+  }
+  function showEnableLogin(profileId){
+    if(!own())throw Error("Ação exclusiva da conta principal.");
+    const target=people().find(p=>Number(p.id)===profileId);
+    if(!target||target.relationship==="principal"||target.linked_user_id)throw Error("Perfil indisponível.");
+    const form=$("#family-access-form");
+    form.reset();
+    form.dataset.profileId=String(profileId);
+    $("#family-access-person").textContent=target.display_name;
+    $("#family-access-dialog").showModal();
+  }
+  async function saveLoginAccess(form){
+    if(!own())throw Error("Ação exclusiva da conta principal.");
+    const profileId=Number(form.dataset.profileId);
+    const password=form.elements.password.value;
+    if(password.length<12||password!==form.elements.confirm_password.value)
+      throw Error("As senhas precisam coincidir e ter pelo menos 12 caracteres.");
+    await api("/api/family/profiles/"+profileId+"/enable-login",
+      {method:"POST",body:JSON.stringify({password})});
+    form.reset();
+    $("#family-access-dialog").close();
+    await load(true);
+    showToast("Acesso individual ativado.");
   }
   function openVisibility(kind,id,existing="privado"){
     if(!own())throw Error("Somente o usuário principal pode administrar rótulos.");
@@ -204,13 +252,23 @@ const AxoraFamily = (() => {
       if(action==="retry")load(true);
       if(action==="new-expense")openEntry().catch(err=>showToast(err.message,true));
       if(action==="navigate-family")go("family");
+      if(action==="enable-login")try{showEnableLogin(Number(btn.dataset.id))}catch(err){showToast(err.message,true)}
+      if(action==="save-relationship"){
+        btn.disabled=true;
+        saveRelationship(Number(btn.dataset.id),btn).catch(err=>showToast(err.message,true))
+          .finally(()=>{btn.disabled=false});
+      }
       if(action==="set-visibility")openVisibility(btn.dataset.resource,Number(btn.dataset.id),btn.dataset.label||"privado");
     });
     $("#page-content").addEventListener("change",e=>{
       if(e.target.closest("#family-profile-form")&&e.target.name==="access_mode"){
         const f=e.target.form;
-        f.querySelector("[data-family-existing]").hidden=e.target.value!=="existente";
-        f.querySelector("[data-family-new]").hidden=e.target.value!=="novo";
+        const active=e.target.value==="login";
+        f.querySelector("[data-family-credentials]").hidden=!active;
+        for(const input of f.querySelectorAll("[data-family-credentials] input")){
+          input.required=active;
+          if(!active)input.value="";
+        }
       }
     });
     $("#page-content").addEventListener("submit",e=>{
@@ -218,6 +276,13 @@ const AxoraFamily = (() => {
       e.preventDefault();
       const button=e.target.querySelector('button[type="submit"]');button.disabled=true;
       saveProfile(e.target).catch(err=>showToast(err.message,true)).finally(()=>button.disabled=false);
+    });
+    $("#family-access-form").addEventListener("submit",e=>{
+      e.preventDefault();
+      const btn=e.target.querySelector('button[type="submit"]');
+      btn.disabled=true;
+      saveLoginAccess(e.target).catch(err=>showToast(err.message,true))
+        .finally(()=>btn.disabled=false);
     });
     $("#family-entry-form").addEventListener("change",e=>{
       if(e.target.name==="classification")togglePayers(e.target.form);
