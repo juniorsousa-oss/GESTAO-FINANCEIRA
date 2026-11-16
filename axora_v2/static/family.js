@@ -150,6 +150,10 @@ const AxoraFamily = (() => {
       password:mode==="login"?values.password:null
     })});
     form.reset();
+    // Após cadastrar perfil sem login, o formulário volta à opção com senha.
+    const credentials=form.querySelector("[data-family-credentials]");
+    if(credentials)credentials.hidden=false;
+    for(const input of form.querySelectorAll("[data-family-credentials] input"))input.required=true;
     await load(true);
     showToast(result.access==="login"?"Subusuário cadastrado com acesso próprio.":"Perfil financeiro cadastrado.");
   }
