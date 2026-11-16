@@ -229,7 +229,7 @@ $$;
 
 CREATE FUNCTION public.axora_family_link_user(
   p_workspace_id uuid,p_actor_id bigint,p_profile_id bigint,p_user_id bigint)
-RETURNS jsonb LANGUAGE plpgsql SET search_path TO 'public' AS $
+RETURNS jsonb LANGUAGE plpgsql SET search_path TO 'public' AS $$
 DECLARE v_owner bigint; v_count integer;
 BEGIN
   PERFORM public.axora_family_validate_actor(p_workspace_id,p_actor_id);
@@ -257,7 +257,7 @@ BEGIN
       WHERE workspace_id=p_workspace_id AND user_id=p_user_id);
   RETURN jsonb_build_object('ok',true,'linked_user_id',p_user_id);
 END;
-$;
+$$;
 
 CREATE FUNCTION public.axora_family_set_visibility(
   p_workspace_id uuid,p_actor_id bigint,p_resource_type text,
