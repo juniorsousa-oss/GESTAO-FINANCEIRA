@@ -69,17 +69,22 @@ def client(monkeypatch):
             {"id":31,"holder_id":1,"bank_name":"Privado","nickname":"Conta pessoal sigilosa",
              "manual_balance":"9999.00","pluggy_account_id":None},
             {"id":32,"holder_id":2,"bank_name":"Casal","nickname":"Conta permitida",
-             "manual_balance":"75.00","pluggy_account_id":None}]
+             "manual_balance":"75.00","account_type":"corrente",
+             "pluggy_account_id":"external-private-reference","pluggy_item_id":"private-item"}]
         if table=="finance_bank_transactions":return [
             {"id":51,"account_id":31,"status":"pending","amount":"999.00"},
             {"id":52,"account_id":32,"status":"pending","amount":"-75.00",
              "description":"Transação sem permissão separada"}]
         if table=="finance_family_profiles":return [
             {"id":1,"display_name":"Principal","relationship":"principal","linked_user_id":1,"active":True},
-            {"id":22,"display_name":"Cônjuge","relationship":"conjuge","linked_user_id":2,"active":True}]
+            {"id":22,"display_name":"Cônjuge","relationship":"conjuge","linked_user_id":2,"active":True},
+            {"id":33,"display_name":"Dependente privado","relationship":"filho","linked_user_id":None,"active":True},
+            {"id":44,"display_name":"Dependente relacionado ao gasto","relationship":"filho","linked_user_id":None,"active":True}]
         if table=="finance_movements":return list(MOVEMENTS)
-        if table=="finance_family_cost_allocations":return []
-        if table=="finance_family_payment_allocations":return []
+        if table=="finance_family_cost_allocations":
+            return [{"movement_id":12,"profile_id":44,"amount":"180.00"}]
+        if table=="finance_family_payment_allocations":
+            return [{"movement_id":12,"payer_profile_id":22,"amount":"180.00"}]
         raise AssertionError((method,table,params,data))
     monkeypatch.setattr(db,"call",call)
     with TestClient(app) as c:
@@ -95,6 +100,11 @@ def test_private_rows_and_totals_never_leak_in_snapshot(client):
     assert data["debts"]==[]
     assert data["summary"]["expenses"]==180
     assert data["summary"]["to_pay"]==150
+    assert "located" not in data["summary"]
+    assert "discrepancy" not in data["summary"]
+    assert "debt_open" not in data["summary"]
+    assert "conciliation" not in data["summary"]
+    assert "goals" not in data["summary"]
     serialized=response.text
     assert "1999.00" not in serialized
     assert "9999" not in serialized
@@ -109,6 +119,11 @@ def test_bank_and_provisions_are_filtered_at_backend(client):
     assert [h["id"] for h in body["holders"]]==[2]
     assert body["pending"]==[]
     assert body["balances"]["combined"]=="75.00"
+    assert body["mode"]=="manual"
+    assert "provider" not in body and "bank_connected" not in body
+    assert "pluggy_account_id" not in bank.text
+    assert "private-item" not in bank.text
+    assert "external-private-reference" not in bank.text
     assert "pessoal sigilosa" not in bank.text
     prov=client.get("/api/provisions")
     assert prov.status_code==200
@@ -132,7 +147,14 @@ def test_member_may_only_read_family_records_allocated_to_own_view(client):
     assert family.status_code==200 and family.json()["my_role"]=="conjuge"
     summary=client.get("/api/family/summary")
     assert summary.status_code==200
-    assert summary.json()["visible_movements"]==1
-    assert summary.json()["unallocated_movements"]==1
+    assert "visible_movements" not in summary.json()
+    assert "unallocated_movements" not in summary.json()
+    assert "note" not in summary.json()
+    assert {p["id"] for p in summary.json()["people"]}=={22,44}
+    assert {p["id"] for p in family.json()["profiles"]}=={22,44}
+    assert "linked_user_id" not in family.text
+    assert "Dependente privado" not in family.text
+    assert "Dependente privado" not in summary.text
+    assert "Principal" not in family.text
     me=client.get("/api/me")
     assert me.status_code==200 and me.json()["family_role"]=="conjuge"

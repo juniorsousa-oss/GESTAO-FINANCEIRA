@@ -561,7 +561,7 @@ def banking_overview(user=Depends(auth)):
         accounts = [
             {"id": a["id"], "holder_id": a["holder_id"],
              "bank_name": a["bank_name"], "nickname": a["nickname"],
-             "account_type": a["account_type"],
+             "account_type": a.get("account_type") or "conta",
              "manual_balance": a.get("manual_balance")}
             for a in accounts
         ]

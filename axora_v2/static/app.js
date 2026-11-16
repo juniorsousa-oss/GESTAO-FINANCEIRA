@@ -26,7 +26,8 @@ const interfaceIconPaths={
   filter:'<path d="M4 7h16M7 12h10M10 17h4"/>',
   reset:'<path d="M3 11a9 9 0 1 1 3.2 6.9"/><path d="M3 4v7h7"/>',
   shield:'<path d="m12 22 8-4V6l-8-4-8 4v12l8 4Z"/><path d="m8.5 12 2.2 2.2 4.7-4.7"/>',
-  check:'<path d="m5 12 4 4L19 6"/>'
+  check:'<path d="m5 12 4 4L19 6"/>',
+  'chevron-down':'<path d="m6 9 6 6 6-6"/>'
 };
 function interfaceIcon(name){
   return '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">'+(interfaceIconPaths[name]||interfaceIconPaths.plus)+'</svg>';
