@@ -26,6 +26,19 @@ def table(name, workspace, *, filters=None, fields="*", limit=1000, order=None):
     return db.call("GET", name, params=data)
 
 
+def all_rows(name, workspace, *, fields="*", order=None, filters=None, maximum=30000):
+    """Paginação para relatórios e visões consolidadas sem truncamento de 1.000 linhas."""
+    result = []
+    page_size = 500
+    while len(result) < maximum:
+        rows = table(name, workspace, fields=fields, order=order,
+                     filters={**(filters or {}), "offset": len(result)}, limit=page_size)
+        result.extend(rows)
+        if len(rows) < page_size:
+            return result
+    raise HTTPException(503, "O histórico é maior que o limite de consulta. Refine o período.")
+
+
 def context(user):
     if not enabled():
         return None
