@@ -1133,12 +1133,28 @@ def multiuser_status(user=Depends(auth)):
 
 @app.get("/api/users")
 def users(user=Depends(auth)):
+    ctx = user.get("_family")
+    if ctx:
+        family_service.require_principal(user)
+        # Não devolver a lista global de contas ao principal de uma família.
+        return [
+            {"id": p["linked_user_id"], "display_name": p["display_name"],
+             "is_admin": p["relationship"] == "principal", "is_active": p["active"]}
+            for p in family_service.profiles(user) if p.get("linked_user_id")
+        ]
     admin(user)
-    return [{"id": x["id"], "display_name": x["display_name"], "is_admin": x["is_admin"], "is_active": x["is_active"]} for x in security.accounts()]
+    return [
+        {"id": x["id"], "display_name": x["display_name"],
+         "is_admin": x["is_admin"], "is_active": x["is_active"]}
+        for x in security.accounts()
+    ]
 
 
 @app.post("/api/users")
 def create_user(payload: UserCreate, user=Depends(authorized)):
+    # Administrador de um núcleo não cria outros usuários principais globais.
+    if user.get("_family"):
+        raise HTTPException(403, "Cadastre pessoas na seção Família e usuários.")
     admin(user)
     name = clean_display_name(payload.display_name)
     if not name:

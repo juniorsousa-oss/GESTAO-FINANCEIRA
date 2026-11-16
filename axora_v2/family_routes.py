@@ -5,7 +5,7 @@ import re
 
 from fastapi import Depends, HTTPException
 
-from axora_v2 import db, family_service, family_policy
+from axora_v2 import db, family_service, family_policy, security
 
 
 def _context(user):
@@ -69,6 +69,27 @@ def _record_fields(data):
     return when, desc.strip(), category.strip() or "OUTROS"
 
 
+def _password_hash(password):
+    """Senha recebida só no backend. O cliente nunca envia hash ou papel."""
+    if password is None:
+        return None
+    if not isinstance(password, str) or len(password) < 12 or len(password) > 500:
+        raise HTTPException(422, "A senha deve ter entre 12 e 500 caracteres.")
+    existing = security.accounts()
+    if len(existing) >= 250:
+        raise HTTPException(422, "Limite de acessos atingido.")
+    if any(security.matches(password, account.get("password_hash", ""))
+           for account in existing):
+        raise HTTPException(422, "Escolha outra senha de acesso.")
+    return security.hash_password(password)
+
+
+def _role(value):
+    if not isinstance(value, str) or value not in ("conjuge", "filho", "outro"):
+        raise HTTPException(422, "Selecione um vínculo de cônjuge, filho ou outro.")
+    return value
+
+
 def install(app, auth, authorized):
     @app.post("/api/family/onboard")
     def activate_my_family(user=Depends(authorized)):
@@ -99,10 +120,15 @@ def install(app, auth, authorized):
     @app.get("/api/family")
     def get_family(user=Depends(auth)):
         ctx = _context(user)
-        return {"enabled": True, "my_role": ctx["role"],
-                "my_profile_id": ctx["profile_id"],
-                "can_manage": ctx["role"] == "principal",
-                "profiles": family_service.accessible_profiles(user)}
+        result = {"enabled": True, "my_role": ctx["role"],
+                  "my_profile_id": ctx["profile_id"],
+                  "can_manage": ctx["role"] == "principal",
+                  "profiles": family_service.accessible_profiles(user)}
+        if ctx["role"] == "principal":
+            workspace = db.call("GET", "finance_workspaces", params={
+                "select":"name", "id":"eq."+ctx["workspace_id"], "limit":1})
+            result["workspace_name"] = workspace[0]["name"] if workspace else "Meu espaço financeiro"
+        return result
 
     @app.post("/api/family/profiles")
     def add_family_profile(payload: dict, user=Depends(authorized)):
@@ -124,35 +150,62 @@ def install(app, auth, authorized):
             "relationship": role, "active": True}, prefer="return=representation")
         return {"profile": added[0]}
 
-    @app.post("/api/family/profiles/{profile_id}/link")
-    def link_existing_login(profile_id: int, payload: dict, user=Depends(authorized)):
+    @app.post("/api/family/members")
+    def create_member(payload: dict, user=Depends(authorized)):
+        """Principal cria perfil e, opcionalmente, login dentro do próprio workspace."""
         ctx = family_service.require_principal(user)
-        if profile_id <= 0 or not isinstance(payload, dict) or set(payload) != {"user_id"}:
-            raise HTTPException(422, "Identificador inválido.")
-        uid = payload["user_id"]
-        if type(uid) is not int or uid <= 0 or uid == ctx["owner_id"]:
-            raise HTTPException(422, "Usuário inválido para vinculação.")
-        current = family_service.table("finance_family_profiles", ctx["workspace_id"],
-            filters={"id": "eq." + str(profile_id)}, limit=1)
-        if not current or current[0].get("linked_user_id") is not None:
-            raise HTTPException(409, "Perfil ausente ou já vinculado.")
-        existing = db.select("users", fields="id,is_active,is_admin",
-            params={"id": "eq." + str(uid), "limit": 1})
-        if not existing or not existing[0]["is_active"] or existing[0]["is_admin"]:
-            raise HTTPException(422, "Usuário precisa estar ativo e não ser administrador.")
-        linked = db.call("GET", "finance_family_profiles", params={
-            "linked_user_id": "eq." + str(uid), "select": "id", "limit": 1})
-        if linked:
-            raise HTTPException(409, "Usuário já vinculado a outra família.")
-        previous = db.call("GET", "finance_workspace_members", params={
-            "user_id": "eq." + str(uid), "select": "workspace_id", "limit": 30})
-        if any(p["workspace_id"] != ctx["workspace_id"] for p in previous):
-            raise HTTPException(409, "Este usuário possui espaço financeiro independente. Migração assistida necessária.")
-        # Um RPC único impede perfil sem membership após erro de rede.
-        return db.call("POST", "rpc/axora_family_link_user", data={
+        if not isinstance(payload, dict) or set(payload) != {"display_name", "relationship", "password"}:
+            raise HTTPException(422, "Cadastro de membro inválido.")
+        name = payload["display_name"]
+        if not isinstance(name, str) or not 1 <= len(name.strip()) <= 80:
+            raise HTTPException(422, "Informe um nome de até 80 caracteres.")
+        name = name.strip()
+        role = _role(payload["relationship"])
+        hashed = _password_hash(payload["password"])
+        if hashed is not None and len(name) > 40:
+            raise HTTPException(422, "Para criar um login, use um nome de até 40 caracteres.")
+        return db.call("POST", "rpc/axora_family_upsert_member", data={
             "p_workspace_id": ctx["workspace_id"], "p_actor_id": ctx["user_id"],
-            "p_profile_id": profile_id, "p_user_id": uid
+            "p_display_name": name, "p_relationship": role,
+            "p_password_hash": hashed, "p_profile_id": None
         })
+
+
+    @app.post("/api/family/profiles/{profile_id}/enable-login")
+    def enable_member_login(profile_id: int, payload: dict, user=Depends(authorized)):
+        ctx = family_service.require_principal(user)
+        if profile_id < 1 or not isinstance(payload, dict) or set(payload) != {"password"}:
+            raise HTTPException(422, "Acesso inválido.")
+        profile = family_service.table("finance_family_profiles", ctx["workspace_id"],
+            fields="id,display_name,relationship,linked_user_id,active",
+            filters={"id":"eq."+str(profile_id)},limit=1)
+        if not profile or not profile[0]["active"] or profile[0]["relationship"]=="principal" or profile[0].get("linked_user_id"):
+            raise HTTPException(404, "Perfil disponível para acesso não encontrado.")
+        hash_value = _password_hash(payload["password"])
+        if hash_value is None:
+            raise HTTPException(422, "Informe a senha deste usuário.")
+        return db.call("POST", "rpc/axora_family_upsert_member", data={
+            "p_workspace_id": ctx["workspace_id"], "p_actor_id": ctx["user_id"],
+            "p_display_name": profile[0]["display_name"], "p_relationship": profile[0]["relationship"],
+            "p_password_hash": hash_value, "p_profile_id": profile_id
+        })
+
+
+    @app.post("/api/family/profiles/{profile_id}/relationship")
+    def change_member_relationship(profile_id: int, payload: dict, user=Depends(authorized)):
+        ctx = family_service.require_principal(user)
+        if profile_id < 1 or not isinstance(payload, dict) or set(payload) != {"relationship"}:
+            raise HTTPException(422, "Vínculo inválido.")
+        return db.call("POST", "rpc/axora_family_change_relationship", data={
+            "p_workspace_id": ctx["workspace_id"], "p_actor_id": ctx["user_id"],
+            "p_profile_id": profile_id, "p_relationship": _role(payload["relationship"])
+        })
+
+
+    @app.post("/api/family/profiles/{profile_id}/link")
+    def legacy_link_disabled(profile_id: int, user=Depends(authorized)):
+        family_service.require_principal(user)
+        raise HTTPException(410, "Vincular outra conta existente requer consentimento e migração assistida.")
 
     @app.post("/api/family/visibility")
     def set_visibility(payload: dict, user=Depends(authorized)):
