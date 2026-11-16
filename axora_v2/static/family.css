@@ -1,0 +1,37 @@
+/* Gestão familiar — complementa a paleta aprovada do AXORA. */
+.family-page{--family-line:#dceaf0;min-width:0}
+.family-intro{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.family-intro h2{font-size:clamp(21px,2.5vw,28px);letter-spacing:-.04em;color:#153652}
+.family-intro p{font-size:13px;color:#667f93;max-width:62ch;line-height:1.6}
+.family-people{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:15px}
+.family-person-summary{min-width:0;padding:19px;border:1px solid var(--family-line);border-radius:19px;background:linear-gradient(160deg,#fff,#f7fafc);display:grid;gap:20px}
+.family-person-heading{display:flex;align-items:center;gap:12px}
+.family-person-heading>div:last-child{display:grid;gap:3px}
+.family-person-heading strong{color:#183b56;font-size:15px}
+.family-person-heading small{color:#7993a3;font-size:11px}
+.family-avatar{flex:0 0 46px;height:46px;border-radius:15px;background:linear-gradient(130deg,#06b9b9,#0b5b97);display:grid;place-items:center;color:#fff;font-weight:900;font-size:20px}
+.family-person-metrics{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.family-person-metrics>div{display:grid;gap:5px;min-width:0}
+.family-person-metrics span{font-size:11px;color:#67829a}
+.family-person-metrics b{font-size:clamp(13px,1.5vw,19px);color:#18425c;overflow-wrap:anywhere}
+.family-profile-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-top:15px}
+.family-profile-form .full{grid-column:1/-1}
+.family-profile-form .btn{justify-self:start;grid-column:1/-1}
+.family-allocation-row{display:grid;grid-template-columns:minmax(0,1fr) 100px 28px;align-items:center;gap:10px;border-bottom:1px solid #e4ebf2;padding:8px 0}
+.family-allocation-row>span:first-child{display:grid;gap:2px;font-weight:700;color:#28475b}
+.family-allocation-row small{font-size:10px;color:#8aa0b0}
+.family-allocation-row input{width:100%;min-width:0;border:1px solid #d6e3eb;border-radius:10px;padding:10px}
+.family-unit{font-size:11px;color:#7590a3}
+.family-fieldset{border:1px solid #dae8ed;border-radius:15px;padding:14px;margin:12px 0}
+.family-fieldset legend{font-weight:800;color:#274861;padding:0 7px}
+.family-check-row{display:flex;align-items:center;gap:8px;padding:9px}
+.family-dialog{border:1px solid #d4e4ea;border-radius:22px;padding:0;background:#fff;max-width:min(96vw,660px);width:100%;max-height:90dvh;overflow-y:auto;box-shadow:0 25px 80px rgba(11,43,70,.22)}
+.family-dialog::backdrop{background:rgba(4,25,43,.55);backdrop-filter:blur(3px)}
+.family-dialog form{padding:22px;display:grid;gap:13px}
+.family-dialog .field{display:grid;gap:6px}
+.family-dialog .field label{font-size:12px;font-weight:750;color:#34546c}
+.family-dialog .field input,.family-dialog .field select{padding:11px;border:1px solid #d7e5eb;border-radius:11px;min-width:0}
+.family-dialog h2{color:#153b56;letter-spacing:-.025em}
+.family-dialog .dialog-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.family-dialog .notice{font-size:12px}
+@media(max-width:600px){.family-profile-form{grid-template-columns:1fr}.family-intro .btn{width:100%}.family-dialog form{padding:16px}.family-allocation-row{grid-template-columns:minmax(0,1fr) 88px 22px}}
