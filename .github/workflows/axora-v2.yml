@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - develop
       - feat/axora-web-v2-20261009
     paths:
       - 'axora_v2/**'
