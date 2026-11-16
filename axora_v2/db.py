@@ -1,7 +1,10 @@
 """Gateway REST exclusivo do servidor para o Supabase já existente."""
+import logging
 import os
 import requests
 from fastapi import HTTPException
+
+log = logging.getLogger("axora.database")
 
 TABLES = {
     "movements": "finance_movements",
@@ -49,8 +52,14 @@ def call(method, table, *, params=None, data=None, prefer=None):
         if response.status_code == 204 or not response.content:
             return []
         return response.json()
-    except requests.RequestException:
-        # Não retornar chaves, URL com parâmetros ou corpo interno do Supabase.
+    except requests.HTTPError as exc:
+        # Diagnóstico seguro: somente código de status, sem URL, resposta, chave ou dados.
+        status = exc.response.status_code if exc.response is not None else "unknown"
+        log.warning("Falha de resposta do Supabase: HTTP %s", status)
+        raise HTTPException(502, "Falha na comunicação com a base financeira.") from None
+    except requests.RequestException as exc:
+        # Não exibir host, parâmetros, credenciais ou conteúdo financeiro nos logs.
+        log.warning("Falha de transporte do Supabase: %s", type(exc).__name__)
         raise HTTPException(502, "Falha na comunicação com a base financeira.") from None
 
 
