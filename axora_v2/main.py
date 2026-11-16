@@ -210,6 +210,9 @@ def snapshot(user=Depends(auth)):
     rows = {kind: db.select(kind, order=ORDERS[kind], params=scope)
             for kind in ("movements", "accounts", "debts")}
     ctx = user.get("_family")
+    if ctx:
+        rows["movements"] = family_service.all_rows(
+            "finance_movements", workspace, order=ORDERS["movements"])
     if ctx and ctx["role"] != "principal":
         # Não enviar métricas, configurações, saldos nem lançamentos privados.
         rows["movements"] = family_service.tagged_records(user, "registro", rows["movements"])
