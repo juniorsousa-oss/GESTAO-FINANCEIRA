@@ -19,6 +19,8 @@ services:
         value: "1"
       - key: AXORA_BANK_MODE
         value: manual
+      - key: AXORA_FAMILY_V2_ENABLED
+        value: "0"
       - key: SUPABASE_URL
         value: https://cuixazpxkvniqldmmnth.supabase.co
       - key: SUPABASE_KEY

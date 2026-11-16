@@ -154,6 +154,8 @@ def install(app, auth, authorized):
     @app.post("/api/family/transactions")
     def create_financial_entry(payload: dict, user=Depends(authorized)):
         ctx = _context(user)
+        if ctx["role"] not in ("principal","conjuge"):
+            raise HTTPException(403, "Somente adultos autorizados podem registrar movimentações.")
         when, description, category = _record_fields(payload)
         value = payload["value"]
         family_policy.amount_cents(value)
@@ -169,6 +171,8 @@ def install(app, auth, authorized):
     @app.post("/api/family/provisions/{occurrence_id}/pay")
     def pay_family_provision(occurrence_id: int, payload: dict, user=Depends(authorized)):
         ctx = _context(user)
+        if ctx["role"] not in ("principal","conjuge"):
+            raise HTTPException(403, "Este perfil não pode registrar pagamentos.")
         if occurrence_id <= 0 or not isinstance(payload, dict) or set(payload) != {
             "payment_date", "amount", "label", "costs", "payments"
         }:

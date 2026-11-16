@@ -9,6 +9,7 @@ const AxoraFamily = (() => {
   const own=()=>me?.family_role==="principal";
   const people=()=>family?.profiles?.filter(p=>p.active)||[];
   const current=()=>Number(family?.my_profile_id||0);
+  function reset(){family=null;summary=null;users=[];lastError="";loading=false;}
   const visOpts=()=>Object.entries(labels).map(([key,title])=>
     '<option value="'+key+'">'+title+'</option>').join("");
   function labelSelect(name="label",value="privado"){
@@ -257,6 +258,6 @@ const AxoraFamily = (() => {
       btn.closest("dialog").close();
     }));
   });
-  return {load,page:pageHtml,openEntry,openVisibility,hasAccess,own};
+  return {load,page:pageHtml,openEntry,openVisibility,hasAccess,own,reset};
 })();
 window.AxoraFamily=AxoraFamily;
