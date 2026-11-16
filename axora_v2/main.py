@@ -408,7 +408,8 @@ def provision_pix_qr(pk: int, response: Response, user=Depends(auth)):
     })
     if not records or not records[0].get("rule"):
         raise HTTPException(404,"Previsão não encontrada ou já quitada.")
-    family_service.assert_visible(user, "provisao", records[0]["rule_id"])
+    if user.get("_family") and user["_family"]["role"] != "principal":
+        family_service.assert_visible(user, "provisao", records[0].get("rule_id") or 0)
     rule=records[0]["rule"]
     if rule.get("payment_method")!="pix" or not rule.get("pix_value"):
         raise HTTPException(409,"Esta previsão não possui Pix configurado.")
