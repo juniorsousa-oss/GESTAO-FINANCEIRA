@@ -122,17 +122,11 @@ def install(app, auth, authorized):
             "user_id": "eq." + str(uid), "select": "workspace_id", "limit": 30})
         if any(p["workspace_id"] != ctx["workspace_id"] for p in previous):
             raise HTTPException(409, "Este usuário possui espaço financeiro independente. Migração assistida necessária.")
-        updated = db.call("PATCH", "finance_family_profiles", params={
-            "workspace_id": "eq." + ctx["workspace_id"],
-            "id": "eq." + str(profile_id), "linked_user_id": "is.null",
-        }, data={"linked_user_id": uid}, prefer="return=representation")
-        if not updated:
-            raise HTTPException(409, "Outro administrador alterou este perfil.")
-        if not previous:
-            db.call("POST", "finance_workspace_members", data={
-                "workspace_id": ctx["workspace_id"], "user_id": uid, "role": "viewer"
-            }, prefer="return=minimal")
-        return {"ok": True, "linked_user_id": uid}
+        # Um RPC único impede perfil sem membership após erro de rede.
+        return db.call("POST", "rpc/axora_family_link_user", data={
+            "p_workspace_id": ctx["workspace_id"], "p_actor_id": ctx["user_id"],
+            "p_profile_id": profile_id, "p_user_id": uid
+        })
 
     @app.post("/api/family/visibility")
     def set_visibility(payload: dict, user=Depends(authorized)):
