@@ -116,3 +116,41 @@
 .bank-person-detail{border-top:1px solid #e5edf3;padding:15px;display:grid;gap:12px;background:#f8fbfe}
 .bank-person-account{margin:0;min-width:0}
 @media(max-width:570px){.bank-person-summary{grid-template-columns:42px minmax(0,1fr);padding:14px;gap:10px}.bank-person-avatar{width:40px;height:40px;border-radius:12px}.bank-person-amount{grid-column:2;justify-self:start;text-align:left}.bank-person-detail{padding:11px}}
+
+/* Layout estável: valores monetários jamais quebram entre reais e centavos. */
+.bank-balance-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.bank-balance-metric>strong,.bank-holder-balance>strong,.bank-person-amount>strong,
+.bank-account-currency{white-space:nowrap!important;overflow-wrap:normal!important;word-break:keep-all!important;font-variant-numeric:tabular-nums}
+.bank-balance-metric>strong{font-size:clamp(17px,1.65vw,25px);letter-spacing:-.035em}
+.bank-people-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:16px}
+.bank-person-card{width:100%;min-width:0}
+.bank-person-summary{display:grid;grid-template-columns:48px minmax(0,1fr) auto 18px;gap:14px;align-items:center;padding:19px;min-width:0}
+.bank-person-amount{align-items:end;min-width:max-content;text-align:right}
+.bank-person-amount>strong{font-size:clamp(16px,1.7vw,24px);line-height:1.2;color:#0d5770}
+.bank-person-amount>small{white-space:nowrap}
+.bank-person-chevron{width:18px;height:18px;display:grid;place-items:center;color:#6e8b9e;transition:transform .2s ease}
+.bank-person-chevron svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
+.bank-person-card[open] .bank-person-chevron{transform:rotate(180deg)}
+.bank-person-detail{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,255px),1fr));gap:12px;padding:16px}
+.bank-person-account{min-width:0;padding:18px;gap:8px}
+.bank-person-account .bank-account-name{font-size:15px;line-height:1.35;overflow-wrap:anywhere}
+.bank-person-account .bank-account-institution{font-size:12px;color:#58758d;overflow-wrap:anywhere}
+.bank-person-account .bank-manual-balance{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:7px 14px;border-top:1px solid #dde9f1;padding-top:12px;margin:10px 0 0;font-size:12px}
+.bank-person-account .bank-account-currency{font-size:clamp(16px,1.65vw,22px);color:#17475c}
+.bank-person-account .bank-card-top{gap:12px}
+.bank-person-account .bank-account-actions{margin-top:5px}
+@media(max-width:750px){
+  .bank-balance-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}
+  .bank-person-summary{grid-template-columns:43px minmax(0,1fr) 18px;gap:10px;padding:15px}
+  .bank-person-avatar{width:42px;height:42px}
+  .bank-person-amount{grid-column:2;grid-row:2;justify-self:start;align-items:start;text-align:left}
+  .bank-person-chevron{grid-column:3;grid-row:1/span 2;align-self:center}
+  .bank-person-detail{padding:12px}
+}
+@media(max-width:420px){
+  .bank-person-summary{padding:13px}
+  .bank-person-amount>strong{font-size:19px}
+  .bank-person-amount>small{font-size:10px}
+  .bank-person-detail{grid-template-columns:1fr}
+  .bank-person-account{padding:14px}
+}

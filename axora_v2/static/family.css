@@ -40,3 +40,10 @@
 [data-family-nav][hidden], [data-family-existing][hidden], [data-family-new][hidden], [data-family-payers][hidden], [data-family-provision-note][hidden], #family-visibility-users[hidden] {display:none!important}
 .family-labels-list{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
 .family-bank-single{grid-template-columns:1fr;max-width:420px}
+
+/* Esconder elementos por permissão mesmo com CSS de navegação com display:flex. */
+.nav-link[hidden],[data-family-nav][hidden]{display:none!important}
+.metric-card .metric-value,.family-person-metrics b{white-space:nowrap;overflow-wrap:normal;word-break:keep-all;font-variant-numeric:tabular-nums}
+.family-person-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+.family-person-metrics b{font-size:clamp(13px,1.45vw,18px)}
+@media(max-width:380px){.family-person-metrics{grid-template-columns:1fr}}

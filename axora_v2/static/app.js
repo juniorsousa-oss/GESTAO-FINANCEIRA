@@ -230,6 +230,23 @@ function metric(label,value,hint,icon,tone=""){return '<div class="metric-card '
 function panel(title,desc,content){return '<section class="panel"><div class="panel-heading"><div><h2>'+title+'</h2><p>'+desc+'</p></div></div>'+content+'</section>'}
 function dashboard(){
   const x=snapshot.summary,s=snapshot.settings;
+  const restricted=Boolean(me?.family_enabled && me.family_role!=="principal");
+  if(restricted){
+    const cards=[
+      metric("Entradas",x.receipts,"Recebimentos registrados","receive"),
+      metric("Despesas",x.expenses,"Gastos registrados","pay","negative"),
+      metric("Resultado",x.realized,"Entradas menos despesas","trend"),
+      metric("Provisões",x.to_pay,(x.pending_count||0)+" compromisso(s)","projection","info"),
+    ].join("");
+    const forecasts=table(["Vencimento","Descrição","Tipo","Valor","Status"],
+      (x.next_forecasts||[]).map(f=>[
+        dateBR(f.due_date),f.description,f.type,money(f.final_value),f.status
+      ]),false);
+    return '<div class="metric-grid">'+cards+'</div><div class="grid-two">'+
+      panel("Evolução mensal","Entradas e despesas registradas no período.",chartMonthly(x.monthly))+
+      panel("Despesas por categoria","Distribuição dos lançamentos.",chartDonut(x.categories))+
+      '</div>'+panel("Próximos compromissos","Agenda de pagamentos.",forecasts);
+  }
   let cards=[
     metric("Saldo realizado",x.realized,"Receitas menos despesas","trend"),
     metric("Saldo localizado",x.located,"Diferença "+money(x.discrepancy),"wallet","info"),
@@ -318,12 +335,14 @@ function modulePage(kind){
     (kind==="forecasts"?optionFilter("classification","Todos os tipos",["Entrada","Saída"])+optionFilter("status","Todos os status",["Não pago","Pago"]):"")+
     (kind==="movements"?optionFilter("category","Todas categorias",uniq(kind,"category")):"");
   const legacyWarning=kind==="forecasts"?'<div class="notice warning"><b>Base antiga:</b> essas previsões ainda não estão ligadas aos pagamentos automáticos. Para novos compromissos, utilize a aba Provisões.</div>':"";
-  return legacyWarning+'<div id="module-stats">'+moduleStats(kind,rows)+'</div><section class="panel table-panel"<div class="table-tools"><div class="filters">'+filtersHtml+'</div><button class="btn ghost small btn-clear" data-action="clear-filters">'+interfaceIcon("reset")+'<span>Limpar filtros</span></button></div><div id="table-body">'+moduleTable(kind,rows)+'</div></section>';
+  return legacyWarning+'<div id="module-stats">'+moduleStats(kind,rows)+'</div><section class="panel table-panel"><div class="table-tools"><div class="filters">'+filtersHtml+'</div><button class="btn ghost small btn-clear" data-action="clear-filters">'+interfaceIcon("reset")+'<span>Limpar filtros</span></button></div><div id="table-body">'+moduleTable(kind,rows)+'</div></section>';
 }
 function moduleTable(kind,rows){
   const cols=columns[kind],visible=rows.slice(0,150);
   const rendered=visible.map(row=>cols.map(([key,label,type])=>formatCell(row,key,type)));
-  const output=table(cols.map(x=>x[1]),rendered,visible.map(x=>kind==="movements"&&x.provision_occurrence_id?{id:x.id,locked:true}:x.id),kind);
+  const allowedActions=me?.family_enabled&&me.family_role!=="principal"?false:
+    visible.map(x=>kind==="movements"&&x.provision_occurrence_id?{id:x.id,locked:true}:x.id);
+  const output=table(cols.map(x=>x[1]),rendered,allowedActions,kind);
   const visibility=kind==="movements"&&me?.family_enabled&&me.family_role==="principal"?
     '<div class="family-labels-list">'+visible.map(row=>'<button class="btn ghost small" type="button" data-family-action="set-visibility" data-resource="registro" data-id="'+Number(row.id)+'" data-label="'+esc(row.visibility_label||"privado")+'">'+esc(row.description)+' · '+esc(row.visibility_label||"privado")+'</button>').join("")+'</div>':"";
   return output+visibility+'<div class="table-count">'+rows.length+' registro(s) encontrados'+(rows.length>150?" · exibindo os 150 primeiros; refine sua pesquisa":"")+'</div>';
@@ -354,9 +373,9 @@ function importPage(){return '<div class="stack">'+panel("Importar planilha","Mo
 async function loadUsers(){try{const users=await api("/api/users");const el=$("#users-table");if(el)el.innerHTML=table(["Nome","Perfil","Situação"],users.map(u=>[u.display_name,u.is_admin?"Administrador":"Usuário",u.is_active?"Ativo":"Inativo"]),false)}catch(e){showToast(e.message,true)}}
 function settingsPage(){
   if(me?.family_enabled && me.family_role!=="principal"){
-    return panel("Meu perfil","Seu acesso é pessoal. Somente registros com permissão são exibidos.",
+    return panel("Meu perfil","Acompanhe seu perfil e suas preferências.",
       '<p><strong>'+esc(me.display_name)+'</strong> · Perfil '+esc(me.family_role)+'</p>'+
-      '<button class="btn primary" type="button" data-family-action="navigate-family">Ver finanças compartilhadas</button>'+
+      '<button class="btn primary" type="button" data-family-action="navigate-family">Família e rateios</button>'+
       '<button class="btn ghost" type="button" data-action="logout">Sair / trocar usuário</button>');
   }
   const s=snapshot.settings;

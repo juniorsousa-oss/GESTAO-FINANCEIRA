@@ -73,7 +73,7 @@ const AxoraFamily = (() => {
     return '<article class="family-person-summary"><div class="family-person-heading"><div class="family-avatar">'+
       esc(p.display_name.slice(0,1).toUpperCase())+'</div><div><strong>'+esc(p.display_name)+
       '</strong><small>'+esc(roleName[p.relationship]||"Outro")+
-      (p.linked_user_id?' · Login vinculado':' · Sem login')+'</small></div></div>'+
+      (own()?(p.linked_user_id?' · Login vinculado':' · Sem login'):'')+'</small></div></div>'+
       '<div class="family-person-metrics"><div><span>Entradas</span><b>'+money(metrics.entradas||0)+'</b></div>'+
       '<div><span>Despesas atribuídas</span><b>'+money(metrics.despesas||0)+'</b></div>'+
       '<div><span>Efetivamente pago</span><b>'+money(metrics.pagamentos||0)+'</b></div>'+
@@ -104,20 +104,18 @@ const AxoraFamily = (() => {
       esc(lastError)+'</p><button class="btn ghost" data-family-action="retry">Tentar novamente</button></section>';
     if(!family)return '<section class="panel"><h2>Gestão familiar</h2>'+
       '<p>Consultando pessoas e indicadores…</p></section>';
-    const summaryNote=Number(summary?.unallocated_movements||0)>0?
+    const summaryNote=own()&&Number(summary?.unallocated_movements||0)>0?
       '<div class="notice warning">'+Number(summary.unallocated_movements)+
       ' registro(s) antigo(s) sem atribuição de custos; serão classificados manualmente, nunca automaticamente.</div>':"";
     return '<div class="stack family-page">'+
       '<section class="panel family-intro"><div><span class="eyebrow">AXORA FAMÍLIA</span>'+
       '<h2>Quem recebe, quanto custa e quem paga.</h2>'+
-      '<p>Os totais abaixo respeitam os rótulos de privacidade de seu perfil. '+
-      'Ser beneficiário ou pagador não libera acesso a contas privadas.</p></div>'+
+      '<p>Entradas, gastos e pagamentos organizados por pessoa.</p></div>'+
       '<button class="btn primary" type="button" data-family-action="new-expense">Novo registro com rateio</button></section>'+
       summaryNote+
       '<div class="family-people">'+people().map(tableRow).join("")+'</div>'+
       (own()?panel("Pessoas e usuários vinculados",
-        "Crie perfis sem login ou associe um usuário existente com autorização própria.",newProfileForm()):
-      '<div class="notice">Você vê apenas dados próprios e compartilhados com seu perfil.</div>')+
+        "Crie perfis sem login ou associe um usuário existente.",newProfileForm()):"")+
       '</div>';
   }
   async function saveProfile(form){

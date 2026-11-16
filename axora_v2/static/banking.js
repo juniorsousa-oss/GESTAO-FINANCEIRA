@@ -31,16 +31,19 @@ function bankTitle(item){
     " · "+(holder?.name||"Titular");
 }
 function bankInfoBanner(){
+  if(me?.family_enabled && me.family_role!=="principal"){
+    return '<div class="notice bank-info"><b>Controle bancário manual.</b> '+
+      'Consulte os saldos registrados e os detalhes de cada conta.</div>';
+  }
   if(bankingData?.mode==="manual"){
-    return '<div class="notice bank-info"><b>Controle bancário manual.</b> A integração bancária foi pausada, '+
-      'sem excluir vínculos ou histórico. Informe o saldo atual de cada conta. '+
-      'Saldos não informados aparecem como pendentes, nunca como zero.</div>';
+    return '<div class="notice bank-info"><b>Controle bancário manual.</b> '+
+      'Informe o saldo atual de cada conta para manter o controle atualizado. '+
+      'Contas sem saldo informado ficam pendentes até serem preenchidas.</div>';
   }
   const enabled=bankingData?.provider?.configured;
-  return '<div class="notice bank-info"><b>'+(enabled?'MeuPluggy pessoal disponível.':'Conexão bancária ainda não configurada.')+'</b> '+
-    (enabled?'Vincule sua conta já autorizada no MeuPluggy. A sincronização consulta saldo e extrato automaticamente, sem movimentar dinheiro.':
-    'Os cadastros manuais e a conciliação continuam disponíveis.')+
-    ' As transações bancárias importadas permanecem pendentes até sua confirmação.</div>';
+  return '<div class="notice bank-info"><b>'+(enabled?'MeuPluggy pessoal disponível.':'Controle bancário manual.')+'</b> '+
+    (enabled?'A sincronização atualiza saldos e transações. Confirme lançamentos antes de conciliá-los.':
+    'Informe os saldos das contas conforme seus extratos.')+'</div>';
 }
 function bankUnavailable(){
   return '<section class="panel"><h2>Dados bancários indisponíveis</h2><p class="panel-copy">'+
@@ -49,15 +52,10 @@ function bankUnavailable(){
 function bankBalancePanel(){
   const b=bankingData?.balances;
   if(!b)return "";
-  if(me?.family_enabled && me.family_role!=="principal"){
-    return '<section class="panel bank-balance-panel"><div class="bank-balance-heading"><div>'+
-      '<h2>Contas autorizadas</h2><p>Somente os saldos de contas compartilhadas com seu perfil.</p>'+
-      '</div></div><div class="bank-balance-grid family-bank-single">'+
-      '<div class="bank-balance-metric bank-balance-mine"><span>Saldo visível</span>'+
-      '<strong>'+(b.known_accounts?money(b.combined):"Não informado")+'</strong>'+
-      '<small>'+b.known_accounts+' conta(s) com saldo'+(b.missing_accounts?' · '+b.missing_accounts+' pendente(s)':'')+
-      '</small></div></div></section>';
-  }
+  // O resumo detalhado pertence somente ao principal. Para outros perfis,
+  // os totais ficam diretamente nos cartões das pessoas, sem indicação de
+  // contas ou patrimônios fora da própria consulta.
+  if(me?.family_enabled && me.family_role!=="principal")return "";
   const holders=bankingData.holders||[], accounts=bankingData.accounts||[];
   const ownKnown=accounts.filter(a=>holders.some(h=>Number(h.id)===Number(a.holder_id)
     && h.relationship==="proprio" && (bankingData?.mode==="manual"||!a.pluggy_account_id?a.manual_balance!=null:a.pluggy_balance!=null))).length;
@@ -89,54 +87,60 @@ function bankBalancePanel(){
 }
 function bankingAccountsPage(){
   if(!bankingData||bankingError)return bankUnavailable();
+  const restricted=Boolean(me?.family_enabled && me.family_role!=="principal");
   const holders=bankingData.holders||[],accounts=bankingData.accounts||[];
   const manual=bankingData.mode==="manual";
-  const balances=new Map((bankingData.balances?.holders||[]).map(item=>[Number(item.holder_id),item]));
+  const balances=new Map((bankingData.balances?.holders||[]).map(x=>[Number(x.holder_id),x]));
   const cards=holders.map(holder=>{
     const personAccounts=accounts.filter(a=>Number(a.holder_id)===Number(holder.id));
-    const balance=balances.get(Number(holder.id));
-    const fullBalance=balance?.known?money(balance.total):"Não informado";
-    const partial=balance?.missing?" · "+balance.missing+" saldo(s) não informado(s)":"";
+    if(!personAccounts.length)return "";
+    const total=balances.get(Number(holder.id));
+    const sum=total?.known?money(total.total):"Não informado";
+    const accountCount=personAccounts.length;
     const rows=personAccounts.map(a=>{
       const connected=Boolean(a.pluggy_account_id||a.pluggy_item_id);
-      const raw=(manual||!connected)?a.manual_balance:a.pluggy_balance;
-      const canManage=!me?.family_enabled||me.family_role==="principal";
-      const labelAction=me?.family_enabled&&canManage?
-        '<button type="button" class="btn ghost small" data-family-action="set-visibility" data-resource="conta" data-id="'+Number(a.id)+'" data-label="'+esc(a.visibility_label||"privado")+'">Acesso: '+esc(a.visibility_label||"privado")+'</button>':"";
-      const rendered='<div class="bank-account-card bank-person-account"><div class="bank-card-top">'+
-        '<span class="bank-icon">'+interfaceIcon("wallet")+'</span>'+
-        '<span class="bank-tag">'+(manual?'Atualização manual':(connected?'Conectada':'Manual'))+'</span></div>'+
-        '<strong>'+esc(a.nickname)+'</strong><div>'+esc(a.bank_name)+'</div>'+
+      const balance=(manual||!connected)?a.manual_balance:a.pluggy_balance;
+      const detail='<article class="bank-account-card bank-person-account">'+
+        '<div class="bank-card-top"><span class="bank-icon">'+interfaceIcon("wallet")+'</span>'+
+        '<span class="bank-tag">'+(manual?'Saldo manual':(connected?'Conectada':'Manual'))+'</span></div>'+
+        '<strong class="bank-account-name">'+esc(a.nickname)+'</strong>'+
+        '<span class="bank-account-institution">'+esc(a.bank_name)+'</span>'+
         '<small>'+esc(a.account_type)+' · BRL</small>'+
-        '<p class="bank-manual-balance">Saldo: '+(raw===null||raw===undefined?'Não informado':money(raw))+'</p>'+
-        '<div class="bank-account-actions">'+
+        '<div class="bank-manual-balance"><span>Saldo</span><strong class="bank-account-currency">'+
+        (balance===null||balance===undefined?"Não informado":money(balance))+'</strong></div>';
+      if(restricted)return detail+'</article>';
+      const actions='<div class="bank-account-actions">'+
         (manual||!connected?'<button type="button" class="btn primary small" data-action="bank-update-balance" data-id="'+Number(a.id)+'">Atualizar saldo</button>':
           (bankingData?.provider?.configured?'<button type="button" class="btn primary small" data-action="meu-pluggy-sync" data-id="'+Number(a.id)+'">Sincronizar</button>':''))+
         (!manual&&bankingData?.provider?.configured&&!connected&&holder.relationship==="proprio"?
-          '<button type="button" class="btn ghost small" data-action="meu-pluggy-link" data-id="'+Number(a.id)+'">Vincular MeuPluggy</button>':'')+
+          '<button type="button" class="btn ghost small" data-action="meu-pluggy-link" data-id="'+Number(a.id)+'">Vincular banco</button>':'')+
         '<button type="button" class="btn ghost small" data-action="bank-edit-account" data-id="'+Number(a.id)+'">Editar</button>'+
         '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-account" data-id="'+Number(a.id)+'">Excluir</button>'+
-        labelAction+
-        '</div></div>';
-      return canManage?rendered:rendered.split('<div class="bank-account-actions">')[0]+'</div>';
+        (me?.family_enabled?'<button type="button" class="btn ghost small" data-family-action="set-visibility" data-resource="conta" data-id="'+Number(a.id)+'" data-label="'+esc(a.visibility_label||"privado")+'">Acesso: '+esc(a.visibility_label||"privado")+'</button>':'')+
+        '</div>';
+      return detail+actions+'</article>';
     }).join("");
     return '<details class="bank-person-card">'+
-      '<summary class="bank-person-summary"><span class="bank-person-avatar" aria-hidden="true">'+esc(holder.name.charAt(0).toUpperCase())+'</span>'+
+      '<summary class="bank-person-summary" aria-label="Detalhar contas de '+esc(holder.name)+'">'+
+      '<span class="bank-person-avatar" aria-hidden="true">'+esc(holder.name.trim().charAt(0).toUpperCase()||"C")+'</span>'+
       '<span class="bank-person-identity"><strong>'+esc(holder.name)+'</strong>'+
-      '<small>'+esc(holderRelations[holder.relationship]||"Outro")+' · '+personAccounts.length+' conta(s)'+esc(partial)+'</small></span>'+
-      '<span class="bank-person-amount"><strong>'+fullBalance+'</strong><small>Toque para detalhar</small></span></summary>'+
-      '<div class="bank-person-detail">'+(rows||'<p class="panel-copy">Nenhuma conta cadastrada para este titular.</p>')+'</div>'+
-      '</details>';
+      '<small>'+esc(holderRelations[holder.relationship]||"Titular")+' · '+
+      accountCount+' '+(accountCount===1?'conta':'contas')+'</small></span>'+
+      '<span class="bank-person-amount"><strong>'+sum+'</strong><small>Detalhar contas</small></span>'+
+      '<span class="bank-person-chevron" aria-hidden="true">'+interfaceIcon("chevron-down")+'</span></summary>'+
+      '<div class="bank-person-detail">'+rows+'</div></details>';
   }).join("");
-  const people=holders.map(h=>'<div class="bank-entity"><div><strong>'+esc(h.name)+'</strong>'+
+  const owners=restricted?"":holders.map(h=>'<div class="bank-entity"><div><strong>'+esc(h.name)+'</strong>'+
     '<small>'+esc(holderRelations[h.relationship]||"Outro")+'</small></div>'+
-    (me?.family_enabled&&me.family_role!=="principal"?"":'<div class="bank-entity-actions"><button type="button" class="btn ghost small" data-action="bank-edit-holder" data-id="'+Number(h.id)+'">Editar</button>'+
-    '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-holder" data-id="'+Number(h.id)+'">Excluir</button></div>')+'</div>').join("");
-  return '<div class="stack bank-module">'+bankBalancePanel()+bankInfoBanner()+
-    panel("Saldos por pessoa","Selecione um titular para expandir as contas bancárias. Cada saldo é contado uma única vez.",
-      '<div class="bank-people-grid">'+(cards||'<p class="panel-copy">Cadastre um titular para começar.</p>')+'</div>')+
-    panel("Gerenciar titulares","Os rótulos de visibilidade familiar serão ativados após a homologação das permissões.",
-      '<div class="bank-entities">'+(people||'<p class="panel-copy">Nenhum titular cadastrado.</p>')+'</div>')+
+    '<div class="bank-entity-actions"><button type="button" class="btn ghost small" data-action="bank-edit-holder" data-id="'+Number(h.id)+'">Editar</button>'+
+    '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-holder" data-id="'+Number(h.id)+'">Excluir</button></div></div>').join("");
+  return '<div class="stack bank-module">'+
+    (restricted?"":bankBalancePanel())+
+    bankInfoBanner()+
+    panel("Saldos por pessoa","Selecione uma pessoa para consultar suas contas bancárias.",
+      '<div class="bank-people-grid">'+(cards||'<div class="empty-state"><b>Nenhuma conta cadastrada</b>Os dados bancários aparecerão nesta área.</div>')+'</div>')+
+    (restricted?"":panel("Titulares cadastrados","Organize os titulares associados às contas.",
+      '<div class="bank-entities">'+(owners||'<p class="panel-copy">Nenhum titular cadastrado.</p>')+'</div>'))+
     '</div>';
 }
 function bankTransactionRow(tx){
