@@ -49,6 +49,15 @@ function bankUnavailable(){
 function bankBalancePanel(){
   const b=bankingData?.balances;
   if(!b)return "";
+  if(me?.family_enabled && me.family_role!=="principal"){
+    return '<section class="panel bank-balance-panel"><div class="bank-balance-heading"><div>'+
+      '<h2>Contas autorizadas</h2><p>Somente os saldos de contas compartilhadas com seu perfil.</p>'+
+      '</div></div><div class="bank-balance-grid family-bank-single">'+
+      '<div class="bank-balance-metric bank-balance-mine"><span>Saldo visível</span>'+
+      '<strong>'+(b.known_accounts?money(b.combined):"Não informado")+'</strong>'+
+      '<small>'+b.known_accounts+' conta(s) com saldo'+(b.missing_accounts?' · '+b.missing_accounts+' pendente(s)':'')+
+      '</small></div></div></section>';
+  }
   const holders=bankingData.holders||[], accounts=bankingData.accounts||[];
   const ownKnown=accounts.filter(a=>holders.some(h=>Number(h.id)===Number(a.holder_id)
     && h.relationship==="proprio" && (bankingData?.mode==="manual"||!a.pluggy_account_id?a.manual_balance!=null:a.pluggy_balance!=null))).length;
