@@ -21,7 +21,7 @@ def _actor(user):
 
 
 def _profile_set(ctx):
-    profiles = family_service.profiles({"_family": ctx})
+    profiles = family_service.accessible_profiles({"_family": ctx})
     return profiles, {int(p["id"]) for p in profiles if p.get("active")}
 
 
@@ -76,7 +76,7 @@ def install(app, auth, authorized):
         return {"enabled": True, "my_role": ctx["role"],
                 "my_profile_id": ctx["profile_id"],
                 "can_manage": ctx["role"] == "principal",
-                "profiles": family_service.profiles(user)}
+                "profiles": family_service.accessible_profiles(user)}
 
     @app.post("/api/family/profiles")
     def add_family_profile(payload: dict, user=Depends(authorized)):
@@ -202,7 +202,7 @@ def install(app, auth, authorized):
     @app.get("/api/family/summary")
     def family_summary(user=Depends(auth)):
         ctx = _context(user)
-        profiles = family_service.profiles(user)
+        profiles = family_service.accessible_profiles(user)
         ledger = family_service.all_rows("finance_movements",ctx["workspace_id"],
             fields="id,value,classification,movement_date",order="id.asc")
         ledger = family_service.filter_rows(user, "registro", ledger)
@@ -239,6 +239,8 @@ def install(app, auth, authorized):
                 "despesas":str(person["despesas"].quantize(Decimal(".01"))),
                 "pagamentos":str(person["pagamentos"].quantize(Decimal(".01"))),
                 "saldo":str((person["entradas"]-person["despesas"]).quantize(Decimal(".01")))})
-        return {"people": result, "visible_movements":len(ledger),
-            "unallocated_movements":sum(int(r["id"]) not in assigned for r in ledger),
-            "note": "Itens antigos sem rateio permanecem não atribuídos. Valores não são duplicados."}
+        response = {"people": result}
+        if ctx["role"] == "principal":
+            response["unallocated_movements"] = sum(
+                int(r["id"]) not in assigned for r in ledger)
+        return response

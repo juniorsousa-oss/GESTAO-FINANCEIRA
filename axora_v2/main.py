@@ -215,29 +215,40 @@ def logout(response: Response, user=Depends(authorized)):
 def snapshot(user=Depends(auth)):
     workspace = user_workspace(user)
     scope = {"workspace_id": "eq." + workspace}
-    rows = {kind: db.select(kind, order=ORDERS[kind], params=scope)
-            for kind in ("movements", "accounts", "debts")}
     ctx = user.get("_family")
-    if ctx:
-        rows["movements"] = family_service.all_rows(
-            "finance_movements", workspace, order=ORDERS["movements"])
-    if ctx and ctx["role"] != "principal":
-        # Não enviar métricas, configurações, saldos nem lançamentos privados.
-        rows["movements"] = family_service.tagged_records(user, "registro", rows["movements"])
-        rows["accounts"] = []
-        rows["debts"] = []
+    restricted = bool(ctx and ctx["role"] != "principal")
+    if restricted:
+        # Nunca buscar contas, dívidas, configurações e agregados do principal.
+        rows = {
+            "movements": family_service.tagged_records(
+                user, "registro", family_service.all_rows(
+                    "finance_movements", workspace, order=ORDERS["movements"])),
+            "accounts": [],
+            "debts": [],
+        }
         provision_totals = family_service.provision_overview(list_provisions(user)["items"])
-        settings = dict(db.DEFAULT_SETTINGS)
+        settings = {}
     else:
+        rows = {kind: db.select(kind, order=ORDERS[kind], params=scope)
+                for kind in ("movements", "accounts", "debts")}
+        if ctx:
+            rows["movements"] = family_service.all_rows(
+                "finance_movements", workspace, order=ORDERS["movements"])
+            rows["movements"] = family_service.tagged_records(
+                user, "registro", rows["movements"])
         db.call("POST", "rpc/axora_ensure_provisions", data={"p_workspace_id": workspace})
         provision_totals = db.call("POST", "rpc/axora_provision_overview",
                                    data={"p_workspace_id": workspace})
         settings = db.get_settings(workspace)
-        if ctx:
-            rows["movements"] = family_service.tagged_records(user, "registro", rows["movements"])
     rows["forecasts"] = []
     summary = metrics.compute(rows["movements"], [], rows["accounts"], rows["debts"],
                               settings, provision_overview=provision_totals)
+    if restricted:
+        # Não incluir placeholders de patrimônio, conciliação, dívidas ou metas
+        # na resposta: não fazem parte da experiência deste usuário.
+        fields = ("receipts", "expenses", "realized", "to_pay", "pending_count",
+                  "monthly", "categories", "next_forecasts")
+        summary = {key: summary[key] for key in fields}
     return {**rows, "settings": settings, "summary": summary}
 
 
@@ -376,7 +387,8 @@ def list_provisions(user=Depends(auth)):
         if ctx["role"] != "principal":
             items = family_service.filter_rows(user, "provisao", items, id_key="rule_id")
         tags = family_service.visibility_map(ctx, "provisao", [x["rule_id"] for x in items])
-        items = [{**x, "visibility_label": tags.get(int(x["rule_id"]), {}).get("label", "privado")} for x in items]
+        if ctx["role"] == "principal":
+            items = [{**x, "visibility_label": tags.get(int(x["rule_id"]), {}).get("label", "privado")} for x in items]
     return {"items": items}
 
 
@@ -530,32 +542,50 @@ def banking_rows(workspace, name, *, filters=None, select="*", order=None, limit
 
 @app.get("/api/banking")
 def banking_overview(user=Depends(auth)):
-    workspace=user_workspace(user)
-    holders=banking_rows(workspace,"finance_bank_holders",order="name.asc")
-    accounts=banking_rows(workspace,"finance_bank_accounts",order="nickname.asc")
-    transactions=banking_rows(workspace,"finance_bank_transactions",
-       filters={"status":"eq.pending"},order="posted_on.desc,id.desc",limit=500)
+    workspace = user_workspace(user)
     ctx = user.get("_family")
-    if ctx and ctx["role"] != "principal":
-        accounts = family_service.tagged_records(user, "conta", accounts)
-        allowed_accounts = {int(a["id"]) for a in accounts}
-        allowed_holders = {int(a["holder_id"]) for a in accounts}
-        holders = [h for h in holders if int(h["id"]) in allowed_holders]
-        transactions = [tx for tx in transactions if int(tx["account_id"]) in allowed_accounts]
-        # Transações bancárias podem conter dados privados: sem tag individual,
-        # nem uma conta compartilhada deve expor o histórico dela.
-        transactions = family_service.tagged_records(user, "transacao", transactions)
-    elif ctx:
-        accounts = family_service.tagged_records(user, "conta", accounts)
+    restricted = bool(ctx and ctx["role"] != "principal")
+    accounts = banking_rows(workspace, "finance_bank_accounts", order="nickname.asc")
     manual = banking.manual_mode()
-    is_owner = (not ctx or ctx["role"] == "principal") and not manual and meu_pluggy.configured() and int(user["id"]) == meu_pluggy.owner_id()
-    return {"holders":holders,"accounts":accounts,"pending":transactions,
-            "balances":banking.balance_overview(holders,accounts,manual_only=manual),
-            "mode":"manual" if manual else ("read_only" if is_owner else "manual"),
-            "bank_connected":any(a.get("pluggy_account_id") for a in accounts),
-            "provider":{"configured":bool(is_owner),
-                        "type":"meu_pluggy_personal" if is_owner else "none",
-                        "paused":manual, "read_only":True}}
+    if restricted:
+        # Pegar apenas contas rotuladas para este perfil. Nunca devolver
+        # vínculos Pluggy, identificadores de terceiros, flags de integração
+        # ou transações que não integram a página deste usuário.
+        accounts = family_service.filter_rows(user, "conta", accounts)
+        holder_ids = {int(a["holder_id"]) for a in accounts}
+        holders = banking_rows(workspace, "finance_bank_holders", order="name.asc") if holder_ids else []
+        holders = [
+            {"id": h["id"], "name": h["name"], "relationship": h["relationship"]}
+            for h in holders if int(h["id"]) in holder_ids
+        ]
+        accounts = [
+            {"id": a["id"], "holder_id": a["holder_id"],
+             "bank_name": a["bank_name"], "nickname": a["nickname"],
+             "account_type": a["account_type"],
+             "manual_balance": a.get("manual_balance")}
+            for a in accounts
+        ]
+        return {
+            "holders": holders, "accounts": accounts, "pending": [],
+            "balances": banking.balance_overview(holders, accounts, manual_only=True),
+            "mode": "manual",
+        }
+
+    holders = banking_rows(workspace, "finance_bank_holders", order="name.asc")
+    transactions = banking_rows(workspace, "finance_bank_transactions",
+        filters={"status": "eq.pending"}, order="posted_on.desc,id.desc", limit=500)
+    if ctx:
+        accounts = family_service.tagged_records(user, "conta", accounts)
+    is_owner = not manual and meu_pluggy.configured() and int(user["id"]) == meu_pluggy.owner_id()
+    return {
+        "holders": holders, "accounts": accounts, "pending": transactions,
+        "balances": banking.balance_overview(holders, accounts, manual_only=manual),
+        "mode": "manual" if manual else ("read_only" if is_owner else "manual"),
+        "bank_connected": any(a.get("pluggy_account_id") for a in accounts),
+        "provider": {"configured": bool(is_owner),
+                     "type": "meu_pluggy_personal" if is_owner else "none",
+                     "paused": manual, "read_only": True},
+    }
 
 
 @app.post("/api/banking/holders")

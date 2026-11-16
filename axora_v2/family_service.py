@@ -195,6 +195,37 @@ def profiles(user):
                  order="id.asc")
 
 
+def accessible_profiles(user):
+    """Exibe só a pessoa logada e participantes de lançamentos a que tem acesso.
+
+    A presença de um dependente ou outro usuário não é revelada por
+    contadores, listagens de perfis ou busca de IDs não autorizados.
+    """
+    ctx = user.get("_family")
+    available = profiles(user)
+    if ctx["role"] == "principal":
+        return available
+    allowed_ids = {int(ctx["profile_id"])}
+    all_ids = all_rows("finance_movements", ctx["workspace_id"],
+                       fields="id", order="id.asc")
+    visible_movements = filter_rows(user, "registro", all_ids)
+    movement_ids = [int(row["id"]) for row in visible_movements]
+    for start in range(0, len(movement_ids), 200):
+        chunk = movement_ids[start:start + 200]
+        condition = {"movement_id": "in.(" + ",".join(map(str, chunk)) + ")"}
+        costs = table("finance_family_cost_allocations", ctx["workspace_id"],
+                      fields="profile_id", filters=condition, limit=500)
+        payers = table("finance_family_payment_allocations", ctx["workspace_id"],
+                       fields="payer_profile_id", filters=condition, limit=500)
+        allowed_ids.update(int(x["profile_id"]) for x in costs)
+        allowed_ids.update(int(x["payer_profile_id"]) for x in payers)
+    return [
+        {"id": p["id"], "display_name": p["display_name"],
+         "relationship": p["relationship"], "active": p["active"]}
+        for p in available if int(p["id"]) in allowed_ids and p.get("active")
+    ]
+
+
 def check_profile_ids(ctx, profile_ids):
     listed = profiles({"_family": ctx})
     known = {int(p["id"]) for p in listed if p.get("active")}
@@ -225,5 +256,6 @@ def tagged_records(user, kind, rows):
     for row in rows:
         tag = tags.get(int(row["id"]))
         if visible(ctx, kind, row["id"], tag=tag):
-            output.append({**row, "visibility_label": tag["label"] if tag else "privado"})
+            output.append({**row, "visibility_label": tag["label"] if tag else "privado"}
+                          if ctx["role"] == "principal" else row)
     return output
