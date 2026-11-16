@@ -1,0 +1,27 @@
+# AXORA BETA: desenvolvimento isolado da produção Hostinger.
+# Não associar axora.nexonlabs.com.br antes da homologação.
+# Segredos nunca são armazenados no repositório.
+services:
+  - type: web
+    name: axora-beta
+    runtime: docker
+    region: oregon
+    plan: free
+    branch: develop
+    autoDeployTrigger: commit
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8000"
+      - key: COOKIE_SECURE
+        value: "1"
+      - key: SUPABASE_URL
+        value: https://cuixazpxkvniqldmmnth.supabase.co
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+# Integração MeuPluggy não habilitada no beta para evitar
+# sincronização bancária concorrente com a produção.
