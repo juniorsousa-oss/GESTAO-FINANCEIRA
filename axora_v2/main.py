@@ -1075,3 +1075,13 @@ app.mount("/assets", StaticFiles(directory=ASSETS), name="assets")
 @app.get("/")
 def index():
     return FileResponse(os.path.join(ASSETS, "index.html"), media_type="text/html")
+
+
+@app.get("/service-worker.js", include_in_schema=False)
+def pwa_service_worker():
+    """Service worker sem cache de respostas financeiras, autenticação ou páginas."""
+    return FileResponse(
+        os.path.join(ASSETS, "pwa", "service-worker.js"),
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-store", "Service-Worker-Allowed": "/"},
+    )

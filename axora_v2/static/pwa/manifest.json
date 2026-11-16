@@ -1,0 +1,26 @@
+{
+  "name": "AXORA — Gestão Financeira Inteligente",
+  "short_name": "AXORA",
+  "description": "Gestão financeira by Nexon Labs",
+  "lang": "pt-BR",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B1E3B",
+  "theme_color": "#0B1E3B",
+  "icons": [
+    {
+      "src": "/assets/pwa/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/pwa/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ]
+}
