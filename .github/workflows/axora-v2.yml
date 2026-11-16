@@ -24,6 +24,17 @@ jobs:
           cache: pip
           cache-dependency-path: axora_v2/requirements.txt
       - run: pip install -r axora_v2/requirements.txt pytest httpx
+      - run: pip install pglast
+      - name: Validar sintaxe das migrações familiares PostgreSQL
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from pglast import parse_sql
+          path=Path("axora_v2/migrations/20261116_family_v2.sql")
+          statements=parse_sql(path.read_text())
+          assert len(statements) >= 15, "Migração incompleta"
+          print(f"PostgreSQL parse validado: {len(statements)} instruções")
+          PY
       - run: python -m compileall -q axora_v2
       - run: python -m pytest axora_v2/tests -q
       - run: node --check axora_v2/static/app.js
@@ -31,6 +42,7 @@ jobs:
       - run: node --check axora_v2/static/auto-sync.js
       - run: node --check axora_v2/static/catalogs.js
       - run: node --check axora_v2/static/banking.js
+      - run: node --check axora_v2/static/family.js
       - run: node --check axora_v2/static/brand-kit.js
       - run: node axora_v2/tests/ui_runtime.cjs
       - run: node axora_v2/tests/mobile_drawer_runtime.cjs
