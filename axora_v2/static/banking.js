@@ -91,7 +91,10 @@ function bankingAccountsPage(){
     const rows=personAccounts.map(a=>{
       const connected=Boolean(a.pluggy_account_id||a.pluggy_item_id);
       const raw=(manual||!connected)?a.manual_balance:a.pluggy_balance;
-      return '<div class="bank-account-card bank-person-account"><div class="bank-card-top">'+
+      const canManage=!me?.family_enabled||me.family_role==="principal";
+      const labelAction=me?.family_enabled&&canManage?
+        '<button type="button" class="btn ghost small" data-family-action="set-visibility" data-resource="conta" data-id="'+Number(a.id)+'" data-label="'+esc(a.visibility_label||"privado")+'">Acesso: '+esc(a.visibility_label||"privado")+'</button>':"";
+      const rendered='<div class="bank-account-card bank-person-account"><div class="bank-card-top">'+
         '<span class="bank-icon">'+interfaceIcon("wallet")+'</span>'+
         '<span class="bank-tag">'+(manual?'Atualização manual':(connected?'Conectada':'Manual'))+'</span></div>'+
         '<strong>'+esc(a.nickname)+'</strong><div>'+esc(a.bank_name)+'</div>'+
@@ -104,7 +107,9 @@ function bankingAccountsPage(){
           '<button type="button" class="btn ghost small" data-action="meu-pluggy-link" data-id="'+Number(a.id)+'">Vincular MeuPluggy</button>':'')+
         '<button type="button" class="btn ghost small" data-action="bank-edit-account" data-id="'+Number(a.id)+'">Editar</button>'+
         '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-account" data-id="'+Number(a.id)+'">Excluir</button>'+
+        labelAction+
         '</div></div>';
+      return canManage?rendered:rendered.replace(/<div class="bank-account-actions">[\\s\\S]*?<\\/div>/,"");
     }).join("");
     return '<details class="bank-person-card">'+
       '<summary class="bank-person-summary"><span class="bank-person-avatar" aria-hidden="true">'+esc(holder.name.charAt(0).toUpperCase())+'</span>'+
@@ -116,8 +121,8 @@ function bankingAccountsPage(){
   }).join("");
   const people=holders.map(h=>'<div class="bank-entity"><div><strong>'+esc(h.name)+'</strong>'+
     '<small>'+esc(holderRelations[h.relationship]||"Outro")+'</small></div>'+
-    '<div class="bank-entity-actions"><button type="button" class="btn ghost small" data-action="bank-edit-holder" data-id="'+Number(h.id)+'">Editar</button>'+
-    '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-holder" data-id="'+Number(h.id)+'">Excluir</button></div></div>').join("");
+    (me?.family_enabled&&me.family_role!=="principal"?"":'<div class="bank-entity-actions"><button type="button" class="btn ghost small" data-action="bank-edit-holder" data-id="'+Number(h.id)+'">Editar</button>'+
+    '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-holder" data-id="'+Number(h.id)+'">Excluir</button></div>')+'</div>').join("");
   return '<div class="stack bank-module">'+bankBalancePanel()+bankInfoBanner()+
     panel("Saldos por pessoa","Selecione um titular para expandir as contas bancárias. Cada saldo é contado uma única vez.",
       '<div class="bank-people-grid">'+(cards||'<p class="panel-copy">Cadastre um titular para começar.</p>')+'</div>')+
