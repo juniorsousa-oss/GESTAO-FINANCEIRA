@@ -26,9 +26,23 @@ def configured():
     return bool(os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_KEY"))
 
 
-def headers(prefer=None):
+def selected_schema():
+    schema = os.environ.get("SUPABASE_DB_SCHEMA", "public").strip()
+    if schema not in {"public", "axora_beta"}:
+        raise HTTPException(503, "Esquema financeiro indisponível.")
+    return schema
+
+
+def headers(prefer=None, *, method="GET"):
     key = os.environ.get("SUPABASE_KEY", "")
+    schema = selected_schema()
     result = {"apikey": key, "Content-Type": "application/json"}
+    # PostgREST seleciona explicitamente o schema da mesma base Supabase.
+    # Não cair silenciosamente em public quando o beta não está disponível.
+    if method.upper() in {"GET", "HEAD"}:
+        result["Accept-Profile"] = schema
+    else:
+        result["Content-Profile"] = schema
     if not key.startswith("sb_secret_"):
         result["Authorization"] = "Bearer " + key
     if prefer:
@@ -45,7 +59,7 @@ def call(method, table, *, params=None, data=None, prefer=None):
         raise HTTPException(503, "A conexão privada com o banco não está configurada.")
     try:
         response = requests.request(
-            method, url(table), headers=headers(prefer),
+            method, url(table), headers=headers(prefer, method=method),
             params=params, json=data, timeout=25,
         )
         response.raise_for_status()
