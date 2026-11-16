@@ -91,5 +91,80 @@ with sync_playwright() as p:
     long_gap = last_view["y"] + last_view["height"] - (last_foot["y"] + last_foot["height"])
     assert 8 <= long_gap <= 45, ("long footer gap", long_gap, last_view, last_foot)
     assert abs(shell.bounding_box()["y"] + shell.bounding_box()["height"] - shell_bottom) <= 2
-    print("AXORA iPhone viewport + rodapé curto/longo: OK")
+    # Cards reais gerados pela tela de contas com dados inteiramente fictícios.
+    page.evaluate("""() => {
+      me={id:1,display_name:"Principal fictício",family_enabled:true,family_role:"principal"};
+      bankingData={
+        mode:"manual",holders:[
+          {id:1,name:"Titular A",relationship:"proprio"},
+          {id:2,name:"Parente B",relationship:"conjuge"},
+          {id:3,name:"Pessoa com nome composto extenso",relationship:"mae"},
+          {id:4,name:"Familiar C",relationship:"pai"}
+        ],
+        accounts:[],balances:{
+          holders:[],known_accounts:0,missing_accounts:0,
+          personal:0,family:0,combined:0,personal_missing:0,family_missing:0
+        }
+      };
+      bankingError=null;
+      document.querySelector("#page-content").innerHTML=bankingAccountsPage();
+    }""")
+    cards=page.locator("#page-content .bank-entity")
+    assert cards.count()==4
+    for i in range(cards.count()):
+        card=cards.nth(i)
+        bounds=card.bounding_box()
+        buttons=card.locator(".bank-entity-actions .btn")
+        assert bounds and bounds["height"]<155, ("holder card too tall",i,bounds)
+        assert buttons.count()==2
+        first,second=buttons.nth(0).bounding_box(),buttons.nth(1).bounding_box()
+        assert first and second
+        assert abs(first["y"]-second["y"])<=2, ("buttons stacked",i,first,second)
+        assert first["x"]+first["width"]<second["x"]+1, ("buttons overlapped",i)
+        assert second["x"]+second["width"]<=bounds["x"]+bounds["width"]+1
+    assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+
+    # O cadastro de titulares e outros formulários não dão zoom automático
+    # (fonte de 16px) nem mudam suas dimensões ao abrir o teclado.
+    page.evaluate("bankOpenHolder(1)")
+    holder_dialog=page.locator("#bank-holder-dialog")
+    assert holder_dialog.is_visible()
+    page.wait_for_timeout(160)
+    initial=holder_dialog.bounding_box()
+    assert initial and initial["x"]>=0 and initial["x"]+initial["width"]<=391
+    input_font=page.locator("#bh-name").evaluate(
+        "(el)=>parseFloat(getComputedStyle(el).fontSize)")
+    assert input_font>=16, ("iOS focus zoom risk",input_font)
+    page.locator("#bh-name").focus()
+    page.set_viewport_size({"width":390,"height":495})
+    page.wait_for_timeout(200)
+    focused=holder_dialog.bounding_box()
+    assert focused
+    for dimension in ("x","y","width","height"):
+        assert abs(initial[dimension]-focused[dimension])<=2, (
+            "dialog jumped with keyboard",dimension,initial,focused)
+    assert focused["x"]>=0 and focused["x"]+focused["width"]<=391
+    page.set_viewport_size({"width":390,"height":844})
+    holder_dialog.evaluate("(el)=>el.close()")
+    page.wait_for_timeout(70)
+
+    # Cobrir os demais diálogos do aplicativo (registros, provisões, família)
+    # sem navegar ou usar a base financeira real.
+    for dialog_id in ("bank-account-dialog","bank-balance-dialog",
+                      "bank-transaction-dialog","editor-dialog",
+                      "provision-dialog","family-entry-dialog",
+                      "family-access-dialog"):
+        dlg=page.locator("#"+dialog_id)
+        dlg.evaluate("(el)=>el.showModal()")
+        page.wait_for_timeout(80)
+        rect=dlg.bounding_box()
+        assert rect and rect["x"]>=0 and rect["x"]+rect["width"]<=391, (
+            dialog_id,rect)
+        inputs=dlg.locator("input:not([type=hidden]):not([type=checkbox]):not([type=radio])")
+        if inputs.count():
+            font=inputs.first.evaluate("(el)=>parseFloat(getComputedStyle(el).fontSize)")
+            assert font>=16, (dialog_id,font)
+        dlg.evaluate("(el)=>el.close()")
+
+    print("AXORA iPhone: teclado, diálogos estáveis e titulares compactos OK")
     browser.close()

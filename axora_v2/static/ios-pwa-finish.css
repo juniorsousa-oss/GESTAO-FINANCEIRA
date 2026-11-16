@@ -137,3 +137,67 @@
 @media(prefers-reduced-motion:reduce){
   #login .login-card{transition:none!important;}
 }
+
+/* Formulários iPhone/PWA: evita zoom automático do Safari nos campos <16px
+   e impede que o navegador recalcule a posição central do modal ao abrir
+   o teclado virtual. A altura do modal é congelada no momento da abertura. */
+@media(max-width:850px){
+  #workspace.workspace:not(.hidden) .main-area input:not([type="checkbox"]):not([type="radio"]),
+  #workspace.workspace:not(.hidden) .main-area select,
+  #workspace.workspace:not(.hidden) .main-area textarea,
+  dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog) input:not([type="checkbox"]):not([type="radio"]),
+  dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog) select,
+  dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog) textarea{
+    font-size:16px!important;
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+  }
+  dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog){
+    position:fixed;
+    top:calc(14px + env(safe-area-inset-top,0px));
+    left:50%;
+    right:auto;
+    bottom:auto;
+    margin:0;
+    transform:translateX(-50%);
+    width:min(620px,calc(100vw - 24px))!important;
+    max-width:calc(100vw - 24px)!important;
+    max-height:calc(var(--axora-login-stage-height,100svh)
+                   - 28px - env(safe-area-inset-top,0px)
+                   - env(safe-area-inset-bottom,0px))!important;
+    height:var(--axora-dialog-locked-height,auto);
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    box-sizing:border-box;
+  }
+  dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog) form{
+    min-width:0;
+    max-width:100%;
+    /* Só aumenta a área de rolagem interna quando o teclado ocupa a tela.
+       Não altera largura, altura ou posição da caixa modal. */
+    padding-bottom:calc(20px + var(--axora-dialog-keyboard-gap,0px));
+  }
+  dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog) .dialog-actions{
+    display:flex;
+    flex-direction:row;
+    flex-wrap:wrap;
+    gap:9px;
+    min-width:0;
+  }
+  dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog) .dialog-actions .btn{
+    flex:1 1 120px;
+    min-width:0;
+    min-height:43px;
+  }
+  dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog) .bank-dialog-heading,
+  dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog) .dialog-heading{
+    min-width:0;
+    gap:10px;
+  }
+  dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog) .bank-dialog-heading>div,
+  dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog) .dialog-heading>div{
+    min-width:0;
+  }
+}

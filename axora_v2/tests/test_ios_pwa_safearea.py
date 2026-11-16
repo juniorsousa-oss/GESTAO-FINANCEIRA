@@ -89,3 +89,32 @@ def test_original_mobile_screen_and_branding_remain():
     assert 'id="workspace"' in html
     assert 'id="sidebar"' in html
     assert html.count("data-institutional-logo") == 2
+
+
+def test_mobile_modal_keyboard_stability_and_no_focus_zoom():
+    css = (STATIC / "ios-pwa-finish.css").read_text()
+    js = (STATIC / "ios-pwa-stability.js").read_text()
+    index = (STATIC / "index.html").read_text()
+    assert 'dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog)' in css
+    assert "font-size:16px!important" in css
+    assert "height:var(--axora-dialog-locked-height,auto)" in css
+    assert "var(--axora-dialog-keyboard-gap,0px)" in css
+    assert 'new MutationObserver' in js
+    assert 'visualViewport.addEventListener("resize"' in js
+    assert 'Math.abs(window.innerWidth-viewportWidth)<3' in js
+    assert "ios-pwa-finish.css?v=20261116-modal-keyboard-r2" in index
+    assert "ios-pwa-stability.js?v=20261116-dialog-stable-r2" in index
+
+
+def test_holder_cards_have_accessible_horizontal_actions():
+    html = (STATIC / "banking.js").read_text()
+    styles = (STATIC / "banking.css").read_text()
+    assert '<article class="bank-entity">' in html
+    assert 'class="bank-entity-details"' in html
+    assert 'class="bank-entity-avatar"' in html
+    assert 'class="bank-entity-actions" role="group"' in html
+    assert 'data-action="bank-edit-holder"' in html
+    assert 'data-action="bank-delete-holder"' in html
+    assert ".bank-entity .bank-entity-actions{" in styles
+    assert "flex-direction:row;" in styles
+    assert "grid-template-columns:minmax(0,1fr)" in styles
