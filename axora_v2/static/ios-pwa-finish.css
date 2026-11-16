@@ -30,6 +30,7 @@
     flex-direction:column;
     align-items:center;
     justify-content:center;
+    justify-content:safe center;
     /* O conteúdo segue acessível por rolagem se a tela for realmente baixa.
        O teclado não reposiciona nem altera o tamanho do cartão. */
     overflow-x:hidden;
@@ -60,7 +61,7 @@
 @media (max-width:900px) and (max-height:660px){
   /* Sob teclado o viewport visual pode ficar baixo, mas o card continua
      na mesma posição, porque usamos a altura estável, não 100dvh. */
-  #login.login-screen{justify-content:center;}
+  #login.login-screen{justify-content:safe center;}
 }
 @media (max-width:850px){
   :root{--axora-mobile-top:calc(var(--ax-mobile-gutter,11px) + env(safe-area-inset-top,0px));}
