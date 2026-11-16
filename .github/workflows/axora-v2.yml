@@ -8,6 +8,7 @@ on:
     branches:
       - main
       - develop
+      - feature/axora-family-v2
       - feat/axora-web-v2-20261009
     paths:
       - 'axora_v2/**'
