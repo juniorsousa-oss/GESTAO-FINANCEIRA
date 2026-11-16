@@ -204,6 +204,7 @@ const AxoraFamily = (() => {
       const action=btn.dataset.familyAction;
       if(action==="retry")load(true);
       if(action==="new-expense")openEntry().catch(err=>showToast(err.message,true));
+      if(action==="navigate-family")go("family");
       if(action==="set-visibility")openVisibility(btn.dataset.resource,Number(btn.dataset.id),btn.dataset.label||"privado");
     });
     $("#page-content").addEventListener("change",e=>{
@@ -221,6 +222,13 @@ const AxoraFamily = (() => {
     });
     $("#family-entry-form").addEventListener("change",e=>{
       if(e.target.name==="classification")togglePayers(e.target.form);
+    });
+    $("#family-entry-form").addEventListener("input",e=>{
+      if(e.target.name!=="value")return;
+      const form=e.target.form,ownId=current();
+      const payer=form.querySelector('[data-family-pagador="'+ownId+'"]');
+      const others=[...form.querySelectorAll("[data-family-pagador]")].filter(x=>x!==payer);
+      if(payer&&others.every(x=>!Number(x.value)))payer.value=Number(e.target.value||0).toFixed(2);
     });
     $("#family-entry-form").addEventListener("submit",e=>{
       e.preventDefault();const btn=e.target.querySelector('button[type="submit"]');btn.disabled=true;
