@@ -4,6 +4,7 @@ Nunca concilia sozinho e não acessa bancos; apenas transações registradas
 manualmente pelo operador nesta primeira etapa.
 """
 from datetime import date
+import os
 from decimal import Decimal, InvalidOperation
 from difflib import SequenceMatcher
 import unicodedata
@@ -64,7 +65,12 @@ def clean_manual_balance(payload):
     return str(value.quantize(Decimal("0.01")))
 
 
-def balance_overview(holders, accounts):
+def manual_mode():
+    """Pausa o provedor sem apagar IDs de vínculos bancários já cadastrados."""
+    return os.environ.get("AXORA_BANK_MODE", "").strip().lower() == "manual"
+
+
+def balance_overview(holders, accounts, *, manual_only=False):
     """Cada conta contribui apenas uma vez: Pluggy OU saldo manual.
 
     Não inclui transações, provisões, cartões nem contas sem saldo informado.
@@ -81,7 +87,7 @@ def balance_overview(holders, accounts):
         group = totals.get(str(account.get("holder_id")))
         if group is None:
             continue
-        connected = bool(account.get("pluggy_account_id"))
+        connected = bool(account.get("pluggy_account_id")) and not manual_only
         raw = account.get("pluggy_balance") if connected else account.get("manual_balance")
         if raw is None:
             group["missing"] += 1
