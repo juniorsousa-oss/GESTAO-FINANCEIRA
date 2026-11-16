@@ -198,8 +198,8 @@ def install(app, auth, authorized):
     def family_summary(user=Depends(auth)):
         ctx = _context(user)
         profiles = family_service.profiles(user)
-        ledger = family_service.table("finance_movements", ctx["workspace_id"],
-                                      fields="id,value,classification,movement_date",limit=10000)
+        ledger = family_service.all_rows("finance_movements",ctx["workspace_id"],
+            fields="id,value,classification,movement_date",order="id.asc")
         ledger = family_service.filter_rows(user, "registro", ledger)
         movement_ids = [int(row["id"]) for row in ledger]
         people = {int(p["id"]): {"id": int(p["id"]), "name": p["display_name"],
