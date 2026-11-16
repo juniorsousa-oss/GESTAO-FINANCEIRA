@@ -116,7 +116,7 @@ function updateSyncStatus(status){
   syncStatus=status;
   const timestamp=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
   const text=status==="ready"?"Conectado":status==="loading"?"Atualizando":"Falha ao atualizar";
-  const sidebar=status==="ready"?"Dados sincronizados":status==="loading"?"Atualizando dados":"Verifique a conexão";
+  const sidebar=status==="ready"?"Dados atualizados":status==="loading"?"Atualizando dados":"Verifique a conexão";
   const description=status==="ready"?"Atualizado às "+timestamp:status==="loading"?"Consultando base financeira…":"Última atualização não concluída";
   const top=$("#top-sync-status"),side=$("#sidebar-sync-status");
   if(top){top.dataset.state=status;top.title=status==="ready"?description:description}
@@ -125,7 +125,7 @@ function updateSyncStatus(status){
   if($("#sidebar-sync-label"))$("#sidebar-sync-label").textContent=sidebar;
   if($("#sidebar-sync-time"))$("#sidebar-sync-time").textContent=description;
   const settings=$("#settings-connection-status");
-  if(settings)settings.textContent=status==="ready"?"Dados financeiros sincronizados":status==="loading"?"Atualizando informações financeiras":"Falha ao atualizar informações financeiras";
+  if(settings)settings.textContent=status==="ready"?"Informações financeiras atualizadas":status==="loading"?"Atualizando informações financeiras":"Falha ao atualizar informações financeiras";
 }
 let snapshotRequest=null,lastSnapshotSync=0;
 async function refresh({silent=false}={}){
@@ -160,7 +160,14 @@ async function refresh({silent=false}={}){
   try{return await snapshotRequest}
   finally{snapshotRequest=null}
 }
-function go(next){page=next;filters={};hideMenu();render();if(next==="settings"){if(me?.is_admin)loadUsers();loadFinanceCatalogs(true).catch(e=>showToast(e.message,true));}if(next==="provisions")loadProvisions().catch(e=>showToast(e.message,true));if(["bank-accounts","reconciliation"].includes(next))loadBanking(true).catch(e=>showToast(e.message,true));if(next==="family"&&window.AxoraFamily)AxoraFamily.load(true).catch(e=>showToast(e.message,true));if(next==="dashboard"&&typeof autoSyncNow==="function")autoSyncNow("navigation");const scroller=$("#workspace .main-area");if(scroller)scroller.scrollTop=0;}
+function go(next){
+  const restricted=Boolean(me?.family_enabled&&me.family_role!=="principal");
+  if(restricted&&["reconciliation","accounts","debts","forecasts","import"].includes(next))return;
+  page=next;filters={};hideMenu();render();
+  if(next==="settings"&&!restricted){
+    if(me?.is_admin)loadUsers();
+    loadFinanceCatalogs(true).catch(e=>showToast(e.message,true));
+  }if(next==="provisions")loadProvisions().catch(e=>showToast(e.message,true));if(["bank-accounts","reconciliation"].includes(next))loadBanking(true).catch(e=>showToast(e.message,true));if(next==="family"&&window.AxoraFamily)AxoraFamily.load(true).catch(e=>showToast(e.message,true));if(next==="dashboard"&&typeof autoSyncNow==="function")autoSyncNow("navigation");const scroller=$("#workspace .main-area");if(scroller)scroller.scrollTop=0;}
 function syncMenuTrigger(){
   const button=$("#menu-toggle"),mobile=window.matchMedia("(max-width:850px)").matches;
   const sidebar=$("#sidebar");

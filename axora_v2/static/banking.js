@@ -47,7 +47,7 @@ function bankInfoBanner(){
 }
 function bankUnavailable(){
   return '<section class="panel"><h2>Dados bancários indisponíveis</h2><p class="panel-copy">'+
-   (bankingError?'Confira a migração bancária no Supabase antes de usar o módulo.':'Carregando cadastros...')+'</p></section>';
+   (bankingError?'Não foi possível carregar as contas. Atualize a página ou tente novamente.':'Carregando contas...')+'</p></section>';
 }
 function bankBalancePanel(){
   const b=bankingData?.balances;
