@@ -35,3 +35,8 @@
 .family-dialog .dialog-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
 .family-dialog .notice{font-size:12px}
 @media(max-width:600px){.family-profile-form{grid-template-columns:1fr}.family-intro .btn{width:100%}.family-dialog form{padding:16px}.family-allocation-row{grid-template-columns:minmax(0,1fr) 88px 22px}}
+
+/* A visibilidade HTML também resiste a regras .nav-link {display:flex}. */
+[data-family-nav][hidden], [data-family-existing][hidden], [data-family-new][hidden], [data-family-payers][hidden], [data-family-provision-note][hidden], #family-visibility-users[hidden] {display:none!important}
+.family-labels-list{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.family-bank-single{grid-template-columns:1fr;max-width:420px}
