@@ -24,7 +24,7 @@ async def lifespan(_app):
     if not db.configured():
         raise RuntimeError("Configure SUPABASE_URL e SUPABASE_KEY antes de iniciar o AXORA.")
     security.signer()
-    task = asyncio.create_task(meu_pluggy_sync.periodic_sync()) if meu_pluggy.configured() else None
+    task = asyncio.create_task(meu_pluggy_sync.periodic_sync()) if meu_pluggy.configured() and not banking.manual_mode() else None
     try:
         yield
     finally:
@@ -498,14 +498,15 @@ def banking_overview(user=Depends(auth)):
     accounts=banking_rows(workspace,"finance_bank_accounts",order="nickname.asc")
     transactions=banking_rows(workspace,"finance_bank_transactions",
        filters={"status":"eq.pending"},order="posted_on.desc,id.desc",limit=500)
-    is_owner = meu_pluggy.configured() and int(user["id"]) == meu_pluggy.owner_id()
+    manual = banking.manual_mode()
+    is_owner = not manual and meu_pluggy.configured() and int(user["id"]) == meu_pluggy.owner_id()
     return {"holders":holders,"accounts":accounts,"pending":transactions,
-            "balances":banking.balance_overview(holders,accounts),
-            "mode":"read_only" if is_owner else "manual",
+            "balances":banking.balance_overview(holders,accounts,manual_only=manual),
+            "mode":"manual" if manual else ("read_only" if is_owner else "manual"),
             "bank_connected":any(a.get("pluggy_account_id") for a in accounts),
             "provider":{"configured":bool(is_owner),
                         "type":"meu_pluggy_personal" if is_owner else "none",
-                        "read_only":True}}
+                        "paused":manual, "read_only":True}}
 
 
 @app.post("/api/banking/holders")
@@ -604,12 +605,15 @@ def banking_update_manual_balance(account_id: int, payload: dict, user=Depends(a
                          filters={"id":"eq."+str(account_id)},limit=1)
     if not current:
         raise HTTPException(404,"Conta não encontrada neste espaço.")
-    if current[0].get("pluggy_account_id") or current[0].get("pluggy_item_id"):
+    manual = banking.manual_mode()
+    if (current[0].get("pluggy_account_id") or current[0].get("pluggy_item_id")) and not manual:
         raise HTTPException(409,"Esta conta está conectada ao banco. Seu saldo é atualizado pela integração.")
+    filters={"id":"eq."+str(account_id),"workspace_id":"eq."+workspace}
+    if not manual:
+        filters.update({"pluggy_account_id":"is.null","pluggy_item_id":"is.null"})
+    # Em modo manual, mantém o vínculo histórico e altera SOMENTE o saldo informado.
     updated=db.call("PATCH","finance_bank_accounts",
-        params={"id":"eq."+str(account_id),"workspace_id":"eq."+workspace,
-                "pluggy_account_id":"is.null","pluggy_item_id":"is.null"},
-        data={"manual_balance":value},prefer="return=representation")
+        params=filters, data={"manual_balance":value},prefer="return=representation")
     if not updated:
         raise HTTPException(409,"Conta modificada por outra sessão. Recarregue e tente novamente.")
     return {"item":updated[0], "source":"manual"}
@@ -651,6 +655,8 @@ def banking_add_transaction(payload:dict,user=Depends(authorized)):
 # MeuPluggy pessoal: a conexão já foi autorizada no dashboard do provedor.
 # Não abrir um widget de nova autorização bancária e não usar contas de terceiros.
 def require_meu_pluggy(user):
+    if banking.manual_mode():
+        raise HTTPException(410, "Integração bancária pausada. Atualize os saldos manualmente.")
     meu_pluggy.require_owner(user)
     return user_workspace(user)
 
