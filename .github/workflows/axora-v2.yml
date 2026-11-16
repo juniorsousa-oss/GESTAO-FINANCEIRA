@@ -45,6 +45,8 @@ jobs:
       - run: node --check axora_v2/static/banking.js
       - run: node --check axora_v2/static/family.js
       - run: node --check axora_v2/static/brand-kit.js
+      - run: node --check axora_v2/static/ios-pwa-stability.js
+      - run: node axora_v2/tests/ios_pwa_keyboard_runtime.cjs
       - run: node axora_v2/tests/ui_runtime.cjs
       - run: node axora_v2/tests/mobile_drawer_runtime.cjs
       - run: docker build --tag axora-v2-ci .
