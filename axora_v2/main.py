@@ -24,6 +24,14 @@ async def lifespan(_app):
     if not db.configured():
         raise RuntimeError("Configure SUPABASE_URL e SUPABASE_KEY antes de iniciar o AXORA.")
     security.signer()
+    # O ambiente de homologação precisa falhar fechado: jamais acessar public
+    # por engano e validar a REST API de todas as tabelas antes de ficar Live.
+    if os.environ.get("AXORA_ENV", "").lower() == "beta":
+        if db.selected_schema() != "axora_beta":
+            raise RuntimeError("AXORA BETA exige SUPABASE_DB_SCHEMA=axora_beta.")
+        if not banking.manual_mode():
+            raise RuntimeError("AXORA BETA exige integração bancária manual.")
+        db.verify()
     task = asyncio.create_task(meu_pluggy_sync.periodic_sync()) if meu_pluggy.configured() and not banking.manual_mode() else None
     try:
         yield
