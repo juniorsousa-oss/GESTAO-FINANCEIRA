@@ -20,7 +20,9 @@ services:
       - key: AXORA_BANK_MODE
         value: manual
       - key: AXORA_FAMILY_V2_ENABLED
-        value: "0"
+        value: "1"
+      - key: SUPABASE_DB_SCHEMA
+        value: axora_beta
       - key: SUPABASE_URL
         value: https://cuixazpxkvniqldmmnth.supabase.co
       - key: SUPABASE_KEY
