@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from axora_v2 import db, metrics, security, branding, provisions, catalogs, banking, meu_pluggy, meu_pluggy_sync, pix_payments, family_service, family_policy
+from axora_v2 import db, metrics, security, branding, provisions, catalogs, banking, meu_pluggy, meu_pluggy_sync, pix_payments, family_service, family_policy, family_routes
 from services.importer import parse_excel
 from services.profile import clean_display_name, avatar_data_uri
 
@@ -1129,3 +1129,8 @@ def pwa_service_worker():
         media_type="application/javascript",
         headers={"Cache-Control": "no-store", "Service-Worker-Allowed": "/"},
     )
+
+
+# As rotas familiares são inertes sem AXORA_FAMILY_V2_ENABLED=1.
+# Nenhuma versão deve ativá-las antes da migração e homologação de permissões.
+family_routes.install(app, auth, authorized)
