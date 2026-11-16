@@ -35,8 +35,8 @@ function interfaceIcon(name){
 const today = () => new Date().toLocaleDateString("en-CA");
 const comp = () => {const d=new Date();return String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear()};
 const dateBR = v => v ? String(v).substring(0,10).split("-").reverse().join("/") : "—";
-const labels = {dashboard:"Visão financeira",movements:"Registros",provisions:"Provisões","bank-accounts":"Contas bancárias",reconciliation:"Central de Conciliação",forecasts:"Previsões antigas",accounts:"Contas e saldos",debts:"Dívidas",import:"Importar / Exportar",settings:"Configurações"};
-const subtitles = {dashboard:"Controle o seu presente. Planeje o seu próximo passo.",movements:"Receitas e despesas realizadas, sem misturar previsões.",provisions:"Somente compromissos pendentes; quitados vão para Registros.","bank-accounts":"Titulares e contas manuais separados por instituição.","reconciliation":"Sugestões inteligentes; o operador confirma cada decisão.",forecasts:"Base antiga: ainda não migrada para a nova lógica de provisões.",accounts:"Saiba exatamente onde está o seu dinheiro.",debts:"Organize pagamentos, renegociações e saldos em aberto.",import:"Leve sua planilha para o AXORA com segurança.",settings:"Personalize seu perfil e defina suas metas financeiras."};
+const labels = {dashboard:"Visão financeira",movements:"Registros",provisions:"Provisões","bank-accounts":"Contas bancárias",reconciliation:"Central de Conciliação",forecasts:"Previsões antigas",accounts:"Contas e saldos",debts:"Dívidas",import:"Importar / Exportar",settings:"Configurações",family:"Família e rateios"};
+const subtitles = {dashboard:"Controle o seu presente. Planeje o seu próximo passo.",movements:"Receitas e despesas realizadas, sem misturar previsões.",provisions:"Somente compromissos pendentes; quitados vão para Registros.","bank-accounts":"Titulares e contas manuais separados por instituição.","reconciliation":"Sugestões inteligentes; o operador confirma cada decisão.",forecasts:"Base antiga: ainda não migrada para a nova lógica de provisões.",accounts:"Saiba exatamente onde está o seu dinheiro.",debts:"Organize pagamentos, renegociações e saldos em aberto.",import:"Leve sua planilha para o AXORA com segurança.",settings:"Personalize seu perfil e defina suas metas financeiras.",family:"Pessoas, custos, pagamentos e permissões."};
 const meta = {
   movements: [
     ["description","Descrição","text",true],["value","Valor (R$)","number",true],
@@ -101,8 +101,15 @@ function releaseInstitutionalPreview(){
   if(institutionalPreviewUrl){URL.revokeObjectURL(institutionalPreviewUrl);institutionalPreviewUrl=null}
 }
 function showToast(message,error=false){const t=$("#toast");t.textContent=message;t.className="toast show"+(error?" error":"");clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>t.className="toast",4300)}
-function logoutVisual(){if(typeof resetFinancialCatalogs==="function")resetFinancialCatalogs();document.title="AXORA | Acesso";me=null;snapshot=null;$("#workspace").classList.add("hidden");$("#login").classList.remove("hidden");$("#login-password").value="";$("#login-password").focus()}
-function enterVisual(){document.title="AXORA | Gestão Financeira"; $("#login").classList.add("hidden");$("#workspace").classList.remove("hidden");$("#user-name").textContent=me.display_name;const a=$("#avatar");a.replaceChildren();if(me.avatar_data_uri){const i=document.createElement("img");i.src=me.avatar_data_uri;i.alt="";a.append(i)}else a.textContent=(me.display_name||"A")[0].toUpperCase()}
+function logoutVisual(){if(window.AxoraFamily)AxoraFamily.reset();
+  // Dados de outra sessão não podem persistir em variáveis do navegador.
+  if(typeof bankingData!=="undefined")bankingData=null;
+  if(typeof bankingError!=="undefined")bankingError=null;
+  if(typeof bankingHistory!=="undefined")bankingHistory=null;
+  if(typeof provisionItems!=="undefined")provisionItems=null;
+  if(typeof provisionError!=="undefined")provisionError=null;
+  if(typeof resetFinancialCatalogs==="function")resetFinancialCatalogs();document.title="AXORA | Acesso";me=null;snapshot=null;$("#workspace").classList.add("hidden");$("#login").classList.remove("hidden");$("#login-password").value="";$("#login-password").focus()}
+function enterVisual(){if(window.AxoraFamily)AxoraFamily.reset();document.title="AXORA | Gestão Financeira"; $("#login").classList.add("hidden");$("#workspace").classList.remove("hidden");$("#user-name").textContent=me.display_name;const a=$("#avatar");a.replaceChildren();if(me.avatar_data_uri){const i=document.createElement("img");i.src=me.avatar_data_uri;i.alt="";a.append(i)}else a.textContent=(me.display_name||"A")[0].toUpperCase();document.querySelectorAll("[data-family-nav]").forEach(n=>n.hidden=!me.family_enabled);document.querySelectorAll('[data-page="reconciliation"]').forEach(n=>n.hidden=Boolean(me.family_enabled&&me.family_role!=="principal"));}
 async function start(){try{me=await api("/api/me");enterVisual();await refresh()}catch{logoutVisual()}}
 function updateSyncStatus(status){
   syncStatus=status;
@@ -139,6 +146,9 @@ async function refresh({silent=false}={}){
         if(previousPosition!==null && scroll)scroll.scrollTop=previousPosition;
       }
       updateSyncStatus("ready");
+      // Pré-carrega perfis para o botão "Acesso" de registros e contas.
+      if(me?.family_enabled && window.AxoraFamily)
+        AxoraFamily.load().catch(()=>{ /* A página familiar exibirá erro seguro. */ });
     }catch(error){
       if(me)updateSyncStatus("error");
       throw error;
@@ -149,7 +159,7 @@ async function refresh({silent=false}={}){
   try{return await snapshotRequest}
   finally{snapshotRequest=null}
 }
-function go(next){page=next;filters={};hideMenu();render();if(next==="settings"){if(me?.is_admin)loadUsers();loadFinanceCatalogs(true).catch(e=>showToast(e.message,true));}if(next==="provisions")loadProvisions().catch(e=>showToast(e.message,true));if(["bank-accounts","reconciliation"].includes(next))loadBanking(true).catch(e=>showToast(e.message,true));if(next==="dashboard"&&typeof autoSyncNow==="function")autoSyncNow("navigation");const scroller=$("#workspace .main-area");if(scroller)scroller.scrollTop=0;}
+function go(next){page=next;filters={};hideMenu();render();if(next==="settings"){if(me?.is_admin)loadUsers();loadFinanceCatalogs(true).catch(e=>showToast(e.message,true));}if(next==="provisions")loadProvisions().catch(e=>showToast(e.message,true));if(["bank-accounts","reconciliation"].includes(next))loadBanking(true).catch(e=>showToast(e.message,true));if(next==="family"&&window.AxoraFamily)AxoraFamily.load(true).catch(e=>showToast(e.message,true));if(next==="dashboard"&&typeof autoSyncNow==="function")autoSyncNow("navigation");const scroller=$("#workspace .main-area");if(scroller)scroller.scrollTop=0;}
 function syncMenuTrigger(){
   const button=$("#menu-toggle"),mobile=window.matchMedia("(max-width:850px)").matches;
   const sidebar=$("#sidebar");
@@ -195,6 +205,10 @@ function trapMobileMenuFocus(e){
   }
 }
 function actionButtons(){
+  if(me?.family_enabled && me.family_role!=="principal" && (page==="bank-accounts"||page==="reconciliation"))return "";
+  if(me?.family_enabled && (page==="movements"||page==="dashboard"))
+    return '<button class="btn primary btn-strong" data-family-action="new-expense">'+interfaceIcon("plus")+'<span>Movimentação com rateio</span></button>';
+  if(me?.family_enabled && me.family_role!=="principal" && page==="provisions")return "";
   if(page==="bank-accounts")return '<button class="btn ghost" data-action="bank-new-holder">'+interfaceIcon("plus")+'<span>Novo titular</span></button><button class="btn primary btn-strong" data-action="bank-new-account">'+interfaceIcon("plus")+'<span>Nova conta</span></button>';
   if(page==="reconciliation")return '<button class="btn primary btn-strong" data-action="bank-new-transaction">'+interfaceIcon("plus")+'<span>Adicionar transação manual</span></button>';
   if(page==="provisions")return '<button class="btn primary btn-strong" data-action="new-provision">'+interfaceIcon("plus")+'<span>Adicionar provisão</span></button>';
@@ -208,7 +222,7 @@ function render(){
   $("#page-title").textContent=labels[page];$("#page-subtitle").textContent=subtitles[page];$("#crumb-current").textContent=labels[page].toUpperCase();$("#page-actions").innerHTML=actionButtons();
   $$(".nav-link").forEach(x=>{const active=x.dataset.page===page;x.classList.toggle("active",active);if(active)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current")});
   const body=$("#page-content");
-  body.innerHTML=page==="dashboard"?dashboard():page==="provisions"?provisionsPage():page==="bank-accounts"?bankingAccountsPage():page==="reconciliation"?bankingReconciliationPage():meta[page]?modulePage(page):page==="import"?importPage():settingsPage();
+  body.innerHTML=page==="family"?(window.AxoraFamily?AxoraFamily.page():""):page==="dashboard"?dashboard():page==="provisions"?provisionsPage():page==="bank-accounts"?bankingAccountsPage():page==="reconciliation"?bankingReconciliationPage():meta[page]?modulePage(page):page==="import"?importPage():settingsPage();
   applyInstitutionalBrand();
   if(typeof applyBrandKit==="function")applyBrandKit();
 }
@@ -309,7 +323,10 @@ function modulePage(kind){
 function moduleTable(kind,rows){
   const cols=columns[kind],visible=rows.slice(0,150);
   const rendered=visible.map(row=>cols.map(([key,label,type])=>formatCell(row,key,type)));
-  return table(cols.map(x=>x[1]),rendered,visible.map(x=>kind==="movements"&&x.provision_occurrence_id?{id:x.id,locked:true}:x.id),kind)+'<div class="table-count">'+rows.length+' registro(s) encontrados'+(rows.length>150?" · exibindo os 150 primeiros; refine sua pesquisa":"")+'</div>';
+  const output=table(cols.map(x=>x[1]),rendered,visible.map(x=>kind==="movements"&&x.provision_occurrence_id?{id:x.id,locked:true}:x.id),kind);
+  const visibility=kind==="movements"&&me?.family_enabled&&me.family_role==="principal"?
+    '<div class="family-labels-list">'+visible.map(row=>'<button class="btn ghost small" type="button" data-family-action="set-visibility" data-resource="registro" data-id="'+Number(row.id)+'" data-label="'+esc(row.visibility_label||"privado")+'">'+esc(row.description)+' · '+esc(row.visibility_label||"privado")+'</button>').join("")+'</div>':"";
+  return output+visibility+'<div class="table-count">'+rows.length+' registro(s) encontrados'+(rows.length>150?" · exibindo os 150 primeiros; refine sua pesquisa":"")+'</div>';
 }
 function updateFiltered(){if(!meta[page])return;let rows=filteredRows(page);$("#module-stats").innerHTML=moduleStats(page,rows);$("#table-body").innerHTML=moduleTable(page,rows)}
 function defaultValue(kind,key){if(key==="competence")return comp();if(key==="due_date"||key==="movement_date")return today();if(key==="classification")return "SAÍDA";if(key==="type")return "Saída";if(key==="status")return kind==="forecasts"?"Não pago":"NÃO RENEGOCIADO";if(key==="fixed_variable")return "FIXO";if(key==="category"&&kind==="movements")return "CONTAS FIXAS";return ""}
@@ -336,6 +353,12 @@ function importPage(){return '<div class="stack">'+panel("Importar planilha","Mo
    panel("Exportar dados","Baixe as quatro bases financeiras em um único arquivo Excel.",'<p class="panel-copy">Exportação de movimentações, previsões, contas e dívidas. Recomendado antes de mudanças importantes.</p><button class="btn primary" data-action="export">'+interfaceIcon("download")+'<span>Exportar Excel</span></button>')+'</div>'}
 async function loadUsers(){try{const users=await api("/api/users");const el=$("#users-table");if(el)el.innerHTML=table(["Nome","Perfil","Situação"],users.map(u=>[u.display_name,u.is_admin?"Administrador":"Usuário",u.is_active?"Ativo":"Inativo"]),false)}catch(e){showToast(e.message,true)}}
 function settingsPage(){
+  if(me?.family_enabled && me.family_role!=="principal"){
+    return panel("Meu perfil","Seu acesso é pessoal. Somente registros com permissão são exibidos.",
+      '<p><strong>'+esc(me.display_name)+'</strong> · Perfil '+esc(me.family_role)+'</p>'+
+      '<button class="btn primary" type="button" data-family-action="navigate-family">Ver finanças compartilhadas</button>'+
+      '<button class="btn ghost" type="button" data-action="logout">Sair / trocar usuário</button>');
+  }
   const s=snapshot.settings;
   let goalInputs=[["gross_income","Renda bruta mensal (R$)"],["net_income","Renda líquida mensal (R$)"],["emergency_months","Reserva de emergência (meses)"],["investment_pct","Investimento mensal (%)"],["fixed_pct","Contas fixas (%)"],["leisure_pct","Lazer (%)"],["investment_multiple","Meta de patrimônio (x renda)"]];
   const goalForm='<form id="goal-form" class="settings-form">'+goalInputs.map(([k,l])=>'<div class="field"><label for="setting-'+k+'">'+esc(l)+'</label><input id="setting-'+k+'" name="'+k+'" type="number" min="0" step="0.01" value="'+esc(s[k])+'" required></div>').join("")+'<button type="submit" class="btn primary">Salvar metas</button></form>';
@@ -343,8 +366,12 @@ function settingsPage(){
   let adminForm='<div class="notice">Cada novo usuário recebe um espaço financeiro próprio. Compartilhamento entre usuários exigirá autorização específica em outra etapa.</div><form id="new-user-form" class="settings-form"><div class="field"><label>Nome</label><input name="display_name" required maxlength="40"></div><div class="field"><label>Senha exclusiva (mínimo 12 caracteres)</label><input name="password" type="password" minlength="12" required></div><button type="submit" class="btn primary">Cadastrar usuário</button></form><div id="users-table" class="table-wrap"></div>';
   const signaturePanel='<div class="institutional-brand-editor"><div class="institutional-preview"><img data-institutional-logo alt="Prévia da assinatura Nexon Labs" width="220" height="60" hidden><span class="institutional-brand-fallback" data-institutional-fallback>by Nexon Labs</span></div><p id="institutional-logo-status" class="panel-copy"></p>'+
     (me.is_admin?'<div class="field"><label for="institutional-logo-upload">Enviar logo institucional · PNG, JPG ou WebP (até 5 MB)</label><input id="institutional-logo-upload" type="file" accept="image/png,image/jpeg,image/webp"></div><div class="page-actions"><button class="btn primary" type="button" data-action="upload-institutional-logo">Salvar assinatura</button><button class="btn ghost" type="button" data-action="delete-institutional-logo">Restaurar padrão</button></div>':'<div class="notice">Somente administradores podem alterar a identidade institucional.</div>')+'</div>';
-  const multiuserPanel='<div class="notice"><b>Espaços financeiros isolados:</b> cada usuário possui um espaço próprio, vinculado às suas Provisões e aos seus Registros. Compartilhamento autorizado por organização será desenvolvido separadamente.</div><div class="workspace-roles"><span>Proprietário</span><span>Administrador</span><span>Editor</span><span>Leitor</span></div><p class="panel-copy">Próxima etapa: associação de equipes a um espaço financeiro com permissões específicas.</p>';
-  return '<div class="settings-grid"><div class="stack">'+panel("Meu perfil","Personalize a identificação associada à sua senha.",profile)+panel("Padrão visual de logos","Logo principal, versão compacta, ícone e favicon, com download PNG.",typeof brandKitPanel==="function"?brandKitPanel():"")+panel("Identidade institucional","Assinatura institucional Nexon Labs usada no login e no rodapé.",signaturePanel)+panel("Base multiusuário","Estrutura de espaços e níveis de acesso — fase de preparação.",multiuserPanel)+panel("Padronização de lançamentos","Categorias e responsáveis usados nas Provisões, com exportação para Excel.",typeof financialCatalogPanel==="function"?financialCatalogPanel():"")+(me.is_admin?panel("Usuários e permissões","Criação de contas e acesso à base compartilhada.",adminForm):"")+'</div><div class="stack">'+panel("Metas financeiras","Defina renda, reserva, percentuais e patrimônio.",goalForm)+panel("Conectividade","Informações sobre os serviços do AXORA.",'<div class="notice"><span class="online-dot"></span> <span id="settings-connection-status">'+(syncStatus==="ready"?"Dados financeiros sincronizados":syncStatus==="loading"?"Atualizando informações financeiras":"Falha ao atualizar informações financeiras")+'</span> · FastAPI · Hostinger</div><p class="panel-copy">AXORA by Nexon Labs. A versão web não utiliza a interface ou infraestrutura Streamlit.</p>')+'</div></div>';
+  const multiuserPanel=me?.family_enabled?
+    '<div class="notice"><b>AXORA Família:</b> conta principal com perfis ramificados. A visibilidade é controlada individualmente por rótulo no servidor; beneficiários e pagadores não recebem acesso automático.</div>'+
+    '<div class="workspace-roles"><span>Principal</span><span>Cônjuge</span><span>Filho(a)</span><span>Outro</span></div>'+
+    '<div class="page-actions"><button type="button" class="btn primary" data-family-action="navigate-family">Administrar família e rateios</button></div>':
+    '<div class="notice"><b>Espaços financeiros isolados:</b> cada usuário possui um espaço próprio, vinculado às suas Provisões e aos seus Registros.</div><div class="workspace-roles"><span>Proprietário</span><span>Administrador</span><span>Editor</span><span>Leitor</span></div>';
+  return '<div class="settings-grid"><div class="stack">'+panel("Meu perfil","Personalize a identificação associada à sua senha.",profile)+panel("Padrão visual de logos","Logo principal, versão compacta, ícone e favicon, com download PNG.",typeof brandKitPanel==="function"?brandKitPanel():"")+panel("Identidade institucional","Assinatura institucional Nexon Labs usada no login e no rodapé.",signaturePanel)+panel("Base multiusuário","Estrutura de espaços e níveis de acesso — fase de preparação.",multiuserPanel)+panel("Padronização de lançamentos","Categorias e responsáveis usados nas Provisões, com exportação para Excel.",typeof financialCatalogPanel==="function"?financialCatalogPanel():"")+(me.is_admin&&!me.family_enabled?panel("Usuários e permissões","Criação de contas e acesso à base compartilhada.",adminForm):"")+'</div><div class="stack">'+panel("Metas financeiras","Defina renda, reserva, percentuais e patrimônio.",goalForm)+panel("Conectividade","Informações sobre os serviços do AXORA.",'<div class="notice"><span class="online-dot"></span> <span id="settings-connection-status">'+(syncStatus==="ready"?"Dados financeiros sincronizados":syncStatus==="loading"?"Atualizando informações financeiras":"Falha ao atualizar informações financeiras")+'</span> · FastAPI · Hospedagem web</div><p class="panel-copy">AXORA by Nexon Labs. A versão web não utiliza a interface ou infraestrutura Streamlit.</p>')+'</div></div>';
 }
 async function doExport(){try{const res=await api("/api/export");const blob=await res.blob();const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="axora_export.xlsx";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);showToast("Planilha exportada.")}catch(e){showToast(e.message,true)}}
 async function uploadExcel(endpoint){

@@ -99,3 +99,20 @@
 .bank-account-card .bank-manual-balance{font-size:13px;font-weight:750;color:#284c63}
 @media(max-width:820px){.bank-balance-grid{grid-template-columns:1fr}.bank-balance-metric{padding:15px}}
 @media(max-width:540px){.bank-holder-balances{grid-template-columns:1fr}.bank-holder-balance{align-items:flex-start;flex-wrap:wrap}}
+
+/* AXORA Family V2 — cartões bancários agrupados por titular, detalhe nativo acessível. */
+.bank-people-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:15px}
+.bank-person-card{border:1px solid #dae8f0;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 12px 26px rgba(10,38,63,.05);min-width:0}
+.bank-person-card[open]{border-color:#8ad7d9;box-shadow:0 16px 32px rgba(7,72,96,.10)}
+.bank-person-summary{display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;gap:13px;cursor:pointer;padding:18px;list-style:none}
+.bank-person-summary::-webkit-details-marker{display:none}
+.bank-person-summary:focus-visible{outline:3px solid #09b5bd;outline-offset:-3px}
+.bank-person-avatar{width:48px;height:48px;border-radius:15px;background:linear-gradient(140deg,#02c6ba,#0b5d97);color:white;display:grid;place-items:center;font-weight:850;font-size:21px}
+.bank-person-identity,.bank-person-amount{min-width:0;display:grid;gap:5px}
+.bank-person-identity>strong{font-size:14px;color:#183b56;overflow-wrap:anywhere}
+.bank-person-identity>small,.bank-person-amount>small{font-size:11px;color:#74899e;line-height:1.4}
+.bank-person-amount{text-align:right}
+.bank-person-amount>strong{color:#0d5770;font-size:clamp(16px,1.6vw,21px);white-space:nowrap}
+.bank-person-detail{border-top:1px solid #e5edf3;padding:15px;display:grid;gap:12px;background:#f8fbfe}
+.bank-person-account{margin:0;min-width:0}
+@media(max-width:570px){.bank-person-summary{grid-template-columns:42px minmax(0,1fr);padding:14px;gap:10px}.bank-person-avatar{width:40px;height:40px;border-radius:12px}.bank-person-amount{grid-column:2;justify-self:start;text-align:left}.bank-person-detail{padding:11px}}

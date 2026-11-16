@@ -108,8 +108,11 @@ function provisionsPage(){
       '<td data-label="Ação"><div class="provision-row-actions"><button type="button" class="btn primary small" data-action="pay-provision" data-id="'+id+'">Registrar pagamento</button>'+
       (paymentMethod==="link"&&paymentUrl?'<a class="btn ghost small provision-site-link" href="'+esc(paymentUrl)+'" target="_blank" rel="noopener noreferrer" title="Abrir o site de consulta ou pagamento em outra aba">Acessar site ↗</a>':'')+
       (paymentMethod==="pix"?'<button type="button" class="btn ghost small provision-pix-button" data-action="open-provision-pix" data-id="'+id+'">Gerar QR Code Pix</button>':'')+
-      '<button type="button" class="btn ghost small" data-action="edit-provision" data-id="'+id+'">Editar</button>'+
-      '<button type="button" class="btn ghost small provision-delete" data-action="cancel-provision" data-id="'+id+'">Excluir</button></div></td></tr>';
+      (me?.family_enabled && me.family_role==="principal"?
+        '<button type="button" class="btn ghost small" data-family-action="set-visibility" data-resource="provisao" data-id="'+Number(item.rule_id)+'" data-label="'+esc(item.visibility_label||"privado")+'">Acesso: '+esc(item.visibility_label||"privado")+'</button>':'')+
+      (me?.family_enabled && me.family_role!=="principal"?"":'<button type="button" class="btn ghost small" data-action="edit-provision" data-id="'+id+'">Editar</button>'+
+        '<button type="button" class="btn ghost small provision-delete" data-action="cancel-provision" data-id="'+id+'">Excluir</button>')+
+      '</div></td></tr>';
   }).join("");
   const listing=lines?'<div class="provision-scroll"><table class="provision-table"><thead><tr><th>Vencimento</th><th>Descrição</th><th>Categoria / Responsável</th><th>Previsto</th><th>Ação</th></tr></thead><tbody>'+lines+'</tbody></table></div>':'<div class="empty-state"><b>Nenhuma provisão pendente neste filtro.</b>Cadastre o primeiro compromisso ou altere o filtro.</div>';
   return '<div class="stack provision-module">'+cards+info+

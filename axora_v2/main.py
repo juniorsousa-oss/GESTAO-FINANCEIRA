@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from axora_v2 import db, metrics, security, branding, provisions, catalogs, banking, meu_pluggy, meu_pluggy_sync, pix_payments
+from axora_v2 import db, metrics, security, branding, provisions, catalogs, banking, meu_pluggy, meu_pluggy_sync, pix_payments, family_service, family_policy, family_routes
 from services.importer import parse_excel
 from services.profile import clean_display_name, avatar_data_uri
 
@@ -24,7 +24,7 @@ async def lifespan(_app):
     if not db.configured():
         raise RuntimeError("Configure SUPABASE_URL e SUPABASE_KEY antes de iniciar o AXORA.")
     security.signer()
-    task = asyncio.create_task(meu_pluggy_sync.periodic_sync()) if meu_pluggy.configured() else None
+    task = asyncio.create_task(meu_pluggy_sync.periodic_sync()) if meu_pluggy.configured() and not banking.manual_mode() else None
     try:
         yield
     finally:
@@ -73,7 +73,10 @@ class UserCreate(BaseModel):
 
 
 def auth(request: Request):
-    return security.current(request)
+    user = security.current(request)
+    user["_family"] = family_service.context(user)
+    family_service.gate(user, request.method, request.url.path)
+    return user
 
 
 def authorized(request: Request, user=Depends(auth)):
@@ -87,7 +90,10 @@ def admin(user):
 
 
 def user_workspace(user):
-    """Acesso financeiro por workspace derivado exclusivamente da sessão."""
+    """Workspace derivado exclusivamente de sessão e perfil familiar autorizado."""
+    shared_workspace = family_service.family_workspace(user)
+    if shared_workspace is not None:
+        return shared_workspace
     result = db.call("POST", "rpc/axora_user_workspace", data={"p_user_id": int(user["id"])})
     if not isinstance(result, str) or len(result) != 36:
         raise HTTPException(503, "Espaço financeiro indisponível.")
@@ -185,7 +191,9 @@ def login(payload: Login, request: Request, response: Response):
 @app.get("/api/me")
 def me(user=Depends(auth)):
     avatar_rows = db.select("users", fields="avatar_data_uri", params={"id": f"eq.{user['id']}", "limit": 1})
+    ctx = user.get("_family")
     return {"id": user["id"], "display_name": user["display_name"], "is_admin": user["is_admin"],
+            "family_enabled": bool(ctx), "family_role": ctx["role"] if ctx else None,
             "avatar_data_uri": avatar_rows[0].get("avatar_data_uri") if avatar_rows else None, "csrf": user["csrf"]}
 
 
@@ -201,12 +209,25 @@ def snapshot(user=Depends(auth)):
     scope = {"workspace_id": "eq." + workspace}
     rows = {kind: db.select(kind, order=ORDERS[kind], params=scope)
             for kind in ("movements", "accounts", "debts")}
-    db.call("POST", "rpc/axora_ensure_provisions", data={"p_workspace_id": workspace})
-    # Agregação no banco: não corta em 1.000 linhas, nem ignora parcelas distantes.
-    provision_totals = db.call("POST", "rpc/axora_provision_overview",
-                               data={"p_workspace_id": workspace})
+    ctx = user.get("_family")
+    if ctx:
+        rows["movements"] = family_service.all_rows(
+            "finance_movements", workspace, order=ORDERS["movements"])
+    if ctx and ctx["role"] != "principal":
+        # Não enviar métricas, configurações, saldos nem lançamentos privados.
+        rows["movements"] = family_service.tagged_records(user, "registro", rows["movements"])
+        rows["accounts"] = []
+        rows["debts"] = []
+        provision_totals = family_service.provision_overview(list_provisions(user)["items"])
+        settings = dict(db.DEFAULT_SETTINGS)
+    else:
+        db.call("POST", "rpc/axora_ensure_provisions", data={"p_workspace_id": workspace})
+        provision_totals = db.call("POST", "rpc/axora_provision_overview",
+                                   data={"p_workspace_id": workspace})
+        settings = db.get_settings(workspace)
+        if ctx:
+            rows["movements"] = family_service.tagged_records(user, "registro", rows["movements"])
     rows["forecasts"] = []
-    settings = db.get_settings(workspace)
     summary = metrics.compute(rows["movements"], [], rows["accounts"], rows["debts"],
                               settings, provision_overview=provision_totals)
     return {**rows, "settings": settings, "summary": summary}
@@ -342,6 +363,12 @@ def list_provisions(user=Depends(auth)):
             break
         if len(items) >= 10000:
             raise HTTPException(503, "Muitas provisões abertas. Use filtros por período.")
+    ctx = user.get("_family")
+    if ctx:
+        if ctx["role"] != "principal":
+            items = family_service.filter_rows(user, "provisao", items, id_key="rule_id")
+        tags = family_service.visibility_map(ctx, "provisao", [x["rule_id"] for x in items])
+        items = [{**x, "visibility_label": tags.get(int(x["rule_id"]), {}).get("label", "privado")} for x in items]
     return {"items": items}
 
 
@@ -380,10 +407,12 @@ def provision_pix_qr(pk: int, response: Response, user=Depends(auth)):
     records=db.call("GET","finance_provision_occurrences",params={
         "workspace_id":"eq."+workspace,"id":"eq."+str(pk),
         "status":"eq.open","limit":1,
-        "select":"id,rule:finance_provision_rules(description,payment_method,pix_kind,pix_value,pix_receiver_name,pix_receiver_city)"
+        "select":"id,rule_id,rule:finance_provision_rules(description,payment_method,pix_kind,pix_value,pix_receiver_name,pix_receiver_city)"
     })
     if not records or not records[0].get("rule"):
         raise HTTPException(404,"Previsão não encontrada ou já quitada.")
+    if user.get("_family") and user["_family"]["role"] != "principal":
+        family_service.assert_visible(user, "provisao", records[0].get("rule_id") or 0)
     rule=records[0]["rule"]
     if rule.get("payment_method")!="pix" or not rule.get("pix_value"):
         raise HTTPException(409,"Esta previsão não possui Pix configurado.")
@@ -498,14 +527,27 @@ def banking_overview(user=Depends(auth)):
     accounts=banking_rows(workspace,"finance_bank_accounts",order="nickname.asc")
     transactions=banking_rows(workspace,"finance_bank_transactions",
        filters={"status":"eq.pending"},order="posted_on.desc,id.desc",limit=500)
-    is_owner = meu_pluggy.configured() and int(user["id"]) == meu_pluggy.owner_id()
+    ctx = user.get("_family")
+    if ctx and ctx["role"] != "principal":
+        accounts = family_service.tagged_records(user, "conta", accounts)
+        allowed_accounts = {int(a["id"]) for a in accounts}
+        allowed_holders = {int(a["holder_id"]) for a in accounts}
+        holders = [h for h in holders if int(h["id"]) in allowed_holders]
+        transactions = [tx for tx in transactions if int(tx["account_id"]) in allowed_accounts]
+        # Transações bancárias podem conter dados privados: sem tag individual,
+        # nem uma conta compartilhada deve expor o histórico dela.
+        transactions = family_service.tagged_records(user, "transacao", transactions)
+    elif ctx:
+        accounts = family_service.tagged_records(user, "conta", accounts)
+    manual = banking.manual_mode()
+    is_owner = (not ctx or ctx["role"] == "principal") and not manual and meu_pluggy.configured() and int(user["id"]) == meu_pluggy.owner_id()
     return {"holders":holders,"accounts":accounts,"pending":transactions,
-            "balances":banking.balance_overview(holders,accounts),
-            "mode":"read_only" if is_owner else "manual",
+            "balances":banking.balance_overview(holders,accounts,manual_only=manual),
+            "mode":"manual" if manual else ("read_only" if is_owner else "manual"),
             "bank_connected":any(a.get("pluggy_account_id") for a in accounts),
             "provider":{"configured":bool(is_owner),
                         "type":"meu_pluggy_personal" if is_owner else "none",
-                        "read_only":True}}
+                        "paused":manual, "read_only":True}}
 
 
 @app.post("/api/banking/holders")
@@ -604,12 +646,15 @@ def banking_update_manual_balance(account_id: int, payload: dict, user=Depends(a
                          filters={"id":"eq."+str(account_id)},limit=1)
     if not current:
         raise HTTPException(404,"Conta não encontrada neste espaço.")
-    if current[0].get("pluggy_account_id") or current[0].get("pluggy_item_id"):
+    manual = banking.manual_mode()
+    if (current[0].get("pluggy_account_id") or current[0].get("pluggy_item_id")) and not manual:
         raise HTTPException(409,"Esta conta está conectada ao banco. Seu saldo é atualizado pela integração.")
+    filters={"id":"eq."+str(account_id),"workspace_id":"eq."+workspace}
+    if not manual:
+        filters.update({"pluggy_account_id":"is.null","pluggy_item_id":"is.null"})
+    # Em modo manual, mantém o vínculo histórico e altera SOMENTE o saldo informado.
     updated=db.call("PATCH","finance_bank_accounts",
-        params={"id":"eq."+str(account_id),"workspace_id":"eq."+workspace,
-                "pluggy_account_id":"is.null","pluggy_item_id":"is.null"},
-        data={"manual_balance":value},prefer="return=representation")
+        params=filters, data={"manual_balance":value},prefer="return=representation")
     if not updated:
         raise HTTPException(409,"Conta modificada por outra sessão. Recarregue e tente novamente.")
     return {"item":updated[0], "source":"manual"}
@@ -651,6 +696,8 @@ def banking_add_transaction(payload:dict,user=Depends(authorized)):
 # MeuPluggy pessoal: a conexão já foi autorizada no dashboard do provedor.
 # Não abrir um widget de nova autorização bancária e não usar contas de terceiros.
 def require_meu_pluggy(user):
+    if banking.manual_mode():
+        raise HTTPException(410, "Integração bancária pausada. Atualize os saldos manualmente.")
     meu_pluggy.require_owner(user)
     return user_workspace(user)
 
@@ -1008,13 +1055,14 @@ def remove_brand_kit(slot: str, user=Depends(authorized)):
 
 @app.get("/api/multiuser/status")
 def multiuser_status(user=Depends(auth)):
+    ctx = user.get("_family")
     return {
-        "phase": "native_finance",
+        "phase": "family_v2" if ctx else "native_finance",
         "isolation_enabled": True,
         "legacy_shared_data": False,
         "workspace_id": user_workspace(user),
-        "workspace_roles": ["owner", "admin", "editor", "viewer"],
-        "next_step": "Compartilhamento entre usuarios e equipes somente com autorizacao explicita.",
+        "workspace_roles": ["principal", "conjuge", "filho", "outro"] if ctx else ["owner", "admin", "editor", "viewer"],
+        "next_step": "Compartilhamento individual exige rótulos explícitos." if ctx else "Compartilhamento familiar ainda não ativado.",
     }
 
 
@@ -1085,3 +1133,8 @@ def pwa_service_worker():
         media_type="application/javascript",
         headers={"Cache-Control": "no-store", "Service-Worker-Allowed": "/"},
     )
+
+
+# As rotas familiares são inertes sem AXORA_FAMILY_V2_ENABLED=1.
+# Nenhuma versão deve ativá-las antes da migração e homologação de permissões.
+family_routes.install(app, auth, authorized)
