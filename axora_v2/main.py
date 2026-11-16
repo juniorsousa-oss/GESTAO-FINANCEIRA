@@ -202,6 +202,7 @@ def me(user=Depends(auth)):
     ctx = user.get("_family")
     return {"id": user["id"], "display_name": user["display_name"], "is_admin": user["is_admin"],
             "family_enabled": bool(ctx), "family_role": ctx["role"] if ctx else None,
+            "family_available": family_service.enabled(),
             "avatar_data_uri": avatar_rows[0].get("avatar_data_uri") if avatar_rows else None, "csrf": user["csrf"]}
 
 

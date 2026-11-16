@@ -70,6 +70,32 @@ def _record_fields(data):
 
 
 def install(app, auth, authorized):
+    @app.post("/api/family/onboard")
+    def activate_my_family(user=Depends(authorized)):
+        """Cria espaço familiar do próprio usuário sem tocar nos testes."""
+        if not family_service.enabled():
+            raise HTTPException(404, "Recurso familiar indisponível.")
+        if user.get("_family"):
+            raise HTTPException(409, "Sua família já está configurada.")
+        uid=int(user["id"])
+        workspace=db.call("POST", "rpc/axora_user_workspace", data={"p_user_id":uid})
+        own=db.call("GET", "finance_workspaces", params={
+            "select":"id,created_by,is_active","id":"eq."+str(workspace),"limit":1})
+        if not own or int(own[0].get("created_by") or 0)!=uid or not own[0].get("is_active"):
+            raise HTTPException(403, "O espaço financeiro não pertence à sua conta.")
+        existing=db.call("GET", "finance_family_profiles", params={
+            "select":"id,relationship,linked_user_id","workspace_id":"eq."+str(workspace),
+            "limit":2})
+        if existing:
+            if len(existing)==1 and existing[0]["relationship"]=="principal" and existing[0].get("linked_user_id")==uid:
+                return {"ok":True,"created":False}
+            raise HTTPException(409, "Espaço já possui cadastro familiar.")
+        db.call("POST", "finance_family_profiles", data={
+            "workspace_id":str(workspace),"display_name":user["display_name"][:80],
+            "relationship":"principal","linked_user_id":uid,"active":True
+        }, prefer="return=representation")
+        return {"ok":True,"created":True}
+
     @app.get("/api/family")
     def get_family(user=Depends(auth)):
         ctx = _context(user)
