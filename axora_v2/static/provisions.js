@@ -243,7 +243,7 @@ function provisionReadSplit(){
     .map(row=>({profile_id:Number(row.querySelector("[data-split-enabled]").dataset.splitEnabled),
       percentage:Number(row.querySelector("[data-split-percent]").value)}));
   if(!selected.length||selected.some(p=>!memberIds.has(p.profile_id)||!Number.isFinite(p.percentage)||
-      p.percentage<=0||p.percentage>100||Math.round(p.percentage*100)!==p.percentage*100))
+      p.percentage<=0||p.percentage>100||Math.abs(Math.round(p.percentage*100)-p.percentage*100)>0.00001))
     throw Error("Selecione os participantes e informe percentuais válidos com até duas casas decimais.");
   if(Math.abs(selected.reduce((sum,p)=>sum+p.percentage,0)-100)>.001)
     throw Error("O rateio da provisão precisa totalizar exatamente 100%.");
