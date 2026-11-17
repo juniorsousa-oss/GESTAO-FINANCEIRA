@@ -78,7 +78,7 @@ with sync_playwright() as p:
               window.__smokeActions++;
           });
         }""",BANK_FIXTURE.format(BANK_CARD.format(1,1),BANK_CARD.format(2,2)))
-        a=page.locator("#b1"),b=page.locator("#b2")
+        a,b=page.locator("#b1"),page.locator("#b2")
         size=lambda el:(el.bounding_box()["width"],el.bounding_box()["height"])
         before=(size(a),size(b))
         a.locator("summary").click()
