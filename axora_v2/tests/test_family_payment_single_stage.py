@@ -18,12 +18,12 @@ def test_payment_form_has_only_one_payment_stage():
     assert 'Sem descontar saldo' in html
     assert 'Descontar da carteira' in html
     assert 'name="balance_mode" value="none" checked' in html
-    assert 'family.css?v=single-payment-stage-r1' in html
-    assert 'family.js?v=global-overlays-r1' in html
+    assert 'family.css?v=wallet-payer-filter-r1' in html
+    assert 'family.js?v=wallet-payer-filter-r1' in html
     assert 'form.querySelector("#family-manual-payer-list").replaceChildren()' in js
     assert 'manualAddPayer(form,true)' in js
     assert 'const {payments,accountSources}=paymentAllocation(form)' in js
-    assert 'data-wallet-payer' not in js
+    assert 'data-wallet-payer' in js
     assert 'data-family-pagador' not in js
     assert 'form.querySelectorAll("#family-wallet-source-list .family-wallet-source")' in js
     assert 'data-manual-payer' in js and 'data-manual-amount' in js

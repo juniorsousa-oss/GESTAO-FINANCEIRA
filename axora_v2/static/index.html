@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AXORA">
   <link rel="manifest" href="/assets/pwa/manifest.json">
-  <link rel="stylesheet" href="/assets/family.css?v=single-payment-stage-r1">
+  <link rel="stylesheet" href="/assets/family.css?v=wallet-payer-filter-r1">
   <link rel="apple-touch-icon" sizes="192x192" href="/assets/pwa/icon-192.png">
   <meta name="description" content="AXORA — inteligência e controle financeiro, by Nexon Labs.">
   <title>AXORA | Acesso</title>
@@ -417,7 +417,7 @@
           </div>
         </div>
         <div id="family-wallet-details" hidden>
-          <p class="family-wallet-hint">Selecione a conta de origem e o valor. O titular da conta será registrado automaticamente como pagador.</p>
+          <p class="family-wallet-hint">Selecione primeiro o responsável, depois uma das contas vinculadas a ele. A primeira conta sugere o valor total; para dividir, ajuste os valores e adicione outras contas.</p>
           <div id="family-wallet-source-list" class="family-wallet-source-list"></div>
           <div class="family-wallet-toolbar">
             <button type="button" class="btn ghost small" id="family-wallet-add-source">+ Adicionar outra conta</button>
@@ -522,7 +522,7 @@
   <script src="/assets/banking.js?v=global-overlays-r1" defer></script>
   <script src="/assets/banking-advanced.js?v=bank-v4-advanced" defer></script>
   <script src="/assets/brand-kit.js?v=brand-icon-flash-r1" defer></script>
-  <script src="/assets/family.js?v=global-overlays-r1" defer></script>
+  <script src="/assets/family.js?v=wallet-payer-filter-r1" defer></script>
   <script src="/assets/ios-pwa-stability.js?v=20261116-dialog-stable-r2" defer></script>
 </body>
 </html>
