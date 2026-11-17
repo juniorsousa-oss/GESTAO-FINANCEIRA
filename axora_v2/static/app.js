@@ -279,7 +279,7 @@ function render(){
   $("#crumb-current").textContent=labels[page].toUpperCase();
   const actionHost=$("#page-actions");
   if(actionHost.innerHTML!==nextActions)actionHost.innerHTML=nextActions;
-  $(".nav-link").forEach(x=>{
+  $$(".nav-link").forEach(x=>{
     const active=x.dataset.page===page;
     x.classList.toggle("active",active);
     if(active)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current");
