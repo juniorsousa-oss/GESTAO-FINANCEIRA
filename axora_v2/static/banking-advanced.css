@@ -126,26 +126,66 @@
   .bank-investments-line,.bank-total-line{flex-wrap:wrap}
 }
 
-/* Menu montado após o saldo, com acionador sempre no canto superior. */
-.bank-person-account{position:relative}
-.bank-person-account .bank-card-top{padding-right:42px}
+/* O menu faz parte do cabeçalho de cada cartão: sem controles flutuando. */
+.bank-person-account{
+  position:relative;
+  isolation:isolate;
+}
+.bank-person-account .bank-card-top{
+  padding-right:0;
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+.bank-person-account .bank-tag{
+  margin-left:auto;
+}
+.bank-account-menu{
+  position:static;
+  flex:0 0 35px;
+  width:35px;
+  min-width:35px;
+  z-index:auto;
+}
 .bank-account-menu>summary{
-  position:absolute;top:14px;right:14px;z-index:1
+  position:static;
+  width:35px;
+  height:35px;
+  display:grid;
+  place-items:center;
+  z-index:auto;
 }
 .bank-account-menu-panel{
-  position:static;z-index:auto;margin-top:14px;
-  /* A lista de ações abre DENTRO do cartão, abaixo do saldo. */
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:8px;box-sizing:border-box;min-width:0
+  position:absolute;
+  top:56px;
+  left:12px;
+  right:12px;
+  z-index:12;
+  margin:0;
+  padding:12px;
+  box-shadow:0 12px 28px rgba(12,46,70,.19);
+  border:1px solid #b9dfe4;
+  background:#fff;
+  border-radius:13px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
 }
 .bank-account-menu-panel>.btn{
-  min-width:0;width:100%;max-width:100%;
-  white-space:normal;overflow-wrap:anywhere
+  flex:none;
+  min-width:0;
+  width:100%;
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
 }
 .bank-person-account:has(.bank-account-menu[open]){
-  border-color:#9bcfd8;box-shadow:0 6px 16px rgba(8,77,94,.08)
+  z-index:2;
+  min-height:345px;
+  border-color:#73cbd2;
 }
 @media(max-width:480px){
   .bank-account-menu-panel{grid-template-columns:1fr}
+  .bank-person-account:has(.bank-account-menu[open]){min-height:475px}
 }
 .bank-member-family-only .btn{flex:0 0 auto}
