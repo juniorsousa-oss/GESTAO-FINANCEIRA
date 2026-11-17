@@ -282,6 +282,12 @@ def install(app, auth, authorized):
     def family_summary(user=Depends(auth)):
         ctx = _context(user)
         profiles = family_service.accessible_profiles(user)
+        if ctx["role"] != "principal":
+            # Compartilhar um lançamento não concede acesso ao patrimônio ou
+            # ao resultado individual dos demais participantes. Para o perfil
+            # secundário, sumarize SOMENTE a própria participação nos
+            # movimentos que o servidor já autorizou por rótulo.
+            profiles = [p for p in profiles if int(p["id"]) == int(ctx["profile_id"])]
         ledger = family_service.all_rows("finance_movements",ctx["workspace_id"],
             fields="id,value,classification,movement_date",order="id.asc")
         ledger = family_service.filter_rows(user, "registro", ledger)
