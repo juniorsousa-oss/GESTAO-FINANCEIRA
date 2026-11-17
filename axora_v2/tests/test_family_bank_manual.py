@@ -77,7 +77,7 @@ def test_family_ui_groups_cards_with_native_details():
     from pathlib import Path
     folder=Path(__file__).resolve().parents[1]
     code=(folder/"static/banking.js").read_text()
-    assert '<details class="bank-person-card">' in code
+    assert '<details class="bank-person-card" data-bank-holder-id="' in code
     assert "bank-person-amount" in code
     assert "bankingData.mode" in code
     assert "Controle bancário manual." in code
