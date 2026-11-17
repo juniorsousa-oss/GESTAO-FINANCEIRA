@@ -164,11 +164,57 @@ with sync_playwright() as p:
     assert menu.count()==1
     assert not menu.get_attribute("open")
     assert not card.locator("[data-action='bank-open-investments']").is_visible()
+    # O ícone deve pertencer ao cartão, sem ficar solto entre linhas.
+    def assert_menu_inside_card(card):
+        bounds=card.bounding_box()
+        button=card.locator(".bank-account-menu > summary").bounding_box()
+        assert bounds and button, ("missing account action",bounds,button)
+        assert bounds["x"]+bounds["width"]-button["x"]-button["width"]>=6, (
+            "action protrudes from card right edge",bounds,button)
+        assert 5<=button["x"]-bounds["x"]<=bounds["width"]-button["width"]-5
+        assert 6<=button["y"]-bounds["y"]<=32, (
+            "action detached from card top (regression)",bounds,button)
+        assert button["y"]+button["height"]<=bounds["y"]+bounds["height"]-8, (
+            "action below card",bounds,button)
+
+    for account in page.locator(".bank-person-account").all():
+        assert_menu_inside_card(account)
     menu.locator("summary").click()
     assert card.locator("[data-action='bank-open-investments']").is_visible()
     assert card.locator("[data-action='bank-transfer-open']").is_visible()
+    assert_menu_inside_card(card)
+    assert card.locator(".bank-account-menu-panel").bounding_box()["y"] < (
+        card.bounding_box()["y"]+card.bounding_box()["height"])
     assert page.locator("#page-content .bank-entity").count()==0
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+
+    # Simula atualizações de dados com tela aberta: preserva o acordeão,
+    # menu de edição e posição de rolagem, sem recriar DOM em consulta idêntica.
+    page.evaluate("""() => {
+      snapshot={settings:{},summary:{}};
+      page="bank-accounts";
+      render();
+      window.__accountTestNode=document.querySelector(".bank-person-card");
+    }""")
+    assert page.evaluate(
+        "document.querySelector('.bank-person-card')===window.__accountTestNode")
+    page.evaluate("render()")
+    assert page.evaluate(
+        "document.querySelector('.bank-person-card')===window.__accountTestNode"), (
+        "unchanged data rebuilt the banking page")
+    assert page.locator("details.bank-person-card").first.get_attribute("open") is not None
+    assert page.locator("details.bank-account-menu").first.get_attribute("open") is not None
+    page.evaluate("""() => {
+      document.querySelector("#workspace .main-area").scrollTop=410;
+      bankingData.accounts[0].manual_balance=999.12;
+      render();
+    }""")
+    assert page.locator("details.bank-person-card").first.get_attribute("open") is not None
+    assert page.locator("details.bank-account-menu").first.get_attribute("open") is not None
+    assert "999,12" in page.locator(".bank-person-account").first.inner_text()
+    assert page.locator("#workspace .main-area").evaluate("(el)=>el.scrollTop")>=400, (
+        "scroll reset after balance update")
+    assert_menu_inside_card(page.locator(".bank-person-account").first)
 
     # Formulários avançados, sem API real e sem modificar saldos.
     assert page.evaluate("Boolean(window.AxoraBankAdvanced)")
@@ -190,6 +236,7 @@ with sync_playwright() as p:
     page.set_viewport_size({"width":390,"height":844})
     page.wait_for_timeout(90)
     assert page.locator("#page-content .bank-person-card").count()==4
+    assert_menu_inside_card(page.locator(".bank-person-account").first)
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
 
     # O cadastro de titulares e outros formulários não dão zoom automático
