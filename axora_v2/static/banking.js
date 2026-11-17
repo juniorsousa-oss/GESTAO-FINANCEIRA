@@ -258,8 +258,8 @@ function bankOpenHolder(id=null){
     form.elements.name.value=selected.name;
     form.elements.relationship.value=selected.relationship;
   }
-  $("#bank-holder-title").textContent=selected?"Editar titular":"Novo titular";
-  $("#bank-holder-submit").textContent=selected?"Salvar alterações":"Salvar titular";
+  $("#bank-holder-title").textContent=selected?"Editar membro":"Novo membro";
+  $("#bank-holder-submit").textContent=selected?"Salvar alterações":"Salvar membro";
   $("#bank-holder-dialog").showModal();
 }
 async function bankOpenAccount(id=null){
