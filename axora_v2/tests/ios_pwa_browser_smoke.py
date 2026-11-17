@@ -139,7 +139,9 @@ with sync_playwright() as p:
     # Contas: abertura de uma pessoa NÃO altera a altura de nenhuma outra.
     page.set_viewport_size({"width":1366,"height":900})
     page.evaluate("""() => {
-      document.querySelector("#page-content").innerHTML=bankingAccountsPage();
+      snapshot={settings:{},summary:{}};
+      page="bank-accounts";
+      render();
     }""")
     assert page.locator("#page-content .bank-entity").count()==0
     person_cards=page.locator("#page-content .bank-person-card")
@@ -177,8 +179,11 @@ with sync_playwright() as p:
         assert button["y"]+button["height"]<=bounds["y"]+bounds["height"]-8, (
             "action below card",bounds,button)
 
-    for account in page.locator(".bank-person-account").all():
+    for account in page.locator(".bank-person-card[open] .bank-person-account").all():
         assert_menu_inside_card(account)
+    # Nenhum botão da carteira recolhida pode permanecer visível.
+    for item in page.locator(".bank-person-card:not([open]) .bank-account-menu > summary").all():
+        assert not item.is_visible(), "menu leaked from closed holder"
     menu.locator("summary").click()
     assert card.locator("[data-action='bank-open-investments']").is_visible()
     assert card.locator("[data-action='bank-transfer-open']").is_visible()
@@ -191,9 +196,6 @@ with sync_playwright() as p:
     # Simula atualizações de dados com tela aberta: preserva o acordeão,
     # menu de edição e posição de rolagem, sem recriar DOM em consulta idêntica.
     page.evaluate("""() => {
-      snapshot={settings:{},summary:{}};
-      page="bank-accounts";
-      render();
       window.__accountTestNode=document.querySelector(".bank-person-card");
     }""")
     assert page.evaluate(
