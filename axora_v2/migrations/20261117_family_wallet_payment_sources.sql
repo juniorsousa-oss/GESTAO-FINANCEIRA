@@ -131,6 +131,12 @@ DECLARE v_prior bigint; v_result jsonb;
 BEGIN
  IF p_request_id IS NULL OR p_classification IS DISTINCT FROM 'SAÍDA' THEN
   RAISE EXCEPTION 'Somente despesas com identificação podem usar saldo'; END IF;
+ PERFORM axora_beta.axora_family_validate_actor(p_workspace_id,p_actor_id);
+ IF NOT EXISTS(SELECT 1 FROM finance_workspaces w JOIN finance_family_profiles f
+   ON f.workspace_id=w.id AND f.linked_user_id=p_actor_id AND f.active
+   WHERE w.id=p_workspace_id AND w.is_active AND w.created_by=p_actor_id
+     AND f.relationship='principal')
+ THEN RAISE EXCEPTION 'Somente o principal pode usar o saldo bancário'; END IF;
  PERFORM pg_advisory_xact_lock(hashtextextended(p_workspace_id::text||p_request_id::text,0));
  SELECT movement_id INTO v_prior FROM finance_family_balance_debits
  WHERE workspace_id=p_workspace_id AND request_id=p_request_id;
@@ -150,6 +156,12 @@ CREATE FUNCTION axora_beta.axora_family_pay_provision_from_wallet(
 DECLARE v_prior bigint; v_result jsonb;
 BEGIN
  IF p_request_id IS NULL THEN RAISE EXCEPTION 'Identificação do pagamento obrigatória'; END IF;
+ PERFORM axora_beta.axora_family_validate_actor(p_workspace_id,p_actor_id);
+ IF NOT EXISTS(SELECT 1 FROM finance_workspaces w JOIN finance_family_profiles f
+   ON f.workspace_id=w.id AND f.linked_user_id=p_actor_id AND f.active
+   WHERE w.id=p_workspace_id AND w.is_active AND w.created_by=p_actor_id
+     AND f.relationship='principal')
+ THEN RAISE EXCEPTION 'Somente o principal pode usar o saldo bancário'; END IF;
  PERFORM pg_advisory_xact_lock(hashtextextended(p_workspace_id::text||p_request_id::text,0));
  SELECT movement_id INTO v_prior FROM finance_family_balance_debits
  WHERE workspace_id=p_workspace_id AND request_id=p_request_id;
