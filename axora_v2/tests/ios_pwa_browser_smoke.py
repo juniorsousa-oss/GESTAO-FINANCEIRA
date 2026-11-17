@@ -122,7 +122,7 @@ with sync_playwright() as p:
     cards=page.locator("#page-content .bank-entity")
     assert cards.count()==4
     assert page.locator("#bank-holder-settings").is_visible()
-    assert page.locator("#page-content").get_by_text("Titulares cadastrados").count()==1
+    assert page.locator("#bank-holder-settings .panel-heading h2").inner_text()=="Titulares cadastrados"
     for i in range(cards.count()):
         card=cards.nth(i)
         bounds=card.bounding_box()
