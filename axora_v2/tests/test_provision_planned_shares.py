@@ -116,3 +116,22 @@ def test_ui_split_modes_and_single_responsible_source():
     assert 'axora_create_provision_with_method(' in sql
     assert 'ALTER TABLE public.' not in sql
     assert 'finance_movements' not in sql
+
+
+def test_provision_scrollbar_stays_inside_rounded_modal_on_desktop():
+    """Scrollbar must not overlap the upper/lower rounded modal edges."""
+    css=(BASE/"static/provisions.css").read_text()
+    html=(BASE/"static/index.html").read_text()
+    assert '@media (min-width:851px)' in css
+    assert 'dialog.provision-dialog:not(.provision-pix-dialog){' in css
+    assert 'overflow:hidden;' in css.split('dialog.provision-dialog:not(.provision-pix-dialog){',1)[1].split('}',1)[0]
+    content=css.split('dialog.provision-dialog:not(.provision-pix-dialog)>form{',1)[1].split('}',1)[0]
+    for expected in ('max-height:calc(min(92dvh,840px) - 24px)',
+                     'margin:10px 10px 10px 0',
+                     'overflow-y:auto',
+                     'overscroll-behavior-y:contain',
+                     'scrollbar-width:thin'):
+        assert expected in content
+    assert 'provisions.css?v=modal-scroll-inset-r1' in html
+    assert '.provision-split-participants{display:grid;' in css  # internal scrolling remains independent
+    assert '@media(max-width:850px)' in (BASE/"static/ios-pwa-finish.css").read_text()
