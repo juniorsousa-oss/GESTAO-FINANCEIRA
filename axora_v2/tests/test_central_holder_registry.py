@@ -59,7 +59,7 @@ def test_ui_registry_is_only_in_settings_and_account_selections_reuse_it():
     assert "bankingHolderOptions()" in catalogs_js
     assert "loadBanking(false)" in provisions
     assert "banking.js?v=single-registry-r1" in html
-    assert "catalogs.js?v=axora-central-holders-r3" in html
+    assert "catalogs.js?v=split-modes-r1" in html
     assert ".bank-people-grid{\n  display:flex;" in styles
     assert "align-items:stretch" in styles
     assert "grid-template-columns:repeat(auto-fill" in styles
