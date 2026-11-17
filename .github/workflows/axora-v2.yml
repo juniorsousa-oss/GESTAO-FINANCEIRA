@@ -65,6 +65,7 @@ jobs:
             sleep 1
           done
           AXORA_SMOKE_URL=http://127.0.0.1:18081/ python axora_v2/tests/ios_pwa_browser_smoke.py
+          AXORA_SMOKE_URL=http://127.0.0.1:18081/ python axora_v2/tests/modal_scroll_browser_smoke.py
       - run: docker build --tag axora-v2-ci .
       - name: Testar inicialização real da imagem
         run: |
