@@ -6,7 +6,7 @@ Até a migração e os filtros serem homologados, o compartilhamento continua de
 from decimal import Decimal, InvalidOperation, ROUND_FLOOR
 from fastapi import HTTPException
 
-ROLES = frozenset({"principal", "conjuge", "filho", "outro"})
+ROLES = frozenset({"principal", "conjuge", "pai", "mae", "filho", "sogro", "tio", "outro"})
 LABELS = frozenset({"privado", "casal", "familia", "selecionados"})
 RESOURCE_KINDS = frozenset({"registro", "provisao", "conta", "transacao"})
 MAX_CENTS = 10**14
