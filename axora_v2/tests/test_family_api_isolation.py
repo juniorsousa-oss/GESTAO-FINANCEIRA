@@ -150,7 +150,7 @@ def test_member_may_only_read_family_records_allocated_to_own_view(client):
     assert "visible_movements" not in summary.json()
     assert "unallocated_movements" not in summary.json()
     assert "note" not in summary.json()
-    assert {p["id"] for p in summary.json()["people"]}=={22,44}
+    assert {p["id"] for p in summary.json()["people"]}=={22}  # Dados de terceiros, mesmo em despesa comum, não viram relatório pessoal.
     assert {p["id"] for p in family.json()["profiles"]}=={22,44}
     assert "linked_user_id" not in family.text
     assert "Dependente privado" not in family.text
