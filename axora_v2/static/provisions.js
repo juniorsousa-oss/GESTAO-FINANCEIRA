@@ -5,6 +5,8 @@
 let provisionItems=null;
 let provisionError=null;
 let provisionView="all";
+let provisionFiltersExpanded=false;
+const provisionMobileMode=()=>typeof window!=="undefined"&&typeof window.matchMedia==="function"&&window.matchMedia("(max-width:850px)").matches;
 const provisionFilters={search:"",category:"",responsible:"",from:"",to:""};
 const provisionNorm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 const provisionSafeUrl=value=>{
@@ -76,17 +78,22 @@ function provisionsPage(){
      ["Próximos 30 dias",provisionSum(soon),soon.length+" ocorrência(s)"],
      ["Reserva · 6 meses",provisionSum(reserve),reserve.length+" ocorrência(s) a vencer"]
    ].map(([label,total,note],index)=>'<div class="metric-card"><div class="metric-label">'+label+'</div><div class="metric-value">'+money(total)+'</div><div class="metric-meta">'+note+' · '+provisionUnknown([items,thisMonth,overdue,soon,reserve][index])+' sem valor definido</div></div>').join("")+'</div>';
-  const info='<div class="notice">Compromissos sem prazo final continuam ativos: o sistema gera vencimentos em uma <b>janela móvel de 18 meses</b>. A última data exibida não é uma data de encerramento. O indicador <b>Reserva · 6 meses</b> considera somente os próximos seis meses, sem os vencidos. Contas de valor variável podem ficar <b>a definir</b>; elas não entram na soma até existir uma referência. Os totais são estimativas, não saldo disponível. Ao quitar, confira antes se já existe um lançamento para evitar duplicidade.</div>';
+  const info='<details class="notice provision-info-disclosure" '+(provisionMobileMode()?'':'open')+
+    '><summary><span>Sobre os valores previstos</span><small>Entenda como os compromissos são calculados</small></summary>'+
+    '<div class="provision-info-copy">Compromissos sem prazo final continuam ativos: o sistema gera vencimentos em uma <b>janela móvel de 18 meses</b>. A última data exibida não é uma data de encerramento. O indicador <b>Reserva · 6 meses</b> considera somente os próximos seis meses, sem os vencidos. Contas de valor variável podem ficar <b>a definir</b>; elas não entram na soma até existir uma referência. Os totais são estimativas, não saldo disponível. Ao quitar, confira antes se já existe um lançamento para evitar duplicidade.</div></details>';
+  const activeFilterCount=[provisionView!=="all",...Object.values(provisionFilters).map(Boolean)].filter(Boolean).length;
   const filterOptions=(options,current,placeholder)=>'<option value="">'+placeholder+'</option>'+
     options.map(x=>'<option value="'+esc(x)+'" '+(current===x?'selected':'')+'>'+esc(x)+'</option>').join("");
-  const selector='<div class="provision-filters" aria-label="Filtros de compromissos">'+
+  const selector='<details class="provision-filter-disclosure" '+((!provisionMobileMode()||provisionFiltersExpanded)?'open':'')+'>'+
+    '<summary><span>Filtros de compromissos</span><small>'+(activeFilterCount?activeFilterCount+' ativo(s)':'Toque para filtrar')+'</small></summary>'+
+    '<div class="provision-filters" aria-label="Filtros de compromissos">'+
     '<label class="provision-filter-label">Período<select id="provision-filter"><option value="all" '+(provisionView==="all"?"selected":"")+'>Todas as pendentes</option><option value="month" '+(provisionView==="month"?"selected":"")+'>Vencimentos do mês</option><option value="overdue" '+(provisionView==="overdue"?"selected":"")+'>Vencidas</option><option value="soon" '+(provisionView==="soon"?"selected":"")+'>Próximos 30 dias</option><option value="six" '+(provisionView==="six"?"selected":"")+'>Próximos 6 meses</option></select></label>'+
     '<label class="provision-filter-label">Categoria<select id="provision-category-filter">'+filterOptions(categories,provisionFilters.category,"Todas")+'</select></label>'+
     '<label class="provision-filter-label">Responsável<select id="provision-responsible-filter">'+filterOptions(responsibles,provisionFilters.responsible,"Todos")+'</select></label>'+
     '<label class="provision-filter-label">De<input type="date" id="provision-from-filter" value="'+esc(provisionFilters.from)+'"></label>'+
     '<label class="provision-filter-label">Até<input type="date" id="provision-to-filter" value="'+esc(provisionFilters.to)+'"></label>'+
     '<label class="provision-filter-label provision-filter-search">Buscar<input type="search" id="provision-search-filter" maxlength="100" value="'+esc(provisionFilters.search)+'" placeholder="Descrição, categoria ou responsável"></label>'+
-    '<button class="btn ghost small provision-clear-filters" type="button" data-action="clear-provision-filters">Limpar</button></div>';
+    '<button class="btn ghost small provision-clear-filters" type="button" data-action="clear-provision-filters">Limpar</button></div></details>';
   const lines=shown.map(item=>{
     const rule=item.rule||{},late=item.due_date<todayISO;
     const type=provisionRecurrence[rule.recurrence]||"Recorrência";
@@ -108,10 +115,20 @@ function provisionsPage(){
       '<td data-label="Ação"><div class="provision-row-actions"><button type="button" class="btn primary small" data-action="pay-provision" data-id="'+id+'">Registrar pagamento</button>'+
       (paymentMethod==="link"&&paymentUrl?'<a class="btn ghost small provision-site-link" href="'+esc(paymentUrl)+'" target="_blank" rel="noopener noreferrer" title="Abrir o site de consulta ou pagamento em outra aba">Acessar site ↗</a>':'')+
       (paymentMethod==="pix"?'<button type="button" class="btn ghost small provision-pix-button" data-action="open-provision-pix" data-id="'+id+'">Gerar QR Code Pix</button>':'')+
+      '<span class="provision-secondary-desktop">'+
       (me?.family_enabled && me.family_role==="principal"?
         '<button type="button" class="btn ghost small" data-family-action="set-visibility" data-resource="provisao" data-id="'+Number(item.rule_id)+'" data-label="'+esc(item.visibility_label||"privado")+'">Acesso: '+esc(item.visibility_label||"privado")+'</button>':'')+
       (me?.family_enabled && me.family_role!=="principal"?"":'<button type="button" class="btn ghost small" data-action="edit-provision" data-id="'+id+'">Editar</button>'+
         '<button type="button" class="btn ghost small provision-delete" data-action="cancel-provision" data-id="'+id+'">Excluir</button>')+
+      '</span>'+
+      (!(me?.family_enabled && me.family_role!=="principal")?
+        '<details class="provision-mobile-actions axora-action-menu"><summary aria-expanded="false" aria-label="Mais opções de '+esc(description)+'" title="Mais opções">⋮</summary>'+
+        '<div class="provision-mobile-actions-panel axora-action-menu-panel">'+
+        (me?.family_enabled && me.family_role==="principal"?
+          '<button type="button" class="btn ghost small" data-family-action="set-visibility" data-resource="provisao" data-id="'+Number(item.rule_id)+'" data-label="'+esc(item.visibility_label||"privado")+'">Acesso: '+esc(item.visibility_label||"privado")+'</button>':'')+
+        '<button type="button" class="btn ghost small" data-action="edit-provision" data-id="'+id+'">Editar</button>'+
+        '<button type="button" class="btn ghost small provision-delete" data-action="cancel-provision" data-id="'+id+'">Excluir</button>'+
+        '</div></details>':'')+
       '</div></td></tr>';
   }).join("");
   const listing=lines?'<div class="provision-scroll"><table class="provision-table"><thead><tr><th>Vencimento</th><th>Descrição</th><th>Categoria / Responsável</th><th>Previsto</th><th>Ação</th></tr></thead><tbody>'+lines+'</tbody></table></div>':'<div class="empty-state"><b>Nenhuma provisão pendente neste filtro.</b>Cadastre o primeiro compromisso ou altere o filtro.</div>';
@@ -462,6 +479,10 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#provision-edit-form").elements.value_mode.addEventListener("change",()=>{
     provisionAmountOptions($("#provision-edit-form"),"pve-value-label","pve-value-help");
   });
+  $("#page-content").addEventListener("toggle",e=>{
+    if(e.target.matches?.(".provision-filter-disclosure"))
+      provisionFiltersExpanded=e.target.open;
+  },true);
   $("#page-content").addEventListener("change",e=>{
     if(e.target.id==="provision-filter"){provisionView=e.target.value;render();}
     const filters={"provision-category-filter":"category","provision-responsible-filter":"responsible",
