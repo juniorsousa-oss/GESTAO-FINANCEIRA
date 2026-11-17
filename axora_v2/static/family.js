@@ -123,6 +123,38 @@ const AxoraFamily = (() => {
       throw Error("Os pagamentos precisam somar exatamente o valor do lançamento.");
     return out;
   }
+  function walletPayerOptions(){
+    const owners=new Set(walletAvailableAccounts().map(a=>a.profile_id));
+    return people().filter(p=>owners.has(Number(p.id))).map(p=>
+      '<option value="'+Number(p.id)+'">'+esc(p.display_name)+'</option>').join("");
+  }
+  function walletAccountOptions(profileId){
+    return walletAvailableAccounts().filter(a=>a.profile_id===Number(profileId))
+      .map(a=>'<option value="'+a.id+'">'+esc(a.label)+' — '+esc(money(a.balance))+
+        '</option>').join("");
+  }
+  function walletChoosePayer(form,row){
+    const payer=Number(row.querySelector("[data-wallet-payer]").value);
+    const select=row.querySelector("[data-wallet-account]");
+    select.innerHTML='<option value="">Selecione uma conta</option>'+
+      (payer?walletAccountOptions(payer):"");
+    select.disabled=!payer||!walletAvailableAccounts().some(a=>a.profile_id===payer);
+    row.querySelector("[data-wallet-amount]").value="";
+    walletTotals(form);
+  }
+  function walletChooseAccount(form,row){
+    const select=row.querySelector("[data-wallet-account]");
+    const account=walletAvailableAccounts().find(a=>a.id===Number(select.value));
+    const payer=Number(row.querySelector("[data-wallet-payer]").value);
+    const amount=row.querySelector("[data-wallet-amount]");
+    const rows=[...form.querySelectorAll("#family-wallet-source-list .family-wallet-source")];
+    // Primeira conta selecionada recebe o valor total como sugestão. A partir
+    // da segunda, a distribuição fica explicitamente sob controle do usuário.
+    if(account&&account.profile_id===payer&&rows.length===1&&
+       !amount.value.trim()&&paymentCents(form.elements.value.value)!==null)
+      amount.value=Number(form.elements.value.value).toFixed(2);
+    walletTotals(form);
+  }
   function walletAddSource(form){
     if(!walletAvailableAccounts().length){
       showToast("Nenhuma conta manual com saldo disponível foi encontrada.",true);
@@ -130,15 +162,15 @@ const AxoraFamily = (() => {
     }
     const row=document.createElement("div");
     row.className="family-wallet-source";
-    row.innerHTML='<label>Conta de origem<select data-wallet-account aria-label="Conta de origem">'+
-      '<option value="">Selecione uma conta</option>'+
-      walletAvailableAccounts().map(a=>
-        '<option value="'+a.id+'">'+esc(a.label)+' — '+esc(money(a.balance))+'</option>').join("")+
-      '</select></label>'+
+    row.innerHTML='<label>Responsável<select data-wallet-payer aria-label="Responsável pelo pagamento">'+
+      '<option value="">Selecione um responsável</option>'+
+      walletPayerOptions()+'</select></label>'+
+      '<label>Conta de origem<select data-wallet-account aria-label="Conta de origem" disabled>'+
+      '<option value="">Escolha primeiro o responsável</option></select></label>'+
       '<label>Valor (R$)<input type="number" data-wallet-amount min="0.01" step="0.01" '+
       'placeholder="0,00" inputmode="decimal" aria-label="Valor retirado da conta"></label>'+
       '<button type="button" data-wallet-remove aria-label="Retirar esta conta">×</button>'+
-      '<small class="family-wallet-balance">Selecione a conta para identificar o pagador e consultar o saldo.</small>';
+      '<small class="family-wallet-balance">Escolha o responsável e depois uma das contas vinculadas a ele.</small>';
     form.querySelector("#family-wallet-source-list").appendChild(row);
     walletTotals(form);
   }
@@ -152,12 +184,13 @@ const AxoraFamily = (() => {
       const input=row.querySelector("[data-wallet-amount]");
       const cents=paymentCents(input.value);
       const account=accounts.get(Number(row.querySelector("[data-wallet-account]").value));
+      const payer=Number(row.querySelector("[data-wallet-payer]").value);
       total+=cents||0;
-      if(!account||cents===null||cents>Math.round(account.balance*100))valid=false;
-      const owner=account&&people().find(p=>Number(p.id)===account.profile_id);
-      row.querySelector(".family-wallet-balance").textContent=account?
-        "Pagador: "+(owner?.display_name||"Titular vinculado")+" · Saldo disponível: "+
-        money(account.balance):"Selecione a conta para identificar o pagador e consultar o saldo.";
+      if(!account||!payer||account.profile_id!==payer||cents===null||
+         cents>Math.round(account.balance*100))valid=false;
+      row.querySelector(".family-wallet-balance").textContent=account&&payer===account.profile_id?
+        "Saldo disponível: "+money(account.balance):
+        (payer?"Selecione uma conta deste responsável.":"Selecione o responsável antes da conta.");
     }
     const expected=paymentCents(form.elements.value.value);
     valid=valid&&expected!==null&&total===expected&&
@@ -192,9 +225,10 @@ const AxoraFamily = (() => {
     for(const row of form.querySelectorAll("#family-wallet-source-list .family-wallet-source")){
       const account_id=Number(row.querySelector("[data-wallet-account]").value);
       const account=accounts.get(account_id);
+      const payer=Number(row.querySelector("[data-wallet-payer]").value);
       const cents=paymentCents(row.querySelector("[data-wallet-amount]").value);
-      if(!account||cents===null||used.has(account_id))
-        throw Error("Selecione uma conta válida, sem repetições, e informe seu valor.");
+      if(!account||!payer||account.profile_id!==payer||cents===null||used.has(account_id))
+        throw Error("Selecione o responsável e uma conta vinculada, sem repetições, e informe o valor.");
       if(cents>Math.round(account.balance*100))
         throw Error("Saldo insuficiente na conta "+account.label+".");
       used.add(account_id);total+=cents;
@@ -548,7 +582,10 @@ const AxoraFamily = (() => {
       const form=e.target.form;
       if(e.target.name==="classification"||e.target.name==="balance_mode")
         walletUpdateMode(form);
-      if(e.target.matches("[data-wallet-account]"))walletTotals(form);
+      if(e.target.matches("[data-wallet-payer]"))
+        walletChoosePayer(form,e.target.closest(".family-wallet-source"));
+      if(e.target.matches("[data-wallet-account]"))
+        walletChooseAccount(form,e.target.closest(".family-wallet-source"));
       if(e.target.matches("[data-manual-payer]"))manualTotals(form);
     });
     $("#family-manual-add-payer").addEventListener("click",()=>manualAddPayer($("#family-entry-form")));
