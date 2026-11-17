@@ -50,8 +50,9 @@ function bankInfoBanner(){
   }
   const isMobile=typeof window!=="undefined"&&typeof window.matchMedia==="function"&&
     window.matchMedia("(max-width:850px)").matches;
-  return '<details class="notice bank-info bank-info-disclosure" '+(isMobile?'':'open')+
-    '><summary>Orientações sobre contas e saldos</summary><div class="bank-info-copy">'+note+'</div></details>';
+  return isMobile?
+    '<details class="notice bank-info bank-info-disclosure"><summary>Orientações sobre contas e saldos</summary><div class="bank-info-copy">'+note+'</div></details>':
+    '<div class="notice bank-info">'+note+'</div>';
 }
 function bankUnavailable(){
   return '<section class="panel"><h2>Dados bancários indisponíveis</h2><p class="panel-copy">'+
