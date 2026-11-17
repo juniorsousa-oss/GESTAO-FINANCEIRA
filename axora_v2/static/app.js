@@ -273,7 +273,15 @@ function render(){
     const expandedAccounts=samePage?new Set(
       [...(body.querySelectorAll?.(".bank-person-account[data-bank-account-id] details.bank-account-menu[open]")||[])]
         .map(el=>el.closest(".bank-person-account")?.dataset.bankAccountId)) : new Set();
+    const expandedFamilyMenus=samePage&&page==="family"?new Set(
+      [...(body.querySelectorAll?.("details.family-member-menu[open][data-family-profile-id]")||[])]
+        .map(el=>el.dataset.familyProfileId)) : new Set();
     body.innerHTML=nextMarkup;
+    if(samePage&&page==="family"){
+      body.querySelectorAll("details.family-member-menu[data-family-profile-id]").forEach(el=>{
+        if(expandedFamilyMenus.has(el.dataset.familyProfileId))el.open=true;
+      });
+    }
     if(samePage&&page==="bank-accounts"){
       body.querySelectorAll("details.bank-person-card[data-bank-holder-id]").forEach(el=>{
         if(expandedHolders.has(el.dataset.bankHolderId))el.open=true;
@@ -501,8 +509,11 @@ function settingsPage(){
   return '<div class="settings-grid settings-balanced"><div class="stack">'+
     onboardingPanel+
     panel("Meu perfil","Personalize sua identificação.",profile)+
-    (typeof bankingHolderCatalogPanel==="function"?bankingHolderCatalogPanel():"")+
-    panel("Usuário principal e subusuários","Gerencie os perfis e suas permissões.",multiuserPanel)+
+    (me?.family_enabled && window.AxoraFamily ? panel("Cadastro familiar e acessos",
+      "Único local para cadastrar familiares, classificá-los e criar acessos individuais.",
+      AxoraFamily.settingsPanel()) :
+      (typeof bankingHolderCatalogPanel==="function"?bankingHolderCatalogPanel():""))+
+    (!me?.family_enabled?panel("Usuário principal e subusuários","Gerencie os perfis e suas permissões.",multiuserPanel):"")+
     panel("Padronização de lançamentos","Categorias e responsáveis históricos utilizados nas provisões.",
       typeof financialCatalogPanel==="function"?financialCatalogPanel():"")+
     (me.is_admin&&!me.family_enabled?panel("Criar conta pessoal","Novo espaço financeiro independente.",adminForm):"")+

@@ -85,8 +85,8 @@ def _password_hash(password):
 
 
 def _role(value):
-    if not isinstance(value, str) or value not in ("conjuge", "filho", "outro"):
-        raise HTTPException(422, "Selecione um vínculo de cônjuge, filho ou outro.")
+    if not isinstance(value, str) or value not in ("conjuge", "pai", "mae", "filho", "sogro", "tio", "outro"):
+        raise HTTPException(422, "Selecione um vínculo familiar válido.")
     return value
 
 
@@ -138,7 +138,7 @@ def install(app, auth, authorized):
         name, role = payload["display_name"], payload["relationship"]
         if not isinstance(name, str) or not 1 <= len(name.strip()) <= 80:
             raise HTTPException(422, "Nome inválido.")
-        if role not in ("conjuge", "filho", "outro"):
+        if role not in ("conjuge", "pai", "mae", "filho", "sogro", "tio", "outro"):
             raise HTTPException(422, "Vínculo inválido.")
         current = family_service.profiles(user)
         if len(current) >= 50:
