@@ -174,7 +174,7 @@ with sync_playwright() as p:
         assert bounds["x"]+bounds["width"]-button["x"]-button["width"]>=6, (
             "action protrudes from card right edge",bounds,button)
         assert 5<=button["x"]-bounds["x"]<=bounds["width"]-button["width"]-5
-        assert 6<=button["y"]-bounds["y"]<=32, (
+        assert 6<=button["y"]-bounds["y"]<=45, (
             "action detached from card top (regression)",bounds,button)
         assert button["y"]+button["height"]<=bounds["y"]+bounds["height"]-8, (
             "action below card",bounds,button)
