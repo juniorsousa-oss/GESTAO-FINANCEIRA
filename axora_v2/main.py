@@ -273,6 +273,15 @@ def change_row(kind: str, pk: int, payload: dict, user=Depends(authorized)):
         raise HTTPException(404, "Registro não localizado.")
     row = sanitize(kind, payload)
     if kind == "movements":
+        if user.get("_family"):
+            debited = db.call("GET", "finance_family_balance_debits", params={
+                "select": "movement_id", "workspace_id": "eq." + workspace,
+                "movement_id": "eq." + str(pk), "limit": 1,
+            })
+            if debited:
+                raise HTTPException(409,
+                    "Registro com débito em contas: não edite nem exclua isoladamente. "
+                    "É necessário estornar também os saldos.")
         if current[0].get("provision_occurrence_id"):
             raise HTTPException(409, "Registro de quitação vinculado à provisão; edição isolada bloqueada.")
         bank_links=db.call("GET","finance_bank_transactions",params={
@@ -293,6 +302,15 @@ def remove_row(kind: str, pk: int, user=Depends(authorized)):
     if not current:
         raise HTTPException(404, "Registro não localizado.")
     if kind == "movements":
+        if user.get("_family"):
+            debited = db.call("GET", "finance_family_balance_debits", params={
+                "select": "movement_id", "workspace_id": "eq." + workspace,
+                "movement_id": "eq." + str(pk), "limit": 1,
+            })
+            if debited:
+                raise HTTPException(409,
+                    "Registro com débito em contas: não edite nem exclua isoladamente. "
+                    "É necessário estornar também os saldos.")
         if current[0].get("provision_occurrence_id"):
             raise HTTPException(409, "Registro vinculado à provisão; estorno controlado virá na próxima etapa.")
         bank_links=db.call("GET","finance_bank_transactions",params={
