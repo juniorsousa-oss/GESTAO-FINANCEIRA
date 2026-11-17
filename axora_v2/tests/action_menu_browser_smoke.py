@@ -77,7 +77,7 @@ with sync_playwright() as p:
             if(e.target.matches('[data-action="test-action"],[data-family-action="test-family-action"]'))
               window.__smokeActions++;
           });
-        }""",BANK_FIXTURE.format(BANK_CARD.format(1,1),BANK_CARD.format(2,2)))
+        }""",BANK_FIXTURE.format(BANK_CARD.format(1,1)+BANK_CARD.format(2,2)))
         a,b=page.locator("#b1"),page.locator("#b2")
         size=lambda el:(el.bounding_box()["width"],el.bounding_box()["height"])
         before=(size(a),size(b))
