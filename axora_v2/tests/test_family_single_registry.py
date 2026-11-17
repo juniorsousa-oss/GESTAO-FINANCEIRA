@@ -27,14 +27,16 @@ def test_one_registration_form_lives_only_in_settings():
 def test_family_cards_use_contextual_three_dot_menu():
     js = (WEB / "family.js").read_text()
     css = (WEB / "family.css").read_text()
-    assert 'details class="family-member-menu" data-family-profile-id=' in js
+    assert 'details class="family-member-menu axora-action-menu" data-family-profile-id=' in js
     assert 'data-family-profile-id' in js
     assert 'aria-label="Opções do membro ' in js
     assert 'data-family-action="save-relationship"' in js
     assert 'data-family-action="enable-login"' in js
     assert '.family-member-menu-panel' in css
     assert '.family-member-menu[open]' in css
-    assert 'expandedFamilyMenus' in (WEB / "app.js").read_text()
+    assert 'expandedFamilyMenus' not in (WEB / "app.js").read_text()
+    assert 'window.AxoraActionMenus?.close()' in (WEB / "app.js").read_text()
+    assert 'closeAll({restoreFocus:true})' in (WEB / "action-menus.js").read_text()
 
 
 @pytest.mark.parametrize("role", ROLES)

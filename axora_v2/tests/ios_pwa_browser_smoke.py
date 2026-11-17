@@ -193,8 +193,8 @@ with sync_playwright() as p:
     assert page.locator("#page-content .bank-entity").count()==0
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
 
-    # Simula atualizações de dados com tela aberta: preserva o acordeão,
-    # menu de edição e posição de rolagem, sem recriar DOM em consulta idêntica.
+    # Preserva o acordeão da pessoa e o scroll. Menus contextuais são
+    # recolhidos ao rolar ou atualizar conteúdo, nunca restaurados à força.
     page.evaluate("""() => {
       window.__accountTestNode=document.querySelector(".bank-person-card");
     }""")
@@ -212,7 +212,8 @@ with sync_playwright() as p:
       render();
     }""")
     assert page.locator("details.bank-person-card").first.get_attribute("open") is not None
-    assert page.locator("details.bank-account-menu").first.get_attribute("open") is not None
+    assert page.locator("details.bank-account-menu").first.get_attribute("open") is None, (
+        "menu de ações reaberto após atualização da página")
     assert "999,12" in page.locator(".bank-person-account").first.inner_text()
     assert page.locator("#workspace .main-area").evaluate("(el)=>el.scrollTop")>=400, (
         "scroll reset after balance update")

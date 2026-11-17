@@ -270,27 +270,13 @@ function render(){
     const expandedHolders=samePage?new Set(
       [...(body.querySelectorAll?.("details.bank-person-card[open][data-bank-holder-id]")||[])]
         .map(el=>el.dataset.bankHolderId)) : new Set();
-    const expandedAccounts=samePage?new Set(
-      [...(body.querySelectorAll?.(".bank-person-account[data-bank-account-id] details.bank-account-menu[open]")||[])]
-        .map(el=>el.closest(".bank-person-account")?.dataset.bankAccountId)) : new Set();
-    const expandedFamilyMenus=samePage&&page==="family"?new Set(
-      [...(body.querySelectorAll?.("details.family-member-menu[open][data-family-profile-id]")||[])]
-        .map(el=>el.dataset.familyProfileId)) : new Set();
+    // Persistimos apenas o acordeão bancário; menus de ações nunca são
+    // reabertos após uma atualização ou troca de página.
+    window.AxoraActionMenus?.close();
     body.innerHTML=nextMarkup;
-    if(samePage&&page==="family"){
-      body.querySelectorAll("details.family-member-menu[data-family-profile-id]").forEach(el=>{
-        if(expandedFamilyMenus.has(el.dataset.familyProfileId))el.open=true;
-      });
-    }
     if(samePage&&page==="bank-accounts"){
       body.querySelectorAll("details.bank-person-card[data-bank-holder-id]").forEach(el=>{
         if(expandedHolders.has(el.dataset.bankHolderId))el.open=true;
-      });
-      body.querySelectorAll(".bank-person-account[data-bank-account-id]").forEach(el=>{
-        if(expandedAccounts.has(el.dataset.bankAccountId)){
-          const menu=el.querySelector(".bank-card-top > details.bank-account-menu");
-          if(menu)menu.open=true;
-        }
       });
     }
     if(previousScroll!==null&&scroller)scroller.scrollTop=previousScroll;

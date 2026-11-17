@@ -58,7 +58,7 @@ def test_ui_registry_is_only_in_settings_and_account_selections_reuse_it():
     assert "open-holder-settings" in page_part
     assert "bankingHolderOptions()" in catalogs_js
     assert "loadBanking(false)" in provisions
-    assert "banking.js?v=single-registry-r1" in html
+    assert "banking.js?v=global-overlays-r1" in html
     assert "catalogs.js?v=split-modes-r1" in html
     assert ".bank-people-grid{\n  display:flex;" in styles
     assert "align-items:stretch" in styles
