@@ -106,6 +106,7 @@ function logoutVisual(){if(window.AxoraFamily)AxoraFamily.reset();
   // Dados de outra sessão não podem persistir em variáveis do navegador.
   if(typeof bankingData!=="undefined")bankingData=null;
   window.AxoraBankAdvanced?.reset();
+  lastRenderedPage=null;lastRenderedMarkup=null;
   if(typeof bankingError!=="undefined")bankingError=null;
   if(typeof bankingHistory!=="undefined")bankingHistory=null;
   if(typeof provisionItems!=="undefined")provisionItems=null;
@@ -141,7 +142,9 @@ async function refresh({silent=false}={}){
       const changed=!snapshot || JSON.stringify(snapshot)!==JSON.stringify(latest);
       snapshot=latest;
       lastSnapshotSync=Date.now();
-      if(!silent || changed){
+      // Saldos bancários e gestão familiar são módulos independentes.
+      // Refresh do dashboard não deve desmontá-los sem necessidade.
+      if((!silent || changed)&&!["bank-accounts","reconciliation","family"].includes(page)){
         const scroll=$("#workspace .main-area");
         const previousPosition=silent&&scroll?scroll.scrollTop:null;
         render();
@@ -236,12 +239,51 @@ function actionButtons(){
   if(page==="import")return '<button class="btn ghost btn-secondary" data-action="export">'+interfaceIcon("download")+'<span>Exportar Excel</span></button>';
   return "";
 }
+// Estado visual persistente: cargas de dados não devem fechar carteiras,
+// apagar foco ou jogar o usuário ao topo da página.
+let lastRenderedPage=null,lastRenderedMarkup=null;
 function render(){
   if(!snapshot)return;
-  $("#page-title").textContent=labels[page];$("#page-subtitle").textContent=subtitles[page];$("#crumb-current").textContent=labels[page].toUpperCase();$("#page-actions").innerHTML=actionButtons();
-  $$(".nav-link").forEach(x=>{const active=x.dataset.page===page;x.classList.toggle("active",active);if(active)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current")});
   const body=$("#page-content");
-  body.innerHTML=page==="family"?(window.AxoraFamily?AxoraFamily.page():""):page==="dashboard"?dashboard():page==="provisions"?provisionsPage():page==="bank-accounts"?bankingAccountsPage():page==="reconciliation"?bankingReconciliationPage():meta[page]?modulePage(page):page==="import"?importPage():settingsPage();
+  const samePage=lastRenderedPage===page;
+  const nextMarkup=page==="family"?(window.AxoraFamily?AxoraFamily.page():""):page==="dashboard"?dashboard():page==="provisions"?provisionsPage():page==="bank-accounts"?bankingAccountsPage():page==="reconciliation"?bankingReconciliationPage():meta[page]?modulePage(page):page==="import"?importPage():settingsPage();
+  const nextActions=actionButtons();
+  // Evita a reconstrução do DOM e a piscada após solicitações sem alteração.
+  if(!samePage||lastRenderedMarkup!==nextMarkup){
+    const scroller=$("#workspace .main-area");
+    const previousScroll=samePage&&scroller?scroller.scrollTop:null;
+    const expandedHolders=samePage?new Set(
+      [...(body.querySelectorAll?.("details.bank-person-card[open][data-bank-holder-id]")||[])]
+        .map(el=>el.dataset.bankHolderId)) : new Set();
+    const expandedAccounts=samePage?new Set(
+      [...(body.querySelectorAll?.(".bank-person-account[data-bank-account-id] details.bank-account-menu[open]")||[])]
+        .map(el=>el.closest(".bank-person-account")?.dataset.bankAccountId)) : new Set();
+    body.innerHTML=nextMarkup;
+    if(samePage&&page==="bank-accounts"){
+      body.querySelectorAll("details.bank-person-card[data-bank-holder-id]").forEach(el=>{
+        if(expandedHolders.has(el.dataset.bankHolderId))el.open=true;
+      });
+      body.querySelectorAll(".bank-person-account[data-bank-account-id]").forEach(el=>{
+        if(expandedAccounts.has(el.dataset.bankAccountId)){
+          const menu=el.querySelector(".bank-card-top > details.bank-account-menu");
+          if(menu)menu.open=true;
+        }
+      });
+    }
+    if(previousScroll!==null&&scroller)scroller.scrollTop=previousScroll;
+    lastRenderedMarkup=nextMarkup;
+    lastRenderedPage=page;
+  }
+  $("#page-title").textContent=labels[page];
+  $("#page-subtitle").textContent=subtitles[page];
+  $("#crumb-current").textContent=labels[page].toUpperCase();
+  const actionHost=$("#page-actions");
+  if(actionHost.innerHTML!==nextActions)actionHost.innerHTML=nextActions;
+  $$(".nav-link").forEach(x=>{
+    const active=x.dataset.page===page;
+    x.classList.toggle("active",active);
+    if(active)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current");
+  });
   applyInstitutionalBrand();
   if(typeof applyBrandKit==="function")applyBrandKit();
 }

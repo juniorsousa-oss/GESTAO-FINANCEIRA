@@ -13,10 +13,11 @@ async function loadBanking(force=false){
   bankingRequest=(async()=>{
     try{
       const data=await api("/api/banking");
+      const changed=!bankingData||JSON.stringify(bankingData)!==JSON.stringify(data)||Boolean(bankingError);
       bankingData=data;bankingError=null;
-      if(page==="bank-accounts"||page==="reconciliation"||
+      if(changed&&(page==="bank-accounts"||page==="reconciliation"||
          (page==="settings"&&(!me?.family_enabled||me.family_role==="principal"))||
-         (page==="family"&&me?.family_role==="principal"))render();
+         (page==="family"&&me?.family_role==="principal")))render();
       return data;
     }catch(e){
       bankingError=e.message;
@@ -156,20 +157,7 @@ function bankingAccountsPage(){
       const cashKnown=balance!==null&&balance!==undefined;
       const investmentKnown=invested!==null&&invested!==undefined;
       const totalAccount=(cashKnown?Number(balance):0)+(investmentKnown?Number(invested):0);
-      const detail='<article class="bank-account-card bank-person-account">'+
-        '<div class="bank-card-top"><span class="bank-icon">'+interfaceIcon("wallet")+'</span>'+
-        '<span class="bank-tag">'+(manual?'Manual':(connected?'Conectada':'Manual'))+'</span></div>'+
-        '<div class="bank-account-topline"><strong class="bank-account-name">'+esc(a.nickname)+'</strong></div>'+
-        '<span class="bank-account-institution">'+esc(a.bank_name)+'</span>'+
-        '<small>'+esc(window.AxoraBankAdvanced?.typeLabel(a.account_type)||a.account_type)+' · BRL</small>'+
-        '<div class="bank-manual-balance"><span>Disponível</span><strong class="bank-account-currency">'+
-        (cashKnown?money(balance):"Não informado")+'</strong></div>'+
-        (investmentKnown?
-          '<div class="bank-investments-line"><span>Investido</span><strong>'+money(invested)+'</strong></div>':"")+
-        ((investmentKnown&&cashKnown)?
-          '<div class="bank-total-line"><span>Total da conta</span><strong>'+money(totalAccount)+'</strong></div>':"");
-      if(restricted)return detail+'</article>';
-      const actions='<details class="bank-account-menu">'+
+      const actions=restricted?"":'<details class="bank-account-menu">'+
         '<summary aria-label="Opções da conta '+esc(a.nickname)+'" title="Ações da conta">⋮</summary>'+
         '<div class="bank-account-menu-panel">'+
         (manual||!connected?'<button type="button" class="btn primary small" data-action="bank-update-balance" data-id="'+Number(a.id)+'">Atualizar saldo</button>':
@@ -181,10 +169,22 @@ function bankingAccountsPage(){
         '<button type="button" class="btn ghost small" data-action="bank-edit-account" data-id="'+Number(a.id)+'">Editar conta</button>'+
         '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-account" data-id="'+Number(a.id)+'">Excluir conta</button>'+
         (me?.family_enabled?'<button type="button" class="btn ghost small" data-family-action="set-visibility" data-resource="conta" data-id="'+Number(a.id)+'" data-label="'+esc(a.visibility_label||"privado")+'">Acesso: '+esc(a.visibility_label||"privado")+'</button>':'')+
-        '</div>';
-      return detail+actions+'</details></article>';
+        '</div></details>';
+      const detail='<article class="bank-account-card bank-person-account" data-bank-account-id="'+Number(a.id)+'">'+
+        '<div class="bank-card-top"><span class="bank-icon">'+interfaceIcon("wallet")+'</span>'+
+        '<span class="bank-tag">'+(manual?'Manual':(connected?'Conectada':'Manual'))+'</span>'+actions+'</div>'+
+        '<div class="bank-account-topline"><strong class="bank-account-name">'+esc(a.nickname)+'</strong></div>'+
+        '<span class="bank-account-institution">'+esc(a.bank_name)+'</span>'+
+        '<small>'+esc(window.AxoraBankAdvanced?.typeLabel(a.account_type)||a.account_type)+' · BRL</small>'+
+        '<div class="bank-manual-balance"><span>Disponível</span><strong class="bank-account-currency">'+
+        (cashKnown?money(balance):"Não informado")+'</strong></div>'+
+        (investmentKnown?
+          '<div class="bank-investments-line"><span>Investido</span><strong>'+money(invested)+'</strong></div>':"")+
+        ((investmentKnown&&cashKnown)?
+          '<div class="bank-total-line"><span>Total da conta</span><strong>'+money(totalAccount)+'</strong></div>':"");
+      return detail+'</article>';
     }).join("");
-    return '<details class="bank-person-card">'+
+    return '<details class="bank-person-card" data-bank-holder-id="'+Number(holder.id)+'">'+
       '<summary class="bank-person-summary" aria-label="Detalhar contas de '+esc(holder.name)+'">'+
       '<span class="bank-person-avatar" aria-hidden="true">'+esc(holder.name.trim().charAt(0).toUpperCase()||"C")+'</span>'+
       '<span class="bank-person-identity"><strong>'+esc(holder.name)+'</strong>'+
