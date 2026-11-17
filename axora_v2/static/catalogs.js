@@ -28,7 +28,7 @@ async function loadFinanceCatalogs(force=false){
   return financeCatalogPending;
 }
 function catalogGroup(kind){
-  const heading=kind==="category"?"Categorias":"Responsáveis";
+  const heading=kind==="category"?"Categorias":"Responsáveis anteriores";
   const items=(financeCatalogItems||[]).filter(it=>it.kind===kind)
        .sort((a,b)=>Number(b.active)-Number(a.active)||a.name.localeCompare(b.name,"pt-BR"));
   const rows=items.map(item=>'<div class="catalog-option'+(item.active?'':' catalog-inactive')+'">'+
@@ -36,14 +36,17 @@ function catalogGroup(kind){
       '<button type="button" class="btn ghost small" data-action="catalog-toggle" data-catalog-id="'+Number(item.id)+'" data-catalog-active="'+(item.active?"false":"true")+'" aria-label="'+(item.active?"Desativar ":"Reativar ")+esc(item.name)+'">'+(item.active?'Desativar':'Reativar')+'</button></div>').join("");
   return '<section class="catalog-group"><div class="catalog-group-head"><h3>'+heading+'</h3><span>'+items.filter(it=>it.active).length+' ativo(s)</span></div>'+
     '<div class="catalog-option-list">'+(rows||'<p class="panel-copy">Nenhuma opção cadastrada.</p>')+'</div>'+
-    '<form class="catalog-create-form" data-catalog-kind="'+kind+'"><label for="catalog-add-'+kind+'">Adicionar '+(kind==="category"?"categoria":"responsável")+'</label>'+
-    '<div class="catalog-create-row"><input id="catalog-add-'+kind+'" name="name" type="text" maxlength="120" autocomplete="off" placeholder="'+(kind==="category"?"Ex.: Moradia, Saúde":"Ex.: Nome do responsável")+'" required>'+
-    '<button class="btn primary small" type="submit">Adicionar</button></div></form></section>';
+    (kind==="category"?'<form class="catalog-create-form" data-catalog-kind="category"><label for="catalog-add-category">Adicionar categoria</label>'+
+    '<div class="catalog-create-row"><input id="catalog-add-category" name="name" type="text" maxlength="120" autocomplete="off" placeholder="Ex.: Moradia, Saúde" required>'+
+    '<button class="btn primary small" type="submit">Adicionar</button></div></form>':
+    '<p class="panel-copy">Para adicionar pessoas, use <b>Titulares cadastrados</b> nesta página. '+
+    'Estes nomes antigos permanecem apenas para compatibilidade com lançamentos existentes.</p>')+'</section>';
 }
 function financialCatalogPanel(){
   if(financeCatalogError)return '<div class="notice warning">Não foi possível carregar os catálogos. Verifique a atualização do banco.<div class="page-actions"><button class="btn ghost small" type="button" data-action="catalog-retry">Tentar novamente</button></div></div>';
   if(financeCatalogItems===null)return '<p class="panel-copy">Carregando categorias e responsáveis…</p>';
-  return '<div class="financial-catalogs"><p class="panel-copy">Padronize os novos cadastros. Uma opção desativada deixa de aparecer nos seletores, mas os lançamentos antigos continuam intactos.</p>'+
+  return '<div class="financial-catalogs"><p class="panel-copy">Categorias continuam neste painel. '+
+    'Pessoas são administradas em Titulares cadastrados; os responsáveis históricos permanecem disponíveis sem duplicar o cadastro.</p>'+
     '<div class="catalog-grid">'+catalogGroup("category")+catalogGroup("responsible")+'</div>'+
     '<div class="catalog-export-area"><p class="panel-copy">Baixe a relação com nomes padronizados, situação e instruções. O CSV abre no Excel e pode ser compartilhado como referência com a equipe.</p>'+
     '<button class="btn ghost" type="button" data-action="catalog-export">'+interfaceIcon("download")+' Exportar listas (CSV)</button></div></div>';
@@ -60,9 +63,16 @@ function hydrateProvisionCatalogs(selector="#provision-form"){
     const previous=select.value;
     select.replaceChildren(new Option(title,""));
     const items=financeCatalogItems.filter(item=>item.kind===kind&&item.active)
-      .sort((a,b)=>a.name.localeCompare(b.name,"pt-BR"));
-    for(const item of items)select.add(new Option(item.name,item.name));
-    if(items.some(it=>it.name===previous))select.value=previous;
+      .map(item=>item.name);
+    if(kind==="responsible"&&typeof bankingHolderOptions==="function"&&
+       (!me?.family_enabled||me.family_role==="principal")){
+      // Reutiliza o mesmo cadastro de Titulares, não cria responsável duplicado.
+      for(const holder of bankingHolderOptions())items.push(holder.name);
+    }
+    const unique=[...new Map(items.map(name=>[String(name).trim().toLocaleLowerCase("pt-BR"),name])).values()]
+      .sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    for(const name of unique)select.add(new Option(name,name));
+    if(unique.some(name=>name===previous))select.value=previous;
   }
 }
 async function exportFinancialCatalogs(){
