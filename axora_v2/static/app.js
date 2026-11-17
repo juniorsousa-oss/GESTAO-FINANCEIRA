@@ -257,7 +257,7 @@ function render(){
         .map(el=>el.dataset.bankHolderId)) : new Set();
     const expandedAccounts=samePage?new Set(
       [...(body.querySelectorAll?.(".bank-person-account[data-bank-account-id] details.bank-account-menu[open]")||[])]
-        .map(el=>el.parentElement.dataset.bankAccountId)) : new Set();
+        .map(el=>el.closest(".bank-person-account")?.dataset.bankAccountId)) : new Set();
     body.innerHTML=nextMarkup;
     if(samePage&&page==="bank-accounts"){
       body.querySelectorAll("details.bank-person-card[data-bank-holder-id]").forEach(el=>{
