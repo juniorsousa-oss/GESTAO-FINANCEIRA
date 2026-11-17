@@ -273,7 +273,15 @@ function render(){
     const expandedAccounts=samePage?new Set(
       [...(body.querySelectorAll?.(".bank-person-account[data-bank-account-id] details.bank-account-menu[open]")||[])]
         .map(el=>el.closest(".bank-person-account")?.dataset.bankAccountId)) : new Set();
+    const expandedFamilyMenus=samePage&&page==="family"?new Set(
+      [...(body.querySelectorAll?.("details.family-member-menu[open][data-family-profile-id]")||[])]
+        .map(el=>el.dataset.familyProfileId)) : new Set();
     body.innerHTML=nextMarkup;
+    if(samePage&&page==="family"){
+      body.querySelectorAll("details.family-member-menu[data-family-profile-id]").forEach(el=>{
+        if(expandedFamilyMenus.has(el.dataset.familyProfileId))el.open=true;
+      });
+    }
     if(samePage&&page==="bank-accounts"){
       body.querySelectorAll("details.bank-person-card[data-bank-holder-id]").forEach(el=>{
         if(expandedHolders.has(el.dataset.bankHolderId))el.open=true;
