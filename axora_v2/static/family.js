@@ -216,7 +216,7 @@ const AxoraFamily = (() => {
   }
   async function saveRelationship(profileId,btn){
     if(!own())throw Error("Ação exclusiva da conta principal.");
-    const section=btn.closest(".family-member-tools");
+    const section=btn.closest(".family-member-menu");
     const relationship=section?.querySelector("[data-family-role]")?.value;
     if(!relationship)throw Error("Selecione o vínculo.");
     await api("/api/family/profiles/"+profileId+"/relationship",
