@@ -107,9 +107,10 @@ with sync_playwright() as p:
             assert page.locator(".provision-row-actions [data-action='edit-provision']").first.is_visible()
             assert page.locator(".provision-mobile-actions").first.is_hidden()
             assert '<details' not in page.evaluate("bankInfoBanner()")
-        # Dashboard deve ser informativo em ambas as variantes.
-        assert page.evaluate("page='dashboard'; actionButtons()")==="",(
-            width,"ação de rateio indevida no dashboard")
+        # Dashboard mantém ações gerais, nunca inclui o atalho de rateio.
+        dashboard_actions=page.evaluate("() => { page='dashboard'; return actionButtons(); }")
+        assert 'data-family-action="new-expense"' not in dashboard_actions
+        assert "Exportar Excel" in dashboard_actions
         context.close()
         print(f"AXORA mobile audit: {width}x{height} validado")
     browser.close()
