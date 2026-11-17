@@ -2,7 +2,7 @@
    Nenhum rótulo é aplicado como permissão apenas no frontend. */
 "use strict";
 const AxoraFamily = (() => {
-  let family=null,summary=null,lastError="",loading=false;
+  let family=null,summary=null,lastError="",loading=false,loadRequest=null;
   const roleName={principal:"Principal",conjuge:"Cônjuge",pai:"Pai",mae:"Mãe",filho:"Filho(a)",sogro:"Sogro(a)",tio:"Tio(a)",outro:"Outro"};
   const labels={privado:"Privado",casal:"Casal",familia:"Família",selecionados:"Selecionados"};
   const hasAccess=()=>Boolean(me?.family_enabled);
@@ -18,14 +18,20 @@ const AxoraFamily = (() => {
   }
   async function load(force=false){
     if(!hasAccess())return;
-    if(loading||(!force&&family&&summary))return;
+    // Quem abrir Provisões durante outra carga aguarda o mesmo pedido e
+    // recebe a lista completa de pessoas; não cria um segundo carregamento.
+    if(loadRequest)return loadRequest;
+    if(!force&&family&&summary)return;
     loading=true;lastError="";
-    try{
-      const [f,s]=await Promise.all([api("/api/family"),api("/api/family/summary")]);
-      family=f;summary=s;
-      // Nunca consulta /api/users: a lista global não pertence ao núcleo familiar.
-    }catch(err){lastError=err.message}
-    finally{loading=false;if(page==="family"||page==="settings")render()}
+    loadRequest=(async()=>{
+      try{
+        const [f,s]=await Promise.all([api("/api/family"),api("/api/family/summary")]);
+        family=f;summary=s;
+        // Nunca consulta /api/users: a lista global não pertence ao núcleo familiar.
+      }catch(err){lastError=err.message;throw err}
+      finally{loading=false;if(page==="family"||page==="settings")render()}
+    })();
+    try{return await loadRequest}finally{loadRequest=null}
   }
   function entryRows(type,predefined=null,shares=[]){
     const target=current()||Number(people()[0]?.id||0);
