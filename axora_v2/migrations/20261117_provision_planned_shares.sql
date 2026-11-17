@@ -66,7 +66,7 @@ BEGIN
  ) THEN RAISE EXCEPTION 'Participante duplicado'; END IF;
  IF (SELECT coalesce(sum(s.percentage),0) FROM jsonb_to_recordset(p_shares)
      AS s(profile_id bigint, percentage numeric))<>100
- THEN RAISE EXCEPTION 'Rateio deve totalizar 100%'; END IF;
+ THEN RAISE EXCEPTION 'Rateio deve totalizar 100%%'; END IF;
 
  v_rule:=axora_beta.axora_create_provision_with_method(
    p_workspace_id,p_description,p_category,p_responsible,
