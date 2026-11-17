@@ -37,6 +37,31 @@ CREATE UNIQUE INDEX IF NOT EXISTS axora_beta_holder_profile_unique
   ON axora_beta.finance_bank_holders(workspace_id,family_profile_id)
   WHERE family_profile_id IS NOT NULL;
 
+-- Primeiro preserva a relação mais específica anteriormente cadastrada
+-- na área bancária (ex.: Mãe/Pai) caso o perfil familiar ainda esteja "Outro".
+-- Nunca sobrescreve um perfil específico nem atribui permissões automaticamente.
+WITH existing_relations AS (
+ SELECT p.id profile_id,h.relationship,h.workspace_id
+ FROM axora_beta.finance_bank_holders h
+ JOIN axora_beta.finance_family_profiles p
+   ON h.workspace_id=p.workspace_id
+  AND lower(btrim(h.name))=lower(btrim(p.display_name))
+ WHERE p.active AND p.relationship='outro'
+   AND h.relationship IN ('conjuge','pai','mae','filho','sogro','tio')
+   AND (h.linked_user_id IS NULL OR p.linked_user_id IS NULL
+        OR h.linked_user_id=p.linked_user_id)
+   AND (SELECT count(*) FROM axora_beta.finance_bank_holders h2
+        WHERE h2.workspace_id=h.workspace_id
+          AND lower(btrim(h2.name))=lower(btrim(h.name)))=1
+   AND (SELECT count(*) FROM axora_beta.finance_family_profiles p2
+        WHERE p2.workspace_id=p.workspace_id AND p2.active
+          AND lower(btrim(p2.display_name))=lower(btrim(p.display_name)))=1
+)
+UPDATE axora_beta.finance_family_profiles p
+SET relationship=e.relationship
+FROM existing_relations e
+WHERE p.id=e.profile_id AND p.workspace_id=e.workspace_id;
+
 -- Migra somente pares de mesmo nome normalizado que sejam únicos em AMBAS
 -- tabelas e não apresentem divergência de login. Nomes ambíguos ficam sem
 -- vínculo automático para decisão humana nas Configurações.
