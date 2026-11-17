@@ -14,11 +14,13 @@ async function loadBanking(force=false){
     try{
       const data=await api("/api/banking");
       bankingData=data;bankingError=null;
-      if(page==="bank-accounts"||page==="reconciliation")render();
+      if(page==="bank-accounts"||page==="reconciliation"||
+         (page==="settings"&&(!me?.family_enabled||me.family_role==="principal")))render();
       return data;
     }catch(e){
       bankingError=e.message;
-      if(page==="bank-accounts"||page==="reconciliation")render();
+      if(page==="bank-accounts"||page==="reconciliation"||
+         (page==="settings"&&(!me?.family_enabled||me.family_role==="principal")))render();
       throw e;
     }finally{bankingRequest=null}
   })();
@@ -85,6 +87,40 @@ function bankBalancePanel(){
     'Saldos conectados vêm do MeuPluggy; os outros são informados manualmente.')+
     ' Não somamos extratos, lançamentos ou previsões para evitar duplicidades.</p></section>';
 }
+/* Um cadastro persistente de titulares por espaço, utilizado em todas as telas. */
+function bankingHolders(){return Array.isArray(bankingData?.holders)?bankingData.holders:[]}
+function bankingHolderOptions(){
+  return bankingHolders().map(h=>({id:Number(h.id),name:String(h.name),relationship:h.relationship}));
+}
+function bankingHolderCatalogPanel(){
+  if(me?.family_enabled&&me.family_role!=="principal")return "";
+  if(bankingError)return panel("Titulares cadastrados","Cadastro central deste espaço.",
+    '<div class="notice warning">Falha ao carregar os titulares. '+
+    '<button type="button" class="btn ghost small" data-action="bank-retry-holders">Tentar novamente</button></div>');
+  if(!bankingData)return panel("Titulares cadastrados","Cadastro central para contas e compromissos.",
+    '<p class="panel-copy">Carregando titulares...</p>');
+  const holders=bankingHolders();
+  const owners=holders.map(h=>'<article class="bank-entity">'+
+    '<div class="bank-entity-details">'+
+      '<span class="bank-entity-avatar" aria-hidden="true">'+esc((h.name||"T").trim().charAt(0).toUpperCase()||"T")+'</span>'+
+      '<div class="bank-entity-copy"><strong>'+esc(h.name)+'</strong>'+
+        '<small>'+esc(holderRelations[h.relationship]||"Outro")+'</small></div></div>'+
+    '<div class="bank-entity-actions" role="group" aria-label="Ações do titular '+esc(h.name)+'">'+
+      '<button type="button" class="btn ghost small bank-edit" data-action="bank-edit-holder" data-id="'+Number(h.id)+'">Editar</button>'+
+      '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-holder" data-id="'+Number(h.id)+'">Excluir</button>'+
+    '</div></article>').join("");
+
+  return panel("Titulares cadastrados",
+    "Cadastro central utilizado pelas contas bancárias e como referência para responsáveis em novos compromissos.",
+    '<div class="bank-holders-toolbar"><span>'+holders.length+' '+
+      (holders.length===1?'titular cadastrado':'titulares cadastrados')+'</span>'+
+      '<button type="button" class="btn primary small" data-action="bank-new-holder">'+interfaceIcon("plus")+
+      '<span>Adicionar titular</span></button></div>'+
+    '<div class="bank-entities">'+(owners||'<div class="empty-state"><b>Nenhum titular cadastrado.</b> '+
+    'Adicione um titular para vincular suas contas bancárias.</div>')+'</div>'+
+    '<p class="bank-holders-footnote">Este cadastro não cria login nem concede acesso a dados privados. '+
+    'As permissões continuam em Família e usuários.</p>');
+}
 function bankingAccountsPage(){
   if(!bankingData||bankingError)return bankUnavailable();
   const restricted=Boolean(me?.family_enabled && me.family_role!=="principal");
@@ -130,22 +166,13 @@ function bankingAccountsPage(){
       '<span class="bank-person-chevron" aria-hidden="true">'+interfaceIcon("chevron-down")+'</span></summary>'+
       '<div class="bank-person-detail">'+rows+'</div></details>';
   }).join("");
-  const owners=restricted?"":holders.map(h=>'<article class="bank-entity">'+
-    '<div class="bank-entity-details">'+
-      '<span class="bank-entity-avatar" aria-hidden="true">'+esc((h.name||"T").trim().charAt(0).toUpperCase()||"T")+'</span>'+
-      '<div class="bank-entity-copy"><strong>'+esc(h.name)+'</strong>'+
-        '<small>'+esc(holderRelations[h.relationship]||"Outro")+'</small></div></div>'+
-    '<div class="bank-entity-actions" role="group" aria-label="Ações do titular '+esc(h.name)+'">'+
-      '<button type="button" class="btn ghost small bank-edit" data-action="bank-edit-holder" data-id="'+Number(h.id)+'">Editar</button>'+
-      '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-holder" data-id="'+Number(h.id)+'">Excluir</button>'+
-    '</div></article>').join("");
   return '<div class="stack bank-module">'+
     (restricted?"":bankBalancePanel())+
     bankInfoBanner()+
-    panel("Saldos por pessoa","Selecione uma pessoa para consultar suas contas bancárias.",
+    panel("Saldos por pessoa","Selecione um titular para expandir suas contas, sem alterar os demais cartões.",
       '<div class="bank-people-grid">'+(cards||'<div class="empty-state"><b>Nenhuma conta cadastrada</b>Os dados bancários aparecerão nesta área.</div>')+'</div>')+
-    (restricted?"":panel("Titulares cadastrados","Organize os titulares associados às contas.",
-      '<div class="bank-entities">'+(owners||'<p class="panel-copy">Nenhum titular cadastrado.</p>')+'</div>'))+
+    (!restricted?'<p class="bank-config-hint">Para gerenciar titulares, '+
+      '<button type="button" class="catalog-settings-link" data-action="open-holder-settings">acesse Configurações</button>.</p>':"")+
     '</div>';
 }
 function bankTransactionRow(tx){
@@ -207,12 +234,12 @@ function bankOpenHolder(id=null){
   $("#bank-holder-dialog").showModal();
 }
 function bankOpenAccount(id=null){
-  if(!(bankingData?.holders||[]).length){showToast("Cadastre primeiro um titular.",true);return}
+  if(!bankingHolders().length){showToast("Cadastre um titular em Configurações.",true);go("settings");return}
   const form=$("#bank-account-form");form.reset();
   const selected=id===null?null:(bankingData?.accounts||[]).find(a=>Number(a.id)===Number(id));
   if(id!==null&&!selected)throw Error("Conta não localizada. Atualize a lista.");
   form.elements.record_id.value=selected?.id||"";
-  bankFillSelect(form.elements.holder_id,bankingData.holders.map(h=>({id:h.id,label:h.name})),
+  bankFillSelect(form.elements.holder_id,bankingHolderOptions().map(h=>({id:h.id,label:h.name})),
                  "Selecione o titular");
   if(selected){
     form.elements.holder_id.value=selected.holder_id;
@@ -373,6 +400,8 @@ document.addEventListener("DOMContentLoaded",()=>{
     const action=el.dataset.action;
     try{
       if(action==="bank-new-holder")bankOpenHolder();
+      else if(action==="bank-retry-holders")await loadBanking(true);
+      else if(action==="open-holder-settings")go("settings");
       else if(action==="bank-new-account")bankOpenAccount();
       else if(action==="bank-edit-holder")bankOpenHolder(Number(el.dataset.id));
       else if(action==="bank-edit-account")bankOpenAccount(Number(el.dataset.id));
