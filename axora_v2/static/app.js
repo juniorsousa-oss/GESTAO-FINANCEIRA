@@ -113,7 +113,16 @@ function logoutVisual(){if(window.AxoraFamily)AxoraFamily.reset();
   if(typeof provisionError!=="undefined")provisionError=null;
   if(typeof resetFinancialCatalogs==="function")resetFinancialCatalogs();document.title="AXORA | Acesso";me=null;snapshot=null;$("#workspace").classList.add("hidden");$("#login").classList.remove("hidden");$("#login-password").value="";$("#login-password").focus()}
 function enterVisual(){if(window.AxoraFamily)AxoraFamily.reset();document.title="AXORA | Gestão Financeira"; $("#login").classList.add("hidden");$("#workspace").classList.remove("hidden");$("#user-name").textContent=me.display_name;const a=$("#avatar");a.replaceChildren();if(me.avatar_data_uri){const i=document.createElement("img");i.src=me.avatar_data_uri;i.alt="";a.append(i)}else a.textContent=(me.display_name||"A")[0].toUpperCase();document.querySelectorAll("[data-family-nav]").forEach(n=>n.hidden=!me.family_enabled);document.querySelectorAll('[data-page="reconciliation"]').forEach(n=>n.hidden=Boolean(me.family_enabled&&me.family_role!=="principal"));}
-async function start(){try{me=await api("/api/me");enterVisual();await refresh()}catch{logoutVisual()}}
+async function start(){
+  try{
+    me=await api("/api/me");enterVisual();
+    await refresh();
+    // A Visão Financeira mostra os saldos apenas das contas devolvidas para
+    // a sessão autenticada — nunca usa os agregados globais do workspace.
+    if(typeof loadBanking==="function")
+      loadBanking(false).catch(()=>{if(page==="dashboard")render()});
+  }catch{logoutVisual()}
+}
 function updateSyncStatus(status){
   syncStatus=status;
   const timestamp=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
@@ -165,6 +174,8 @@ async function refresh({silent=false}={}){
   finally{snapshotRequest=null}
 }
 function go(next){
+  // A conciliação automática está pausada neste estágio do produto.
+  if(next==="reconciliation")return;
   const restricted=Boolean(me?.family_enabled&&me.family_role!=="principal");
   if(restricted&&["reconciliation","accounts","debts","forecasts","import"].includes(next))return;
   page=next;filters={};hideMenu();render();
@@ -180,7 +191,11 @@ function go(next){
     AxoraFamily.load(true).catch(e=>showToast(e.message,true));
     if(me?.family_role==="principal")loadBanking(false).catch(()=>{});
   }
-  if(next==="bank-accounts")window.AxoraBankAdvanced?.loadTypes(false).catch(()=>{});if(next==="dashboard"&&typeof autoSyncNow==="function")autoSyncNow("navigation");const scroller=$("#workspace .main-area");if(scroller)scroller.scrollTop=0;}
+  if(next==="bank-accounts")window.AxoraBankAdvanced?.loadTypes(false).catch(()=>{});if(next==="dashboard"){
+    if(typeof loadBanking==="function")
+      loadBanking(false).catch(()=>{if(page==="dashboard")render()});
+    if(typeof autoSyncNow==="function")autoSyncNow("navigation");
+  }const scroller=$("#workspace .main-area");if(scroller)scroller.scrollTop=0;}
 function syncMenuTrigger(){
   const button=$("#menu-toggle"),mobile=window.matchMedia("(max-width:850px)").matches;
   const sidebar=$("#sidebar");
@@ -289,11 +304,31 @@ function render(){
 }
 function metric(label,value,hint,icon,tone=""){return '<div class="metric-card '+tone+'"><div class="metric-label">'+esc(label)+'<span class="metric-icon">'+metricIcon(icon)+'</span></div><div class="metric-value">'+money(value)+'</div><div class="metric-meta">'+esc(hint)+'</div></div>'}
 function panel(title,desc,content){return '<section class="panel"><div class="panel-heading"><div><h2>'+title+'</h2><p>'+desc+'</p></div></div>'+content+'</section>'}
+function bankDashboardMetric(){
+  const balances=typeof bankingData!=="undefined"?bankingData?.balances:null;
+  const loading=typeof bankingData==="undefined"||(!balances&&!bankingError);
+  const total=balances?money(balances.combined):loading?"Carregando…":"Indisponível";
+  const count=Number(balances?.known_accounts||0);
+  const missing=Number(balances?.missing_accounts||0);
+  // Somas recebidas somente de /api/banking; o backend já filtra contas
+  // pelo usuário. Não anunciar a existência de recursos não compartilhados.
+  const detail=balances?
+    (count?"Disponível "+money(balances.cash_total)+
+      " · Investimentos "+money(balances.investment_total):
+      "Sem saldos registrados")+
+    (missing?" · "+missing+" sem saldo informado":""):
+    loading?"Consultando saldos bancários":"Não foi possível atualizar os saldos.";
+  return '<div class="metric-card metric-banking-total">'+
+    '<div class="metric-label">Total em contas<span class="metric-icon">'+metricIcon("wallet")+'</span></div>'+
+    '<div class="metric-value">'+esc(total)+'</div>'+
+    '<div class="metric-meta">'+esc(detail)+'</div></div>';
+}
 function dashboard(){
   const x=snapshot.summary,s=snapshot.settings;
   const restricted=Boolean(me?.family_enabled && me.family_role!=="principal");
   if(restricted){
     const cards=[
+      bankDashboardMetric(),
       metric("Entradas",x.receipts,"Recebimentos registrados","receive"),
       metric("Despesas",x.expenses,"Gastos registrados","pay","negative"),
       metric("Resultado",x.realized,"Entradas menos despesas","trend"),
@@ -309,8 +344,8 @@ function dashboard(){
       '</div>'+panel("Próximos compromissos","Agenda de pagamentos.",forecasts);
   }
   let cards=[
+    bankDashboardMetric(),
     metric("Saldo realizado",x.realized,"Receitas menos despesas","trend"),
-    metric("Saldo localizado",x.located,"Diferença "+money(x.discrepancy),"wallet","info"),
     metric("A receber",x.to_receive,"Previsões pendentes","receive"),
     metric("A pagar",x.to_pay,(x.pending_count??0)+" compromissos pendentes no total","pay","negative"),
     metric("Saldo projetado",x.projected,"Realizado menos todas as provisões","projection","info"),
@@ -323,12 +358,10 @@ function dashboard(){
     ["Reserva de emergência",x.goals.emergency],["Investimento mensal",x.goals.investment],
     ["Contas fixas",x.goals.fixed],["Lazer",x.goals.leisure]
   ].map(([l,v])=>'<div class="goal-item"><small>'+esc(l)+'</small><b>'+money(v)+'</b></div>').join("")+'</div>':'<div class="empty-state">Defina sua renda líquida em Configurações para visualizar as metas.</div>';
-  let reconciliation='<div class="conciliation-big">'+num(x.conciliation).toFixed(0)+'%</div><p class="panel-copy">Nível estimado de conciliação</p><progress class="progress-native" value="'+num(x.conciliation)+'" max="100" aria-label="Conciliação dos saldos"></progress><ul class="checklist"><li>Realizado separado do previsto</li><li>Saldos comparados com o sistema</li><li>Divergência: '+money(x.discrepancy)+'</li></ul>';
   const html='<div class="metric-grid">'+cards+'</div><div class="grid-two">'+
     panel("Evolução financeira mensal","Receitas e despesas realizadas nos últimos seis meses.",chartMonthly(x.monthly))+
     panel("Despesas por categoria","Distribuição das saídas registradas.",chartDonut(x.categories))+'</div><div class="grid-two">'+
-    panel("Próximas contas e previsões","Agenda financeira para acompanhamento imediato.",forecasts)+
-    panel("Conciliação de saldo","Conferência do saldo calculado e localizado.",reconciliation)+'</div>'+
+    panel("Próximas contas e previsões","Agenda financeira para acompanhamento imediato.",forecasts)+'</div>'+
     panel("Suas metas financeiras","Planejamento baseado na renda líquida configurada.",goals);
   return html;
 }
@@ -505,7 +538,10 @@ async function importAction(action){
   }catch(e){showToast(e.message,true)}
 }
 function bind(){
-  $("#login-form").addEventListener("submit",async e=>{e.preventDefault();$("#login-error").textContent="";const btn=e.currentTarget.querySelector("button[type=submit]");btn.disabled=true;try{await api("/api/login",{method:"POST",body:JSON.stringify({password:$("#login-password").value})});me=await api("/api/me");enterVisual();await refresh()}catch(err){$("#login-error").textContent=err.message}finally{btn.disabled=false}});
+  $("#login-form").addEventListener("submit",async e=>{e.preventDefault();$("#login-error").textContent="";const btn=e.currentTarget.querySelector("button[type=submit]");btn.disabled=true;try{await api("/api/login",{method:"POST",body:JSON.stringify({password:$("#login-password").value})});me=await api("/api/me");enterVisual();await refresh();
+        if(typeof loadBanking==="function")
+          loadBanking(false).catch(()=>{if(page==="dashboard")render()});
+      }catch(err){$("#login-error").textContent=err.message}finally{btn.disabled=false}});
   $("#toggle-password").onclick=()=>{const p=$("#login-password");p.type=p.type==="password"?"text":"password";$("#toggle-password").textContent=p.type==="password"?"Mostrar":"Ocultar"};
   $("#menu-toggle").onclick=showMenu;
   $("#close-menu").onclick=hideMenu;
