@@ -36,19 +36,22 @@ function bankTitle(item){
     " · "+(holder?.name||"Titular");
 }
 function bankInfoBanner(){
-  if(me?.family_enabled && me.family_role!=="principal"){
-    return '<div class="notice bank-info"><b>Controle bancário manual.</b> '+
-      'Consulte os saldos registrados e os detalhes de cada conta.</div>';
+  const restricted=me?.family_enabled&&me.family_role!=="principal";
+  let note;
+  if(restricted){
+    note='<b>Controle bancário manual.</b> Consulte os saldos registrados e os detalhes de cada conta.';
+  }else if(bankingData?.mode==="manual"){
+    note='<b>Controle bancário manual.</b> Informe o saldo atual de cada conta para manter o controle atualizado. Contas sem saldo informado ficam pendentes até serem preenchidas.';
+  }else{
+    const enabled=bankingData?.provider?.configured;
+    note='<b>'+(enabled?'MeuPluggy pessoal disponível.':'Controle bancário manual.')+'</b> '+
+      (enabled?'A sincronização atualiza saldos e transações. Confirme lançamentos antes de conciliá-los.':
+        'Informe os saldos das contas conforme seus extratos.');
   }
-  if(bankingData?.mode==="manual"){
-    return '<div class="notice bank-info"><b>Controle bancário manual.</b> '+
-      'Informe o saldo atual de cada conta para manter o controle atualizado. '+
-      'Contas sem saldo informado ficam pendentes até serem preenchidas.</div>';
-  }
-  const enabled=bankingData?.provider?.configured;
-  return '<div class="notice bank-info"><b>'+(enabled?'MeuPluggy pessoal disponível.':'Controle bancário manual.')+'</b> '+
-    (enabled?'A sincronização atualiza saldos e transações. Confirme lançamentos antes de conciliá-los.':
-    'Informe os saldos das contas conforme seus extratos.')+'</div>';
+  const isMobile=typeof window!=="undefined"&&typeof window.matchMedia==="function"&&
+    window.matchMedia("(max-width:850px)").matches;
+  return '<details class="notice bank-info bank-info-disclosure" '+(isMobile?'':'open')+
+    '><summary>Orientações sobre contas e saldos</summary><div class="bank-info-copy">'+note+'</div></details>';
 }
 function bankUnavailable(){
   return '<section class="panel"><h2>Dados bancários indisponíveis</h2><p class="panel-copy">'+
