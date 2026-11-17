@@ -23,7 +23,6 @@
   dialog:is(.editor-dialog,.family-dialog,.bank-dialog,.provision-dialog)>form,
   dialog.provision-pix-dialog>.provision-pix-content{
     box-sizing:border-box;
-    display:block;
     min-width:0;
     max-width:100%;
     max-height:calc(var(--axora-modal-scroll-limit) - 24px);
