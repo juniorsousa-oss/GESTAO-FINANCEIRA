@@ -253,10 +253,10 @@ function render(){
     const scroller=$("#workspace .main-area");
     const previousScroll=samePage&&scroller?scroller.scrollTop:null;
     const expandedHolders=samePage?new Set(
-      [...body.querySelectorAll("details.bank-person-card[open][data-bank-holder-id]")]
+      [...(body.querySelectorAll?.("details.bank-person-card[open][data-bank-holder-id]")||[])]
         .map(el=>el.dataset.bankHolderId)) : new Set();
     const expandedAccounts=samePage?new Set(
-      [...body.querySelectorAll(".bank-person-account[data-bank-account-id] > details.bank-account-menu[open]")]
+      [...(body.querySelectorAll?.(".bank-person-account[data-bank-account-id] > details.bank-account-menu[open]")||[])]
         .map(el=>el.parentElement.dataset.bankAccountId)) : new Set();
     body.innerHTML=nextMarkup;
     if(samePage&&page==="bank-accounts"){
