@@ -123,7 +123,7 @@ def test_frontend_contract_and_migration_scope():
     css=(BASE/"static/banking-advanced.css").read_text()
     migration=(BASE/"migrations/20261116_bank_transfers_investments_and_types.sql").read_text()
     html=(BASE/"static/index.html").read_text()
-    assert 'class="bank-account-menu"' in js
+    assert 'class="bank-account-menu axora-action-menu"' in js
     assert '"bank-transfer-open"' in js+app+advanced
     assert '"bank-open-investments"' in js
     assert 'bankingHolderCatalogPanel' in app
