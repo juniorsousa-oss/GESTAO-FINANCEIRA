@@ -242,7 +242,9 @@ function trapMobileMenuFocus(e){
 }
 function actionButtons(){
   if(me?.family_enabled && me.family_role!=="principal" && (page==="bank-accounts"||page==="reconciliation"))return "";
-  if(me?.family_enabled && (page==="movements"||page==="dashboard"))
+  // Dashboard é exclusivamente de leitura; cadastros e rateios ficam nos módulos.
+  if(page==="dashboard")return "";
+  if(me?.family_enabled && page==="movements")
     return '<button class="btn primary btn-strong" data-family-action="new-expense">'+interfaceIcon("plus")+'<span>Movimentação com rateio</span></button>';
   if(me?.family_enabled && me.family_role!=="principal" && page==="provisions")return "";
   if(page==="bank-accounts")return '<button class="btn ghost btn-secondary" data-action="bank-transfer-open">'+interfaceIcon("wallet")+'<span>Transferir saldo</span></button>'+
@@ -250,7 +252,7 @@ function actionButtons(){
   if(page==="reconciliation")return '<button class="btn primary btn-strong" data-action="bank-new-transaction">'+interfaceIcon("plus")+'<span>Adicionar transação manual</span></button>';
   if(page==="provisions")return '<button class="btn primary btn-strong" data-action="new-provision">'+interfaceIcon("plus")+'<span>Adicionar provisão</span></button>';
   if(meta[page])return '<button class="btn primary btn-strong" data-action="new">'+interfaceIcon("plus")+'<span>Novo registro</span></button>';
-  if(page==="dashboard")return '<button class="btn ghost btn-secondary" data-action="export">'+interfaceIcon("download")+'<span>Exportar Excel</span></button><button class="btn primary btn-strong" data-action="new-movement">'+interfaceIcon("plus")+'<span>Movimentação</span></button>';
+
   if(page==="import")return '<button class="btn ghost btn-secondary" data-action="export">'+interfaceIcon("download")+'<span>Exportar Excel</span></button>';
   return "";
 }
