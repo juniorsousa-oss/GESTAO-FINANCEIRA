@@ -24,6 +24,7 @@ with sync_playwright() as p:
         page.goto(URL,wait_until="networkidle")
         ids=page.locator(SELECTOR).evaluate_all("(els)=>els.map(e=>e.id)")
         assert len(ids)>=15,("Modal não coberto pela auditoria",ids)
+        assert page.locator("dialog").count()==len(ids), ("Novo modal sem padrão de rolagem",ids)
         for id in ids:
             locator=page.locator("#"+id)
             locator.evaluate("""(dialog)=>{
