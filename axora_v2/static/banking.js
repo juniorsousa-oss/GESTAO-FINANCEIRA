@@ -5,7 +5,7 @@
 let bankingData=null,bankingError=null,bankingRequest=null,bankingHistory=null;
 let bankingSelected=null,bankingCandidates=[],bankingChoice=null,bankingReview=false;
 const bankingModes={matched_record:"Vincular Registro existente",matched_provision:"Quitar Provisão",recorded:"Criar Registro",transfer:"Transferência interna",ignored:"Ignorar movimentação"};
-const holderRelations={proprio:"Próprio",conjuge:"Cônjuge",mae:"Mãe",pai:"Pai",familiar:"Familiar",outro:"Outro"};
+const holderRelations={proprio:"Próprio",conjuge:"Cônjuge",pai:"Pai",mae:"Mãe",filho:"Filho(a)",sogro:"Sogro(a)",tio:"Tio(a)",familiar:"Familiar",outro:"Outro"};
 
 async function loadBanking(force=false){
   if(bankingRequest)return bankingRequest;
