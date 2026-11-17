@@ -157,9 +157,9 @@ function bankingAccountsPage(){
       const cashKnown=balance!==null&&balance!==undefined;
       const investmentKnown=invested!==null&&invested!==undefined;
       const totalAccount=(cashKnown?Number(balance):0)+(investmentKnown?Number(invested):0);
-      const actions=restricted?"":'<details class="bank-account-menu">'+
-        '<summary aria-label="Opções da conta '+esc(a.nickname)+'" title="Ações da conta">⋮</summary>'+
-        '<div class="bank-account-menu-panel">'+
+      const actions=restricted?"":'<details class="bank-account-menu axora-action-menu">'+
+        '<summary aria-expanded="false" aria-label="Opções da conta '+esc(a.nickname)+'" title="Ações da conta">⋮</summary>'+
+        '<div class="bank-account-menu-panel axora-action-menu-panel">'+
         (manual||!connected?'<button type="button" class="btn primary small" data-action="bank-update-balance" data-id="'+Number(a.id)+'">Atualizar saldo</button>':
           (bankingData?.provider?.configured?'<button type="button" class="btn primary small" data-action="meu-pluggy-sync" data-id="'+Number(a.id)+'">Sincronizar</button>':''))+
         '<button type="button" class="btn ghost small" data-action="bank-open-investments" data-id="'+Number(a.id)+'">Investimentos</button>'+
