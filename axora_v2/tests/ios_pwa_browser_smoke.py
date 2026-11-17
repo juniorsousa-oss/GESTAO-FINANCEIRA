@@ -91,7 +91,7 @@ with sync_playwright() as p:
     long_gap = last_view["y"] + last_view["height"] - (last_foot["y"] + last_foot["height"])
     assert 8 <= long_gap <= 45, ("long footer gap", long_gap, last_view, last_foot)
     assert abs(shell.bounding_box()["y"] + shell.bounding_box()["height"] - shell_bottom) <= 2
-    # Cards reais gerados pela tela de contas com dados inteiramente fictícios.
+    # Titulares vêm de um único endpoint e agora vivem nas Configurações.
     page.evaluate("""() => {
       me={id:1,display_name:"Principal fictício",family_enabled:true,family_role:"principal"};
       bankingData={
@@ -101,16 +101,28 @@ with sync_playwright() as p:
           {id:3,name:"Pessoa com nome composto extenso",relationship:"mae"},
           {id:4,name:"Familiar C",relationship:"pai"}
         ],
-        accounts:[],balances:{
-          holders:[],known_accounts:0,missing_accounts:0,
-          personal:0,family:0,combined:0,personal_missing:0,family_missing:0
+        accounts:Array.from({length:7},(_,i)=>({
+          id:i+10,holder_id:i<4?1:i===4?2:i===5?3:4,
+          bank_name:"Banco fictício",nickname:"Carteira de teste "+i,
+          account_type:"corrente",manual_balance:100+i,
+          visibility_label:"privado"
+        })),
+        balances:{
+          holders:[{holder_id:1,known:4,missing:0,total:406},
+                   {holder_id:2,known:1,missing:0,total:104},
+                   {holder_id:3,known:1,missing:0,total:105},
+                   {holder_id:4,known:1,missing:0,total:106}],
+          known_accounts:7,missing_accounts:0,
+          personal:406,family:315,combined:721,personal_missing:0,family_missing:0
         }
       };
       bankingError=null;
-      document.querySelector("#page-content").innerHTML=bankingAccountsPage();
+      document.querySelector("#page-content").innerHTML=bankingHolderCatalogPanel();
     }""")
     cards=page.locator("#page-content .bank-entity")
     assert cards.count()==4
+    assert page.locator("#bank-holder-settings").is_visible()
+    assert page.locator("#bank-holder-settings .panel-heading h2").inner_text()=="Titulares cadastrados"
     for i in range(cards.count()):
         card=cards.nth(i)
         bounds=card.bounding_box()
@@ -122,6 +134,36 @@ with sync_playwright() as p:
         assert abs(first["y"]-second["y"])<=2, ("buttons stacked",i,first,second)
         assert first["x"]+first["width"]<second["x"]+1, ("buttons overlapped",i)
         assert second["x"]+second["width"]<=bounds["x"]+bounds["width"]+1
+    assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+
+    # Contas: abertura de uma pessoa NÃO altera a altura de nenhuma outra.
+    page.set_viewport_size({"width":1366,"height":900})
+    page.evaluate("""() => {
+      document.querySelector("#page-content").innerHTML=bankingAccountsPage();
+    }""")
+    assert page.locator("#page-content .bank-entity").count()==0
+    person_cards=page.locator("#page-content .bank-person-card")
+    assert person_cards.count()==4
+    assert person_cards.first.locator(".bank-person-account").count()==4
+    small_before=person_cards.nth(1).bounding_box()
+    last_before=person_cards.nth(3).bounding_box()
+    first_before=person_cards.first.bounding_box()
+    person_cards.first.locator("summary").click()
+    page.wait_for_timeout(140)
+    first_after=person_cards.first.bounding_box()
+    small_after=person_cards.nth(1).bounding_box()
+    last_after=person_cards.nth(3).bounding_box()
+    assert first_after["height"]>first_before["height"]+150
+    assert abs(small_after["height"]-small_before["height"])<=2, (small_before,small_after)
+    assert abs(last_after["height"]-last_before["height"])<=2, (last_before,last_after)
+    assert small_after["y"]>=first_after["y"]+first_after["height"]+4, (small_after,first_after)
+    assert page.locator("#page-content .bank-person-account").count()==7
+    assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+
+    # Repetição em largura de iPhone com vários cartões internos.
+    page.set_viewport_size({"width":390,"height":844})
+    page.wait_for_timeout(90)
+    assert page.locator("#page-content .bank-person-card").count()==4
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
 
     # O cadastro de titulares e outros formulários não dão zoom automático

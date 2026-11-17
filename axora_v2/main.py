@@ -311,6 +311,35 @@ def finance_catalog_items(workspace):
     })
 
 
+def finance_provision_options(workspace, values):
+    """Aceita titulares do cadastro único sem duplicar responsáveis legados.
+
+    Usa primeiro os catálogos históricos. Busca titulares deste workspace
+    somente quando o nome escolhido não está no catálogo, mantendo a
+    compatibilidade e evitando uma consulta adicional desnecessária.
+    """
+    options = finance_catalog_items(workspace)
+    selected = str(values.get("p_responsible", "")).strip().casefold()
+    if any(entry.get("kind") == "responsible" and entry.get("active")
+           and str(entry.get("name", "")).casefold() == selected
+           for entry in options):
+        return options
+    holders = db.call("GET", "finance_bank_holders", params={
+        "workspace_id": "eq." + workspace,
+        "select": "name",
+        "order": "name.asc",
+        "limit": 500,
+    })
+    seen = {str(entry.get("name", "")).casefold() for entry in options
+            if entry.get("kind") == "responsible" and entry.get("active")}
+    for holder in holders:
+        name = str(holder.get("name") or "").strip()
+        if name and name.casefold() not in seen:
+            options.append({"kind": "responsible", "name": name, "active": True})
+            seen.add(name.casefold())
+    return options
+
+
 @app.get("/api/catalogs")
 def list_finance_catalogs(user=Depends(auth)):
     return {"items": finance_catalog_items(user_workspace(user))}
@@ -397,7 +426,7 @@ def list_provisions(user=Depends(auth)):
 def add_provision(payload: dict, user=Depends(authorized)):
     workspace = user_workspace(user)
     values = provisions.clean_provision(payload)
-    catalogs.canonicalize_provision(values, finance_catalog_items(workspace))
+    catalogs.canonicalize_provision(values, finance_provision_options(workspace, values))
     values["p_workspace_id"] = workspace
     endpoint = ("rpc/axora_create_provision_with_method" if "p_payment_method" in values
                 else ("rpc/axora_create_provision_with_link" if "p_payment_url" in values
@@ -411,7 +440,7 @@ def edit_provision(pk: int, payload: dict, user=Depends(authorized)):
     positive_id(pk)
     workspace = user_workspace(user)
     values = provisions.clean_edit_provision(payload)
-    catalogs.canonicalize_provision(values, finance_catalog_items(workspace))
+    catalogs.canonicalize_provision(values, finance_provision_options(workspace, values))
     endpoint = ("rpc/axora_edit_provision_with_method" if "p_payment_method" in values
                 else ("rpc/axora_edit_provision_with_link" if "p_payment_url" in values
                       else "rpc/axora_edit_provision"))
