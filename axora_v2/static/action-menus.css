@@ -19,7 +19,6 @@ details.axora-action-menu > summary{user-select:none}
 .bank-account-menu-panel.axora-action-menu-panel,
 .family-member-menu-panel.axora-action-menu-panel{
   position:fixed!important;
-  inset:auto!important;
   left:0;
   top:0;
   right:auto!important;
