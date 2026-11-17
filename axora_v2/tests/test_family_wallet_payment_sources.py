@@ -141,12 +141,12 @@ def test_ui_account_selection_and_no_balance_are_explicit():
     assert 'name="balance_mode" value="none" checked' in html
     assert 'name="balance_mode" value="wallet"' in html
     assert 'id="family-wallet-source-list"' in html
-    assert 'data-wallet-payer' in js and 'data-wallet-account' in js
+    assert 'data-wallet-account' in js and 'data-wallet-payer' not in js
     assert 'walletPaymentSources(form)' in js
     assert 'body.account_sources=accountSources' in js
     assert 'form.dataset.walletRequestId=crypto.randomUUID()' in js
     assert "walletAvailableAccounts()" in js
-    assert 'family.css?v=wallet-sources-r1' in html
+    assert 'family.css?v=single-payment-stage-r1' in html
     assert '.family-wallet-source{' in css
     assert 'axora_family_record_from_wallet' in sql
     assert 'axora_family_pay_provision_from_wallet' in sql
