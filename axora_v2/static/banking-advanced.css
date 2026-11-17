@@ -179,14 +179,13 @@
   white-space:normal;
   overflow-wrap:anywhere;
 }
+/* O menu flutua sem redimensionar o card; controller global aplica overlay. */
 .bank-person-account:has(.bank-account-menu[open]){
   z-index:2;
-  min-height:345px;
   border-color:#73cbd2;
 }
 @media(max-width:480px){
   .bank-account-menu-panel{grid-template-columns:1fr}
-  .bank-person-account:has(.bank-account-menu[open]){min-height:475px}
 }
 .bank-member-family-only .btn{flex:0 0 auto}
 
