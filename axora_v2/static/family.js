@@ -279,9 +279,9 @@ const AxoraFamily = (() => {
   }
   function memberTools(p){
     const uid=Number(p.id);
-    return '<details class="family-member-menu" data-family-profile-id="'+uid+'">'+
-      '<summary aria-label="Opções do membro '+esc(p.display_name)+'" title="Ações do membro">⋮</summary>'+
-      '<div class="family-member-menu-panel"><div class="family-member-role">'+
+    return '<details class="family-member-menu axora-action-menu" data-family-profile-id="'+uid+'">'+
+      '<summary aria-expanded="false" aria-label="Opções do membro '+esc(p.display_name)+'" title="Ações do membro">⋮</summary>'+
+      '<div class="family-member-menu-panel axora-action-menu-panel"><div class="family-member-role">'+
       '<label for="family-role-'+uid+'">Vínculo familiar</label>'+
       '<select id="family-role-'+uid+'" data-family-role="'+uid+'">'+
       relationshipOptions(p.relationship)+'</select>'+
