@@ -243,7 +243,7 @@ function trapMobileMenuFocus(e){
 function actionButtons(){
   if(me?.family_enabled && me.family_role!=="principal" && (page==="bank-accounts"||page==="reconciliation"))return "";
   // Dashboard é exclusivamente de leitura; cadastros e rateios ficam nos módulos.
-  if(page==="dashboard")return "";
+  // Rateio somente nos módulos de movimentação. Dashboard conserva ações gerais existentes.
   if(me?.family_enabled && page==="movements")
     return '<button class="btn primary btn-strong" data-family-action="new-expense">'+interfaceIcon("plus")+'<span>Movimentação com rateio</span></button>';
   if(me?.family_enabled && me.family_role!=="principal" && page==="provisions")return "";
@@ -253,6 +253,7 @@ function actionButtons(){
   if(page==="provisions")return '<button class="btn primary btn-strong" data-action="new-provision">'+interfaceIcon("plus")+'<span>Adicionar provisão</span></button>';
   if(meta[page])return '<button class="btn primary btn-strong" data-action="new">'+interfaceIcon("plus")+'<span>Novo registro</span></button>';
 
+  if(page==="dashboard")return '<button class="btn ghost btn-secondary" data-action="export">'+interfaceIcon("download")+'<span>Exportar Excel</span></button><button class="btn primary btn-strong" data-action="new-movement">'+interfaceIcon("plus")+'<span>Movimentação</span></button>';
   if(page==="import")return '<button class="btn ghost btn-secondary" data-action="export">'+interfaceIcon("download")+'<span>Exportar Excel</span></button>';
   return "";
 }
