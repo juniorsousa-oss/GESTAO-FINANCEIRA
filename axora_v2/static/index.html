@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AXORA">
   <link rel="manifest" href="/assets/pwa/manifest.json">
-  <link rel="stylesheet" href="/assets/family.css?v=family-card-spacing-r2">
+  <link rel="stylesheet" href="/assets/family.css?v=wallet-sources-r1">
   <link rel="apple-touch-icon" sizes="192x192" href="/assets/pwa/icon-192.png">
   <meta name="description" content="AXORA — inteligência e controle financeiro, by Nexon Labs.">
   <title>AXORA | Acesso</title>
@@ -400,6 +400,23 @@
       </div>
       <fieldset class="family-fieldset"><legend>Para quem é este valor? (100%)</legend><div id="family-cost-list"></div><small>Este campo atribui custo ou receita. Não concede acesso ao registro.</small></fieldset>
       <fieldset class="family-fieldset" data-family-payers><legend>Quem pagou? (total em R$)</legend><div id="family-payer-list"></div><small>O valor desembolsado deve somar o total do lançamento.</small></fieldset>
+      <fieldset class="family-fieldset family-wallet-fieldset" data-family-wallet hidden>
+        <legend>De onde saiu o dinheiro?</legend>
+        <p class="family-wallet-hint">Escolha se a quitação deve movimentar os saldos cadastrados. Quem pagou e de qual conta saiu são informações diferentes.</p>
+        <div class="family-wallet-mode" role="radiogroup" aria-label="Movimentação de saldo">
+          <label><input type="radio" name="balance_mode" value="none" checked> Não movimentar saldo <small>Registro retroativo ou saldo já atualizado</small></label>
+          <label data-family-wallet-allowed><input type="radio" name="balance_mode" value="wallet"> Descontar das contas cadastradas <small>Uma ou várias contas, conforme o valor pago</small></label>
+        </div>
+        <div id="family-wallet-details" hidden>
+          <p class="family-wallet-hint">Informe a pessoa pagadora, a conta de origem e o valor debitado. Cada pessoa deve totalizar o valor informado em “Quem pagou”.</p>
+          <div id="family-wallet-source-list" class="family-wallet-source-list"></div>
+          <div class="family-wallet-toolbar">
+            <button type="button" class="btn ghost small" id="family-wallet-add-source">+ Adicionar outra conta</button>
+            <output id="family-wallet-total" aria-live="polite"></output>
+          </div>
+          <small>Somente saldos disponíveis de contas manuais podem ser debitados. O saldo investido não será utilizado.</small>
+        </div>
+      </fieldset>
       <div class="dialog-actions"><button type="button" class="btn ghost" data-family-close>Cancelar</button><button class="btn primary" type="submit">Salvar rateio</button></div>
     </form>
   </dialog>
@@ -495,7 +512,7 @@
   <script src="/assets/banking.js?v=single-registry-r1" defer></script>
   <script src="/assets/banking-advanced.js?v=bank-v4-advanced" defer></script>
   <script src="/assets/brand-kit.js?v=brand-icon-flash-r1" defer></script>
-  <script src="/assets/family.js?v=split-modes-r1" defer></script>
+  <script src="/assets/family.js?v=wallet-sources-r1" defer></script>
   <script src="/assets/ios-pwa-stability.js?v=20261116-dialog-stable-r2" defer></script>
 </body>
 </html>
