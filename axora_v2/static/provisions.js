@@ -191,10 +191,70 @@ async function openPixDialog(id){
   }
 }
 
+
+function provisionSplitMembers(){
+  if(!me?.family_enabled||me?.family_role!=="principal")return [];
+  return (window.AxoraFamily?.profiles?.()||[]).filter(p=>p.active);
+}
+function provisionSplitTotal(){
+  const rows=[...document.querySelectorAll("#provision-split-participants .provision-split-participant")];
+  const selected=rows.filter(row=>row.querySelector("[data-split-enabled]").checked);
+  const total=selected.reduce((sum,row)=>sum+Number(row.querySelector("[data-split-percent]").value||0),0);
+  const target=$("#provision-split-total");
+  target.textContent="Total: "+total.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"% de 100%";
+  target.dataset.invalid=String(!selected.length||Math.abs(total-100)>.001);
+}
+function provisionSplitEqual(){
+  const checked=[...document.querySelectorAll("#provision-split-participants .provision-split-participant")]
+    .filter(row=>row.querySelector("[data-split-enabled]").checked);
+  checked.forEach((row,i)=>{
+    const pct=row.querySelector("[data-split-percent]");
+    pct.disabled=false;
+    pct.value=((Math.floor(10000/checked.length)+(i<10000%checked.length?1:0))/100).toFixed(2);
+  });
+  document.querySelectorAll("#provision-split-participants .provision-split-participant").forEach(row=>{
+    const on=row.querySelector("[data-split-enabled]").checked;
+    const input=row.querySelector("[data-split-percent]");
+    input.disabled=!on;if(!on)input.value="0";
+  });
+  provisionSplitTotal();
+}
+function provisionSplitOptions(){
+  const panel=$("#provision-split-fieldset"),form=$("#provision-form");
+  const responsible=form.elements.responsible.value;
+  const members=provisionSplitMembers();
+  const target=members.find(p=>provisionNorm(p.display_name)===provisionNorm(responsible));
+  if(!target){panel.hidden=true;$("#provision-split-participants").replaceChildren();return}
+  panel.hidden=false;
+  $("#provision-split-participants").innerHTML=members.map(p=>{
+    const active=Number(p.id)===Number(target.id);
+    return '<div class="provision-split-participant"><label><input type="checkbox" data-split-enabled="'+Number(p.id)+'" '+
+      (active?'checked':'')+'><span>'+esc(p.display_name)+'</span></label>'+
+      '<input type="number" data-split-percent="'+Number(p.id)+'" inputmode="decimal" min="0.01" max="100" step="0.01" '+
+      'value="'+(active?'100':'0')+'" '+(active?'':'disabled')+' aria-label="Percentual de '+esc(p.display_name)+'"></div>';
+  }).join("");
+  provisionSplitTotal();
+}
+function provisionReadSplit(){
+  if(!me?.family_enabled||me.family_role!=="principal")return null;
+  const memberIds=new Set(provisionSplitMembers().map(p=>Number(p.id)));
+  const selected=[...document.querySelectorAll("#provision-split-participants .provision-split-participant")]
+    .filter(row=>row.querySelector("[data-split-enabled]").checked)
+    .map(row=>({profile_id:Number(row.querySelector("[data-split-enabled]").dataset.splitEnabled),
+      percentage:Number(row.querySelector("[data-split-percent]").value)}));
+  if(!selected.length||selected.some(p=>!memberIds.has(p.profile_id)||!Number.isFinite(p.percentage)||
+      p.percentage<=0||p.percentage>100||Math.round(p.percentage*100)!==p.percentage*100))
+    throw Error("Selecione os participantes e informe percentuais válidos com até duas casas decimais.");
+  if(Math.abs(selected.reduce((sum,p)=>sum+p.percentage,0)-100)>.001)
+    throw Error("O rateio da provisão precisa totalizar exatamente 100%.");
+  return selected;
+}
+
 async function openProvisionDialog(){
   await Promise.all([
     loadFinanceCatalogs(true),
-    typeof loadBanking==="function" ? loadBanking(false) : Promise.resolve(null)
+    typeof loadBanking==="function" ? loadBanking(false) : Promise.resolve(null),
+    me?.family_enabled&&window.AxoraFamily?AxoraFamily.load(false):Promise.resolve(null)
   ]);
   const d=$("#provision-dialog"),f=$("#provision-form");
   f.reset();
@@ -205,16 +265,19 @@ async function openProvisionDialog(){
   }
   f.elements.start_due_date.value=provisionToday();
   f.elements.recurrence.value="unlimited";f.elements.frequency.value="monthly";
-  f.elements.value_mode.value="fixed";provisionOptions();
+  f.elements.value_mode.value="fixed";$("#pv-limit-recurring").checked=false;provisionOptions();
+  provisionSplitOptions();
   f.elements.payment_method.value="none";provisionMethodOptions(f);
   d.showModal();f.elements.description.focus();
 }
 function provisionOptions(){
   const f=$("#provision-form"),mode=f.elements.recurrence.value;
+  const limited=mode==="unlimited"&&$("#pv-limit-recurring").checked;
   $("#provision-frequency-wrap").hidden=mode==="once";
-  $("#provision-installments-wrap").hidden=!["until_date","installments"].includes(mode);
-  $("#pv-count-label").textContent=mode==="until_date"?"Quantidade de vencimentos *":"Quantidade de parcelas *";
-  f.elements.installment_count.required=["until_date","installments"].includes(mode);
+  $("#provision-limit-wrap").hidden=mode!=="unlimited";
+  $("#provision-installments-wrap").hidden=!(limited||mode==="installments");
+  $("#pv-count-label").textContent=limited?"Quantidade de vencimentos *":"Quantidade de parcelas *";
+  f.elements.installment_count.required=limited||mode==="installments";
   provisionAmountOptions(f,"pv-value-label","pv-value-help");
 }
 let provisionPaymentMatches=[];
@@ -308,7 +371,10 @@ async function openEditProvisionDialog(id){
   form.elements.occurrence_id.value=item.id;
   form.elements.description.value=provisionEffective(item,"description");
   form.elements.category.value=provisionEffective(item,"category");
-  form.elements.responsible.value=provisionEffective(item,"responsible");
+  const priorResponsible=provisionEffective(item,"responsible");
+  if(priorResponsible&&![...form.elements.responsible.options].some(opt=>opt.value===priorResponsible))
+    form.elements.responsible.add(new Option(priorResponsible+" (histórico)",priorResponsible));
+  form.elements.responsible.value=priorResponsible;
   form.elements.due_date.value=item.due_date;
   form.elements.planned_value.value=item.planned_value==null?"":Number(item.planned_value).toFixed(2);
   form.elements.value_mode.value=provisionEffective(item,"value_mode");
@@ -379,6 +445,15 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#provision-edit-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-edit]"))$("#provision-edit-dialog").close()});
   $("#provision-cancel-dialog").addEventListener("click",e=>{if(e.target.closest("[data-dismiss-cancel]"))$("#provision-cancel-dialog").close()});
   $("#provision-form").elements.recurrence.addEventListener("change",provisionOptions);
+  $("#pv-limit-recurring").addEventListener("change",provisionOptions);
+  $("#provision-form").elements.responsible.addEventListener("change",provisionSplitOptions);
+  $("#provision-split-participants").addEventListener("change",e=>{
+    if(e.target.matches("[data-split-enabled]"))provisionSplitEqual();
+    if(e.target.matches("[data-split-percent]"))provisionSplitTotal();
+  });
+  $("#provision-split-participants").addEventListener("input",e=>{
+    if(e.target.matches("[data-split-percent]"))provisionSplitTotal();
+  });
   for(const form of [$("#provision-form"),$("#provision-edit-form")]){
     form.elements.payment_method.addEventListener("change",()=>provisionMethodOptions(form));
     form.elements.pix_kind.addEventListener("change",()=>provisionMethodOptions(form));
@@ -407,12 +482,15 @@ document.addEventListener("DOMContentLoaded",()=>{
     e.preventDefault();const form=e.currentTarget,btn=form.querySelector('button[type="submit"]');
     const values=Object.fromEntries(new FormData(form).entries());
     delete values.installment_count;
-    if(["until_date","installments"].includes(form.elements.recurrence.value)){
+    const isLimited=form.elements.recurrence.value==="unlimited"&&$("#pv-limit-recurring").checked;
+    if(isLimited)values.recurrence="until_date"; // valor interno existente, compatível com dados antigos
+    if(isLimited||form.elements.recurrence.value==="installments")
       values.installment_count=Number(form.elements.installment_count.value);
-    }
     values.planned_value=values.planned_value===""?null:Number(values.planned_value);
     btn.disabled=true;
     try{
+      const shares=provisionReadSplit();
+      if(shares)values.cost_shares=shares;
       await api("/api/provisions",{method:"POST",body:JSON.stringify(values)});
       $("#provision-dialog").close();await loadProvisions();showToast("Provisão cadastrada com sucesso.");
     }catch(err){showToast(err.message,true)}
