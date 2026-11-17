@@ -49,7 +49,7 @@ def test_family_card_name_and_relationship_have_separate_lines():
     css=(ROOT/"family.css").read_text()
     js=(ROOT/"family.js").read_text()
     html=(ROOT/"index.html").read_text()
-    assert 'class="family-person-identity"><strong>' in js
+    assert js.count('class="family-person-identity"><strong>') >= 2
     assert '</strong><small>' in js
     assert '.family-person-heading>.family-person-identity{' in css
     rules=css.split('.family-person-heading>.family-person-identity{',1)[1].split('}',1)[0]
