@@ -145,7 +145,7 @@ const AxoraFamily = (() => {
   function walletTotals(form){
     const output=form.querySelector("#family-wallet-total");
     const accounts=new Map(walletAvailableAccounts().map(a=>[a.id,a]));
-    const rows=[...form.querySelectorAll(".family-wallet-source")];
+    const rows=[...form.querySelectorAll("#family-wallet-source-list .family-wallet-source")];
     const selected=rows.map(row=>Number(row.querySelector("[data-wallet-account]").value));
     let total=0,valid=rows.length>0;
     for(const row of rows){
@@ -178,7 +178,7 @@ const AxoraFamily = (() => {
     const wallet=expense&&available&&choice.checked;
     form.querySelector("#family-wallet-details").hidden=!wallet;
     form.querySelector("#family-manual-details").hidden=!expense||wallet;
-    if(wallet&&!form.querySelector(".family-wallet-source"))walletAddSource(form);
+    if(wallet&&!form.querySelector("#family-wallet-source-list .family-wallet-source"))walletAddSource(form);
     if(wallet)walletTotals(form);
     else if(expense)manualTotals(form);
   }
@@ -189,7 +189,7 @@ const AxoraFamily = (() => {
     const accounts=new Map(walletAvailableAccounts().map(a=>[a.id,a]));
     const used=new Set(),result=[];
     let total=0;
-    for(const row of form.querySelectorAll(".family-wallet-source")){
+    for(const row of form.querySelectorAll("#family-wallet-source-list .family-wallet-source")){
       const account_id=Number(row.querySelector("[data-wallet-account]").value);
       const account=accounts.get(account_id);
       const cents=paymentCents(row.querySelector("[data-wallet-amount]").value);
