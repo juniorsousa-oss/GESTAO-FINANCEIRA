@@ -95,7 +95,7 @@ def test_catalog_api_is_workspace_scoped_and_requires_csrf(monkeypatch):
                 return []
         if table == "rpc/axora_create_provision":
             assert data["p_category"] == "Moradia"
-            assert data["p_responsible"] == "Sérgio"
+            assert data["p_responsible"] in {"Sérgio", "Maria José"}
             assert data["p_workspace_id"] == WORKSPACE
             return 89
         raise AssertionError("Inesperado: " + table)
@@ -152,7 +152,7 @@ def test_catalog_api_is_workspace_scoped_and_requires_csrf(monkeypatch):
             "start_due_date": "2026-10-13", "planned_value": 90,
             "value_mode": "fixed", "recurrence": "unlimited", "frequency": "monthly"
         })
-        # A simulação original do RPC só aceita Sérgio; a consulta já validou Maria.
+        assert second.status_code == 200
         assert any(t == "finance_bank_holders" for _, t, _, _ in calls)
 
 
