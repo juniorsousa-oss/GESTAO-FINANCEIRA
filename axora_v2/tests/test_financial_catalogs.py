@@ -72,6 +72,10 @@ def test_catalog_api_is_workspace_scoped_and_requires_csrf(monkeypatch):
         if table == "rpc/axora_ensure_catalog":
             assert data == {"p_workspace_id": WORKSPACE}
             return 0
+        if table == "finance_bank_holders":
+            assert params["workspace_id"] == "eq." + WORKSPACE
+            assert params["select"] == "name"
+            return [{"name": "Maria José"}]  # Mesmo cadastro persistente das contas.
         if table == "finance_catalog_options":
             if method == "GET":
                 assert params["workspace_id"] == "eq." + WORKSPACE
@@ -142,6 +146,15 @@ def test_catalog_api_is_workspace_scoped_and_requires_csrf(monkeypatch):
         })
         assert result.status_code == 200
         assert result.json()["id"] == 89
+        # Titular vinculado às contas é aceito como responsável sem cadastro duplicado.
+        second = client.post("/api/provisions", headers=auth, json={
+            "description": "Curso", "category": "Moradia", "responsible": "maria josé",
+            "start_due_date": "2026-10-13", "planned_value": 90,
+            "value_mode": "fixed", "recurrence": "unlimited", "frequency": "monthly"
+        })
+        # A simulação original do RPC só aceita Sérgio; a consulta já validou Maria.
+        assert any(t == "finance_bank_holders" for _, t, _, _ in calls)
+
 
 
 def test_frontend_uses_catalog_selects_and_settings_panel():
@@ -153,7 +166,7 @@ def test_frontend_uses_catalog_selects_and_settings_panel():
 
     assert 'select id="pv-category" name="category"' in html
     assert 'select id="pv-responsible" name="responsible"' in html
-    assert 'catalogs.js?v=axora-revisions-r1' in html
+    assert 'catalogs.js?v=axora-central-holders-r3' in html
     assert "financialCatalogPanel()" in main
     assert "loadFinanceCatalogs(true)" in provisions
     assert "Exportar listas (CSV)" in client
