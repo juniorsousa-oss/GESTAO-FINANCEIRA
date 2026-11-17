@@ -1,0 +1,75 @@
+/* AXORA | Sistema único de rolagem para modais
+ * O contorno do card nunca é o elemento rolável no desktop. O conteúdo
+ * desloca-se dentro dele, com trilho recuado em todas as extremidades.
+ * Aplica-se a todas as janelas: registros, família, provisões, Pix e bancos.
+ * Mobile/iOS conserva a rolagem do dialog controlada pelo teclado virtual. */
+@media (min-width:851px){
+  dialog:is(.editor-dialog,.family-dialog,.bank-dialog,.provision-dialog){
+    --axora-modal-scroll-limit:90dvh;
+    --axora-modal-scroll-gutter:10px;
+    overflow:hidden;
+    overscroll-behavior:contain;
+  }
+  dialog.bank-dialog{
+    --axora-modal-scroll-limit:92dvh;
+  }
+  dialog.provision-dialog{
+    --axora-modal-scroll-limit:min(92dvh,840px);
+  }
+  /* Também supera a antiga regra particular do modal de provisões. */
+  dialog.provision-dialog:not(.provision-pix-dialog){
+    overflow:hidden;
+  }
+  dialog:is(.editor-dialog,.family-dialog,.bank-dialog,.provision-dialog)>form,
+  dialog.provision-pix-dialog>.provision-pix-content{
+    box-sizing:border-box;
+    min-width:0;
+    max-width:100%;
+    max-height:calc(var(--axora-modal-scroll-limit) - 24px);
+    margin:10px 10px 10px 0;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior-y:contain;
+    scrollbar-width:thin;
+    scrollbar-color:#91a6b2 transparent;
+    scrollbar-gutter:stable;
+  }
+  /* Mantém o respiro do conteúdo sem aproximar o trilho dos cantos. */
+  dialog.editor-dialog>form{padding:26px 18px 26px 26px}
+  dialog.family-dialog>form{padding:22px 16px 22px 22px}
+  dialog.bank-dialog>form{padding:26px 18px 26px 26px}
+  dialog.provision-dialog:not(.provision-pix-dialog)>form{
+    max-height:calc(min(92dvh,840px) - 24px);
+    margin:10px 10px 10px 0;
+    padding:28px 18px 28px 28px;
+    overflow-x:hidden;
+    overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-color:#91a6b2 transparent;
+    scrollbar-gutter:stable;
+  }
+  dialog.provision-pix-dialog>.provision-pix-content{
+    padding-right:18px;
+  }
+  dialog:is(.editor-dialog,.family-dialog,.bank-dialog,.provision-dialog)>form::-webkit-scrollbar,
+  dialog.provision-pix-dialog>.provision-pix-content::-webkit-scrollbar{
+    width:7px;
+  }
+  dialog:is(.editor-dialog,.family-dialog,.bank-dialog,.provision-dialog)>form::-webkit-scrollbar-thumb,
+  dialog.provision-pix-dialog>.provision-pix-content::-webkit-scrollbar-thumb{
+    background:#91a6b2;
+    border-radius:8px;
+  }
+  dialog:is(.editor-dialog,.family-dialog,.bank-dialog,.provision-dialog)>form::-webkit-scrollbar-track,
+  dialog.provision-pix-dialog>.provision-pix-content::-webkit-scrollbar-track{
+    background:transparent;
+  }
+}
+/* O iPhone usa modal com altura travada ao abrir teclado: não inverter o
+   elemento rolável nesse breakpoint. Evita saltos de foco e do viewport. */
+@media (max-width:850px){
+  dialog:is(.editor-dialog,.family-dialog,.bank-dialog,.provision-dialog){
+    scrollbar-width:thin;
+    scrollbar-color:#91a6b2 transparent;
+  }
+}
