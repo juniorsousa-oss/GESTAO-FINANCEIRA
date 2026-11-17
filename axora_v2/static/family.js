@@ -92,7 +92,7 @@ const AxoraFamily = (() => {
   }
   function memberTools(p){
     const uid=Number(p.id);
-    return '<details class="family-member-menu">'+
+    return '<details class="family-member-menu" data-family-profile-id="'+uid+'">'+
       '<summary aria-label="Opções do membro '+esc(p.display_name)+'" title="Ações do membro">⋮</summary>'+
       '<div class="family-member-menu-panel"><div class="family-member-role">'+
       '<label for="family-role-'+uid+'">Vínculo familiar</label>'+
