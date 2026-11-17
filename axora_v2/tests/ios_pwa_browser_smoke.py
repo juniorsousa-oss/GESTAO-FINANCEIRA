@@ -148,7 +148,7 @@ with sync_playwright() as p:
     small_before=person_cards.nth(1).bounding_box()
     last_before=person_cards.nth(3).bounding_box()
     first_before=person_cards.first.bounding_box()
-    person_cards.first.locator("summary").click()
+    person_cards.first.locator("summary.bank-person-summary").click()
     page.wait_for_timeout(140)
     first_after=person_cards.first.bounding_box()
     small_after=person_cards.nth(1).bounding_box()
