@@ -13,10 +13,11 @@ async function loadBanking(force=false){
   bankingRequest=(async()=>{
     try{
       const data=await api("/api/banking");
+      const changed=!bankingData||JSON.stringify(bankingData)!==JSON.stringify(data)||Boolean(bankingError);
       bankingData=data;bankingError=null;
-      if(page==="bank-accounts"||page==="reconciliation"||
+      if(changed&&(page==="bank-accounts"||page==="reconciliation"||
          (page==="settings"&&(!me?.family_enabled||me.family_role==="principal"))||
-         (page==="family"&&me?.family_role==="principal"))render();
+         (page==="family"&&me?.family_role==="principal")))render();
       return data;
     }catch(e){
       bankingError=e.message;
@@ -156,7 +157,7 @@ function bankingAccountsPage(){
       const cashKnown=balance!==null&&balance!==undefined;
       const investmentKnown=invested!==null&&invested!==undefined;
       const totalAccount=(cashKnown?Number(balance):0)+(investmentKnown?Number(invested):0);
-      const detail='<article class="bank-account-card bank-person-account">'+
+      const detail='<article class="bank-account-card bank-person-account" data-bank-account-id="'+Number(a.id)+'">'+
         '<div class="bank-card-top"><span class="bank-icon">'+interfaceIcon("wallet")+'</span>'+
         '<span class="bank-tag">'+(manual?'Manual':(connected?'Conectada':'Manual'))+'</span></div>'+
         '<div class="bank-account-topline"><strong class="bank-account-name">'+esc(a.nickname)+'</strong></div>'+
@@ -184,7 +185,7 @@ function bankingAccountsPage(){
         '</div>';
       return detail+actions+'</details></article>';
     }).join("");
-    return '<details class="bank-person-card">'+
+    return '<details class="bank-person-card" data-bank-holder-id="'+Number(holder.id)+'">'+
       '<summary class="bank-person-summary" aria-label="Detalhar contas de '+esc(holder.name)+'">'+
       '<span class="bank-person-avatar" aria-hidden="true">'+esc(holder.name.trim().charAt(0).toUpperCase()||"C")+'</span>'+
       '<span class="bank-person-identity"><strong>'+esc(holder.name)+'</strong>'+
