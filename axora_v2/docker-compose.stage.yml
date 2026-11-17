@@ -1,9 +1,10 @@
-# Homologação AXORA Provisões: use EXCLUSIVAMENTE Supabase de testes isolado.
-# Não apontar este Compose para o banco financeiro em produção.
+# AXORA BETA: build exclusivamente do develop, com schema financeiro isolado.
+# O banco é o projeto Supabase compartilhado; a aplicação acessa APENAS axora_beta.
+# Não alterar o Compose de produção ou apontar para o schema public.
 services:
   axora-web:
     build:
-      context: https://github.com/juniorsousa-oss/GESTAO-FINANCEIRA.git#main
+      context: https://github.com/juniorsousa-oss/GESTAO-FINANCEIRA.git#develop
       dockerfile: axora_v2/Dockerfile
     restart: unless-stopped
     environment:
@@ -11,6 +12,10 @@ services:
       SUPABASE_KEY: ${AXORA_HML_SUPABASE_KEY:?Use chave somente do banco de homologacao}
       SESSION_SECRET: ${AXORA_HML_SESSION_SECRET:?Use segredo exclusivo de homologacao com ao menos 32 caracteres}
       COOKIE_SECURE: "1"
+      AXORA_ENV: beta
+      SUPABASE_DB_SCHEMA: axora_beta
+      AXORA_FAMILY_V2_ENABLED: "1"
+      AXORA_BANK_MODE: manual
     expose:
       - "8000"
     labels:
