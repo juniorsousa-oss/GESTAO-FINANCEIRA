@@ -13,7 +13,7 @@ import re
 
 from fastapi import HTTPException
 
-RELATIONSHIPS = {"proprio", "conjuge", "mae", "pai", "familiar", "outro"}
+RELATIONSHIPS = {"proprio", "conjuge", "pai", "mae", "filho", "sogro", "tio", "familiar", "outro"}
 ACTIONS = {"matched_record", "matched_provision", "recorded", "transfer", "ignored"}
 
 
