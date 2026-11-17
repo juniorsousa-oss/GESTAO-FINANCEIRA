@@ -27,7 +27,7 @@ def test_one_registration_form_lives_only_in_settings():
 def test_family_cards_use_contextual_three_dot_menu():
     js = (WEB / "family.js").read_text()
     css = (WEB / "family.css").read_text()
-    assert 'details class="family-member-menu"' in js
+    assert 'details class="family-member-menu" data-family-profile-id=' in js
     assert 'data-family-profile-id' in js
     assert 'aria-label="Opções do membro ' in js
     assert 'data-family-action="save-relationship"' in js
