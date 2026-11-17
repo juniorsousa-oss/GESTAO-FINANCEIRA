@@ -152,7 +152,7 @@ def test_ui_and_sql_methods_and_qr_are_local():
     assert 'id="provision-pix-dialog"' in html
     assert "navigator.clipboard.writeText" in js
     assert 'data-action="open-provision-pix"' in js
-    assert 'v=axora-pix-methods-r1' in html
+    assert 'v=split-modes-r1' in html
     assert "pix_payments.pix_qr" in py
     assert "axora_create_provision_with_method" in migration
     assert "axora_edit_provision_with_method" in migration

@@ -426,12 +426,46 @@ def list_provisions(user=Depends(auth)):
 @app.post("/api/provisions")
 def add_provision(payload: dict, user=Depends(authorized)):
     workspace = user_workspace(user)
-    values = provisions.clean_provision(payload)
-    catalogs.canonicalize_provision(values, finance_provision_options(workspace, values))
+    if not isinstance(payload, dict):
+        raise HTTPException(422, "Cadastro de provisão inválido.")
+    split_requested = "cost_shares" in payload
+    values = provisions.clean_provision({k:v for k,v in payload.items() if k != "cost_shares"})
+    options = finance_provision_options(workspace, values)
+    if user.get("_family") and user["_family"]["role"]=="principal":
+        # Perfis financeiros são a fonte única; alguns ainda não possuem banco.
+        known = {str(item.get("name","")).casefold() for item in options
+                 if item.get("kind")=="responsible" and item.get("active")}
+        for member in family_service.profiles(user):
+            name = str(member.get("display_name") or "").strip()
+            if member.get("active") and name and name.casefold() not in known:
+                options.append({"kind":"responsible","name":name,"active":True})
+                known.add(name.casefold())
+    catalogs.canonicalize_provision(values, options)
     values["p_workspace_id"] = workspace
-    endpoint = ("rpc/axora_create_provision_with_method" if "p_payment_method" in values
-                else ("rpc/axora_create_provision_with_link" if "p_payment_url" in values
-                      else "rpc/axora_create_provision"))
+    if split_requested:
+        ctx = family_service.require_principal(user)
+        shares = payload["cost_shares"]
+        if not isinstance(shares, list):
+            raise HTTPException(422, "Informe a divisão da provisão.")
+        checked = family_policy.split_percentages("100.00", shares)
+        allowed = {int(p["id"]) for p in family_service.profiles(user) if p.get("active")}
+        if any(int(p["profile_id"]) not in allowed for p in checked):
+            raise HTTPException(422, "O rateio contém pessoa fora da família.")
+        values.update({
+            "p_actor_id": ctx["user_id"],
+            "p_shares": [{"profile_id": int(p["profile_id"]), "percentage": p["percentage"]}
+                         for p in checked],
+        })
+        # Uma transação SQL cria a provisão e seus percentuais juntos. Nunca
+        # gravar rateio em segunda chamada: não pode sobrar cadastro incompleto.
+        for key in ("p_payment_method","p_payment_url","p_pix_kind","p_pix_value",
+                    "p_pix_receiver_name","p_pix_receiver_city"):
+            values.setdefault(key, "none" if key=="p_payment_method" else None)
+        endpoint = "rpc/axora_family_create_provision_with_shares"
+    else:
+        endpoint = ("rpc/axora_create_provision_with_method" if "p_payment_method" in values
+                    else ("rpc/axora_create_provision_with_link" if "p_payment_url" in values
+                          else "rpc/axora_create_provision"))
     new_id = db.call("POST", endpoint, data=values)
     return {"id": new_id, "ok": True}
 

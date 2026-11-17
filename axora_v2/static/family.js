@@ -2,7 +2,7 @@
    Nenhum rótulo é aplicado como permissão apenas no frontend. */
 "use strict";
 const AxoraFamily = (() => {
-  let family=null,summary=null,lastError="",loading=false;
+  let family=null,summary=null,lastError="",loading=false,loadRequest=null;
   const roleName={principal:"Principal",conjuge:"Cônjuge",pai:"Pai",mae:"Mãe",filho:"Filho(a)",sogro:"Sogro(a)",tio:"Tio(a)",outro:"Outro"};
   const labels={privado:"Privado",casal:"Casal",familia:"Família",selecionados:"Selecionados"};
   const hasAccess=()=>Boolean(me?.family_enabled);
@@ -18,20 +18,28 @@ const AxoraFamily = (() => {
   }
   async function load(force=false){
     if(!hasAccess())return;
-    if(loading||(!force&&family&&summary))return;
+    // Quem abrir Provisões durante outra carga aguarda o mesmo pedido e
+    // recebe a lista completa de pessoas; não cria um segundo carregamento.
+    if(loadRequest)return loadRequest;
+    if(!force&&family&&summary)return;
     loading=true;lastError="";
-    try{
-      const [f,s]=await Promise.all([api("/api/family"),api("/api/family/summary")]);
-      family=f;summary=s;
-      // Nunca consulta /api/users: a lista global não pertence ao núcleo familiar.
-    }catch(err){lastError=err.message}
-    finally{loading=false;if(page==="family"||page==="settings")render()}
+    loadRequest=(async()=>{
+      try{
+        const [f,s]=await Promise.all([api("/api/family"),api("/api/family/summary")]);
+        family=f;summary=s;
+        // Nunca consulta /api/users: a lista global não pertence ao núcleo familiar.
+      }catch(err){lastError=err.message;throw err}
+      finally{loading=false;if(page==="family"||page==="settings")render()}
+    })();
+    try{return await loadRequest}finally{loadRequest=null}
   }
-  function entryRows(type,predefined=null){
+  function entryRows(type,predefined=null,shares=[]){
     const target=current()||Number(people()[0]?.id||0);
+    const planned=new Map((shares||[]).map(s=>[Number(s.profile_id),Number(s.percentage)]));
     return people().map(p=>{
       const id=Number(p.id),selected=id===target;
-      const amount=type==="cost"?(selected?100:0):(selected?Number(predefined||0).toFixed(2):"0.00");
+      const amount=type==="cost"?(planned.size?(planned.get(id)||0):(selected?100:0)):
+        (selected?Number(predefined||0).toFixed(2):"0.00");
       const name=type==="cost"?"beneficiario":"pagador";
       return '<label class="family-allocation-row"><span>'+esc(p.display_name)+
         '<small>'+esc(roleName[p.relationship]||"Perfil")+'</small></span><input inputmode="decimal" type="number" '+
@@ -54,7 +62,7 @@ const AxoraFamily = (() => {
     form.elements.label.value=config.label==="casal"||config.label==="familia"?config.label:"privado";
     form.elements.classification.disabled=Boolean(config.occurrence_id);
     form.elements.description.readOnly=Boolean(config.occurrence_id);
-    form.querySelector("#family-cost-list").innerHTML=entryRows("cost");
+    form.querySelector("#family-cost-list").innerHTML=entryRows("cost",null,config.shares);
     form.querySelector("#family-payer-list").innerHTML=entryRows("payment",config.value);
     form.querySelector("#family-entry-heading").textContent=config.occurrence_id?
       "Pagar provisão com rateio":"Novo lançamento com rateio";
@@ -66,6 +74,12 @@ const AxoraFamily = (() => {
     if(!hasAccess())throw Error("Ative o ambiente familiar para utilizar o rateio.");
     if(!family)await load(true);
     if(!people().length)throw Error("Cadastre perfis antes de registrar custos.");
+    // Rateio planejado é sugerido na quitação, mas o usuário pode revisá-lo.
+    // O endpoint não revela os percentuais de terceiros aos subusuários.
+    if(config.rule_id&&own()){
+      const planned=await api("/api/family/provisions/"+Number(config.rule_id)+"/shares");
+      config={...config,shares:planned.shares||[]};
+    }
     initExpense($("#family-entry-form"),config);
   }
   function personMetrics(data, pending=false){
@@ -301,7 +315,8 @@ const AxoraFamily = (() => {
       if(pay&&hasAccess()){
         e.preventDefault();e.stopPropagation();
         const item=(provisionItems||[]).find(x=>Number(x.id)===Number(pay.dataset.id));
-        if(item)openEntry({occurrence_id:item.id,description:item.description_override||item.rule?.description,
+        if(item)openEntry({occurrence_id:item.id,rule_id:item.rule_id,
+          description:item.description_override||item.rule?.description,
           category:item.category_override||item.rule?.category,
           value:item.planned_value,label:item.visibility_label}).catch(err=>showToast(err.message,true));
       }

@@ -133,3 +133,21 @@
 .provision-pix-content #provision-pix-copy-text{width:100%;min-height:80px;resize:vertical;box-sizing:border-box;border:1px solid #cddfe9;border-radius:12px;padding:12px;font:12px/1.6 monospace;overflow-wrap:anywhere;color:#28475e;background:#f7fafc}
 .provision-pix-content .dialog-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 @media(max-width:640px){.provision-pix-content{padding:18px}.provision-pix-content .dialog-actions button{flex:1}}
+
+/* Planejamento familiar: rateio acessível, sem duplicação de cadastros. */
+.provision-split{margin:0;min-width:0;border:1px solid #dce9f0;background:#f8fbfd;border-radius:14px;padding:13px;display:grid;gap:10px}
+.provision-split[hidden],#provision-limit-wrap[hidden]{display:none!important}
+.provision-split legend{padding:0 7px;font-size:12px;font-weight:800;color:#22455d}
+.provision-split-help{margin:0;color:#56748b;font-size:12px;line-height:1.5}
+.provision-split-participants{display:grid;gap:8px;max-height:230px;overflow-y:auto;overscroll-behavior:contain}
+.provision-split-participant{display:grid;grid-template-columns:minmax(0,1fr) 110px;align-items:center;gap:9px;border:1px solid #e0eaf1;border-radius:10px;background:#fff;padding:8px 10px}
+.provision-split-participant label{display:flex;align-items:center;gap:9px;min-width:0;cursor:pointer;color:#29485f;font-size:12px;overflow-wrap:anywhere}
+.provision-split-participant input[type=checkbox]{width:17px;height:17px;min-height:17px;accent-color:#119fa8;flex:0 0 17px;padding:0}
+.provision-split-participant input[type=number]{max-width:110px;min-height:36px;padding:6px 9px;text-align:right}
+.provision-split-participant input[type=number]:disabled{opacity:.48}
+.provision-split-total{font-size:12px;font-weight:800;color:#1a696f;text-align:right}
+.provision-split-total[data-invalid=true]{color:#b34354}
+.provision-split small{line-height:1.55;color:#668096;font-size:11px}
+.provision-limit-choice{display:flex;align-items:center;gap:8px;cursor:pointer}
+.provision-limit-choice input[type=checkbox]{width:17px;min-height:17px;height:17px;accent-color:#11a5a6}
+@media(max-width:600px){.provision-split{padding:11px}.provision-split-participant{grid-template-columns:minmax(0,1fr) 95px}.provision-split-participant input[type=number]{width:95px}}

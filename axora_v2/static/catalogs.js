@@ -62,11 +62,15 @@ function hydrateProvisionCatalogs(selector="#provision-form"){
     if(!select)return;
     const previous=select.value;
     select.replaceChildren(new Option(title,""));
-    const items=financeCatalogItems.filter(item=>item.kind===kind&&item.active)
+    let items=financeCatalogItems.filter(item=>item.kind===kind&&item.active)
       .map(item=>item.name);
-    if(kind==="responsible"&&typeof bankingHolderOptions==="function"&&
+    if(kind==="responsible"&&me?.family_enabled&&me?.family_role==="principal"){
+      // Um único cadastro de membros; o alias histórico "Próprio" não é
+      // uma pessoa e nunca deve aparecer como novo responsável.
+      const members=window.AxoraFamily?.profiles?.()||[];
+      items=members.filter(p=>p.active).map(p=>p.display_name);
+    }else if(kind==="responsible"&&typeof bankingHolderOptions==="function"&&
        (!me?.family_enabled||me.family_role==="principal")){
-      // Reutiliza o mesmo cadastro de Titulares, não cria responsável duplicado.
       for(const holder of bankingHolderOptions())items.push(holder.name);
     }
     const unique=[...new Map(items.map(name=>[String(name).trim().toLocaleLowerCase("pt-BR"),name])).values()]
