@@ -3,7 +3,7 @@
 "use strict";
 const AxoraFamily = (() => {
   let family=null,summary=null,lastError="",loading=false;
-  const roleName={principal:"Principal",conjuge:"Cônjuge",filho:"Filho(a)",outro:"Outro"};
+  const roleName={principal:"Principal",conjuge:"Cônjuge",pai:"Pai",mae:"Mãe",filho:"Filho(a)",sogro:"Sogro(a)",tio:"Tio(a)",outro:"Outro"};
   const labels={privado:"Privado",casal:"Casal",familia:"Família",selecionados:"Selecionados"};
   const hasAccess=()=>Boolean(me?.family_enabled);
   const own=()=>me?.family_role==="principal";
@@ -25,7 +25,7 @@ const AxoraFamily = (() => {
       family=f;summary=s;
       // Nunca consulta /api/users: a lista global não pertence ao núcleo familiar.
     }catch(err){lastError=err.message}
-    finally{loading=false;if(page==="family")render()}
+    finally{loading=false;if(page==="family"||page==="settings")render()}
   }
   function entryRows(type,predefined=null){
     const target=current()||Number(people()[0]?.id||0);
@@ -80,27 +80,29 @@ const AxoraFamily = (() => {
   function tableRow(p){
     const metrics=summary?.people?.find(x=>Number(x.id)===Number(p.id))||{};
     return '<article class="family-person-summary"><div class="family-person-heading"><div class="family-avatar">'+
-      esc(p.display_name.slice(0,1).toUpperCase())+'</div><div><strong>'+esc(p.display_name)+
+      esc(p.display_name.slice(0,1).toUpperCase())+'</div><div class="family-person-identity"><strong>'+esc(p.display_name)+
       '</strong><small>'+esc(roleName[p.relationship]||"Outro")+
-      (own()?(p.linked_user_id?' · Login vinculado':' · Sem login'):'')+'</small></div></div>'+
-      personMetrics(metrics)+
-      (own()&&p.relationship!=="principal"?memberTools(p):"")+'</article>';
+      (own()?(p.linked_user_id?' · Login vinculado':' · Sem login'):'')+'</small></div>'+
+      (own()&&p.relationship!=="principal"?memberTools(p):"")+'</div>'+
+      personMetrics(metrics)+'</article>';
   }
   function relationshipOptions(current){
-    return [["conjuge","Cônjuge"],["filho","Filho(a)"],["outro","Outro"]]
+    return [["conjuge","Cônjuge"],["pai","Pai"],["mae","Mãe"],["filho","Filho(a)"],["sogro","Sogro(a)"],["tio","Tio(a)"],["outro","Outro"]]
       .map(([value,label])=>'<option value="'+value+'" '+(value===current?'selected':'')+'>'+label+'</option>').join("");
   }
   function memberTools(p){
     const uid=Number(p.id);
-    return '<div class="family-member-tools"><div class="family-member-role">'+
+    return '<details class="family-member-menu">'+
+      '<summary aria-label="Opções do membro '+esc(p.display_name)+'" title="Ações do membro">⋮</summary>'+
+      '<div class="family-member-menu-panel"><div class="family-member-role">'+
       '<label for="family-role-'+uid+'">Vínculo familiar</label>'+
       '<select id="family-role-'+uid+'" data-family-role="'+uid+'">'+
       relationshipOptions(p.relationship)+'</select>'+
-      '<button type="button" class="btn ghost small" data-family-action="save-relationship" data-id="'+uid+'">Salvar</button></div>'+
+      '<button type="button" class="btn ghost small" data-family-action="save-relationship" data-id="'+uid+'">Salvar vínculo</button></div>'+
       (p.linked_user_id?
        '<span class="family-access-status">Acesso individual ativo</span>':
        '<button type="button" class="btn ghost small" data-family-action="enable-login" data-id="'+uid+'">Criar acesso com senha</button>')+
-      '</div>';
+      '</div></details>';
   }
   function newProfileForm(){
     return '<form id="family-profile-form" class="family-profile-form">'+
@@ -137,10 +139,7 @@ const AxoraFamily = (() => {
       '<div><strong>'+esc(h.name)+'</strong><small>'+esc(relation)+
       ' · Membro financeiro</small></div></div>'+
       personMetrics(null,true)+
-      '<div class="family-bank-setup"><small>Para atribuir receitas e despesas a esta pessoa, '+ 
-      'habilite seu perfil de rateio. Isso não cria login nem concede acesso a contas.</small>'+
-      '<button type="button" class="btn ghost small" data-family-action="activate-bank-member" '+
-      'data-holder-id="'+Number(h.id)+'">Habilitar rateios</button></div></article>';
+      '<p class="family-bank-status">Cadastro e vínculo para rateios disponíveis somente em Configurações.</p></article>';
   }
   async function activateBankMember(holderId){
     if(!own())throw Error("Somente o principal pode criar perfis de rateio.");
@@ -148,13 +147,28 @@ const AxoraFamily = (() => {
     if(!holder)throw Error("Membro bancário não encontrado ou já vinculado a perfil.");
     const name=String(holder.name||"").trim();
     if(!name)throw Error("Nome do membro não informado.");
-    const relationship=holder.relationship==="conjuge"?"conjuge":
-      holder.relationship==="filho"?"filho":"outro";
+    const relationship=["conjuge","pai","mae","filho","sogro","tio"].includes(holder.relationship)?holder.relationship:"outro";
     await api("/api/family/members",{
       method:"POST",body:JSON.stringify({display_name:name,relationship,password:null})
     });
     await load(true);
     showToast("Perfil de rateio habilitado para "+name+". Nenhum acesso criado.");
+  }
+  function settingsPanel(){
+    if(!own())return "";
+    if(lastError)return '<p class="notice warning">'+esc(lastError)+'</p>';
+    if(!family)return '<p class="panel-copy">Carregando cadastro familiar…</p>';
+    const bankOnly=bankOnlyMembers();
+    return '<div class="family-registry-settings">'+
+      '<p class="panel-copy">Este é o único ponto para cadastrar familiares, com ou sem acesso próprio. Os perfis são vinculados às contas e aos rateios sem liberar dados privados automaticamente.</p>'+
+      newProfileForm()+
+      (bankOnly.length?'<div class="family-bank-setup-list"><h3>Vincular membros bancários existentes</h3>'+
+        '<p class="panel-copy">Para evitar cadastros duplicados, habilite o perfil financeiro de quem já possui contas vinculadas.</p>'+
+        bankOnly.map(h=>'<div class="family-registry-legacy"><span>'+esc(h.name)+
+          ' · '+esc(holderRelations[h.relationship]||"Outro")+'</span>'+
+          '<button type="button" class="btn ghost small" data-family-action="activate-bank-member" data-holder-id="'+Number(h.id)+'">Habilitar rateios</button></div>').join("")+
+        '</div>':"")+
+      '</div>';
   }
   function pageHtml(){
     if(!hasAccess())return '<section class="panel"><h2>Gestão familiar indisponível</h2>'+
@@ -178,8 +192,6 @@ const AxoraFamily = (() => {
       (own()&&bankOnlyMembers().length?
         panel("Demais membros cadastrados","Pessoas associadas a contas bancárias, ainda sem perfil de rateio.",
           '<div class="family-bank-grid">'+bankOnlyMembers().map(bankMemberRow).join("")+'</div>'):"")+
-      (own()?panel("Adicionar subusuário ou dependente",
-        "Cadastre cônjuge, filho(a) ou outra pessoa no seu próprio espaço financeiro.",newProfileForm()):"")+
       '</div>';
   }
   async function saveProfile(form){
@@ -198,6 +210,7 @@ const AxoraFamily = (() => {
     const credentials=form.querySelector("[data-family-credentials]");
     if(credentials)credentials.hidden=false;
     for(const input of form.querySelectorAll("[data-family-credentials] input"))input.required=true;
+    await loadBanking(true);
     await load(true);
     showToast(result.access==="login"?"Subusuário cadastrado com acesso próprio.":"Perfil financeiro cadastrado.");
   }
@@ -375,7 +388,7 @@ const AxoraFamily = (() => {
       btn.closest("dialog").close();
     }));
   });
-  return {load,page:pageHtml,openEntry,openVisibility,hasAccess,own,reset,
+  return {load,page:pageHtml,settingsPanel,openEntry,openVisibility,hasAccess,own,reset,
     profiles:()=>own()?people():[]};
 })();
 window.AxoraFamily=AxoraFamily;
