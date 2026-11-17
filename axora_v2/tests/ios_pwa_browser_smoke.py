@@ -122,7 +122,7 @@ with sync_playwright() as p:
     cards=page.locator("#page-content .bank-entity")
     assert cards.count()==4
     assert page.locator("#bank-holder-settings").is_visible()
-    assert page.locator("#bank-holder-settings .panel-heading h2").inner_text()=="Titulares cadastrados"
+    assert page.locator("#bank-holder-settings .panel-heading h2").inner_text()=="Membros cadastrados"
     for i in range(cards.count()):
         card=cards.nth(i)
         bounds=card.bounding_box()
@@ -158,6 +158,16 @@ with sync_playwright() as p:
     assert abs(last_after["height"]-last_before["height"])<=2, (last_before,last_after)
     assert small_after["y"]>=first_after["y"]+first_after["height"]+4, (small_after,first_after)
     assert page.locator("#page-content .bank-person-account").count()==7
+    # Menu recolhido por padrão; opções visíveis só após os três pontos.
+    card=page.locator(".bank-person-account").first
+    menu=card.locator(".bank-account-menu")
+    assert menu.count()==1
+    assert not menu.get_attribute("open")
+    assert not card.locator("[data-action='bank-open-investments']").is_visible()
+    menu.locator("summary").click()
+    assert card.locator("[data-action='bank-open-investments']").is_visible()
+    assert card.locator("[data-action='bank-transfer-open']").is_visible()
+    assert page.locator("#page-content .bank-entity").count()==0
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
 
     # Repetição em largura de iPhone com vários cartões internos.
