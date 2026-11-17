@@ -15,13 +15,13 @@ async function loadBanking(force=false){
       const data=await api("/api/banking");
       const changed=!bankingData||JSON.stringify(bankingData)!==JSON.stringify(data)||Boolean(bankingError);
       bankingData=data;bankingError=null;
-      if(changed&&(page==="bank-accounts"||page==="reconciliation"||
+      if(changed&&(page==="dashboard"||page==="bank-accounts"||page==="reconciliation"||
          (page==="settings"&&(!me?.family_enabled||me.family_role==="principal"))||
          (page==="family"&&me?.family_role==="principal")))render();
       return data;
     }catch(e){
       bankingError=e.message;
-      if(page==="bank-accounts"||page==="reconciliation"||
+      if(page==="dashboard"||page==="bank-accounts"||page==="reconciliation"||
          (page==="settings"&&(!me?.family_enabled||me.family_role==="principal"))||
          (page==="family"&&me?.family_role==="principal"))render();
       throw e;

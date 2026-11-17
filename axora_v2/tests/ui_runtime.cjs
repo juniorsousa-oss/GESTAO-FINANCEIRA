@@ -58,3 +58,27 @@ vm.runInContext('page="settings";render()',ctx);
 assert.ok(element("#page-content").innerHTML.includes("settings-connection-status"));
 assert.ok(element("#page-content").innerHTML.includes("Falha ao atualizar informações financeiras"));
 console.log("AXORA: iconografia comum e indicadores de sincronização validados");
+
+
+// O total da Visão Financeira vem do módulo bancário já filtrado pelo backend,
+ // nunca dos agregados antigos de patrimônio nem de outras pessoas.
+ vm.runInContext(`var bankingData={balances:{
+   combined:"123.45",cash_total:"100.00",investment_total:"23.45",
+   known_accounts:1,missing_accounts:0}};
+   page="dashboard";me={display_name:"Principal",is_admin:true,
+   family_enabled:true,family_role:"principal"};snapshot.summary.located=999999;
+   render();`,ctx);
+ let dashboardHtml=element("#page-content").innerHTML;
+ assert.ok(dashboardHtml.includes("Total em contas"),"Total bancário faltando");
+ assert.ok(dashboardHtml.includes("123,45"),"Total bancário incorreto");
+ assert.ok(!dashboardHtml.includes("999.999"),"Métrica financeira antiga vazou");
+ vm.runInContext(`bankingData={balances:{
+   combined:"15.25",cash_total:"15.25",investment_total:"0.00",
+   known_accounts:1,missing_accounts:0}};
+   me={display_name:"Cônjuge",family_enabled:true,family_role:"conjuge"};
+   render();`,ctx);
+ dashboardHtml=element("#page-content").innerHTML;
+ assert.ok(dashboardHtml.includes("15,25"),"Total das contas permitidas ausente");
+ assert.ok(!dashboardHtml.includes("123,45"),"Total anterior do principal vazou");
+ assert.ok(!dashboardHtml.includes("999.999"),"Métrica global vazou");
+ console.log("AXORA: total de contas para principal e secundário validado");

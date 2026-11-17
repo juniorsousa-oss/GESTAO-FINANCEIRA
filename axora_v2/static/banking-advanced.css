@@ -189,3 +189,46 @@
   .bank-person-account:has(.bank-account-menu[open]){min-height:475px}
 }
 .bank-member-family-only .btn{flex:0 0 auto}
+
+/* Métricas individuais idênticas para familiares com e sem login. */
+.family-bank-only{min-width:0;align-content:start;gap:14px}
+.family-bank-only .family-person-metrics{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;
+  padding-top:12px;border-top:1px solid #dfebf1
+}
+.family-bank-only .family-person-metrics>div{min-width:0;display:grid;gap:4px}
+.family-bank-only .family-person-metrics span{font-size:11px;color:#698196}
+.family-bank-only .family-person-metrics b{
+  font-size:15px;color:#17425e;font-variant-numeric:tabular-nums;
+  overflow-wrap:anywhere
+}
+.family-bank-only .family-bank-status{margin:0;font-size:11px;color:#647d91}
+.family-bank-only .family-bank-setup{
+  border-top:1px solid #deebf1;padding-top:11px;display:flex;align-items:center;
+  justify-content:space-between;gap:10px;flex-wrap:wrap
+}
+.family-bank-only .family-bank-setup small{
+  flex:1 1 175px;font-size:11px;color:#657f94;line-height:1.45
+}
+.family-bank-only .family-bank-setup .btn{flex:0 0 auto;min-width:0}
+@media(max-width:520px){
+  .family-bank-only .family-bank-setup .btn{width:100%}
+}
+
+/* A conciliação ficará fora da navegação enquanto não houver integração. */
+.nav-link[data-page="reconciliation"]{display:none!important}
+.metric-banking-total{
+  border-color:#8bd8d9;
+  background:linear-gradient(135deg,#fff 0%,#f1fafb 100%);
+}
+.metric-banking-total .metric-value{
+  font-size:clamp(25px,2.5vw,38px);
+  overflow-wrap:normal;white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.metric-banking-total .metric-meta{
+  overflow-wrap:anywhere;line-height:1.55;
+}
+@media(max-width:520px){
+  .metric-banking-total .metric-value{font-size:clamp(23px,8vw,33px)}
+}
