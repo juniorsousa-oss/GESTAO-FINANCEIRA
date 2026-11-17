@@ -151,3 +151,34 @@
 .provision-limit-choice{display:flex;align-items:center;gap:8px;cursor:pointer}
 .provision-limit-choice input[type=checkbox]{width:17px;min-height:17px;height:17px;accent-color:#11a5a6}
 @media(max-width:600px){.provision-split{padding:11px}.provision-split-participant{grid-template-columns:minmax(0,1fr) 95px}.provision-split-participant input[type=number]{width:95px}}
+
+
+/* Modal desktop: a rolagem pertence ao formulário e nunca ultrapassa a
+   borda arredondada. O trilho começa/termina recuado 10px do banner.
+   Mobile mantém o scroll próprio do dialog para não afetar o teclado iOS. */
+@media (min-width:851px){
+  dialog.provision-dialog:not(.provision-pix-dialog){
+    overflow:hidden;
+  }
+  dialog.provision-dialog:not(.provision-pix-dialog)>form{
+    box-sizing:border-box;
+    max-height:calc(min(92dvh,840px) - 24px);
+    margin:10px 10px 10px 0;
+    padding:18px 18px 18px 28px;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior-y:contain;
+    scrollbar-width:thin;
+    scrollbar-color:#91a6b2 transparent;
+  }
+  dialog.provision-dialog:not(.provision-pix-dialog)>form::-webkit-scrollbar{
+    width:7px;
+  }
+  dialog.provision-dialog:not(.provision-pix-dialog)>form::-webkit-scrollbar-thumb{
+    border-radius:10px;
+    background:#91a6b2;
+  }
+  dialog.provision-dialog:not(.provision-pix-dialog)>form::-webkit-scrollbar-track{
+    background:transparent;
+  }
+}
