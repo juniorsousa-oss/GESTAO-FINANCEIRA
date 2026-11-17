@@ -136,7 +136,7 @@ const AxoraFamily = (() => {
       (holderRelations[h.relationship]||"Familiar") : "Familiar";
     return '<article class="family-bank-only"><div class="family-person-heading">'+
       '<div class="family-avatar">'+esc((h.name||"M").trim().slice(0,1).toUpperCase())+'</div>'+
-      '<div><strong>'+esc(h.name)+'</strong><small>'+esc(relation)+
+      '<div class="family-person-identity"><strong>'+esc(h.name)+'</strong><small>'+esc(relation)+
       ' · Membro financeiro</small></div></div>'+
       personMetrics(null,true)+
       '<p class="family-bank-status">Cadastro e vínculo para rateios disponíveis somente em Configurações.</p></article>';
