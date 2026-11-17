@@ -430,7 +430,17 @@ def add_provision(payload: dict, user=Depends(authorized)):
         raise HTTPException(422, "Cadastro de provisão inválido.")
     split_requested = "cost_shares" in payload
     values = provisions.clean_provision({k:v for k,v in payload.items() if k != "cost_shares"})
-    catalogs.canonicalize_provision(values, finance_provision_options(workspace, values))
+    options = finance_provision_options(workspace, values)
+    if user.get("_family") and user["_family"]["role"]=="principal":
+        # Perfis financeiros são a fonte única; alguns ainda não possuem banco.
+        known = {str(item.get("name","")).casefold() for item in options
+                 if item.get("kind")=="responsible" and item.get("active")}
+        for member in family_service.profiles(user):
+            name = str(member.get("display_name") or "").strip()
+            if member.get("active") and name and name.casefold() not in known:
+                options.append({"kind":"responsible","name":name,"active":True})
+                known.add(name.casefold())
+    catalogs.canonicalize_provision(values, options)
     values["p_workspace_id"] = workspace
     if split_requested:
         ctx = family_service.require_principal(user)
