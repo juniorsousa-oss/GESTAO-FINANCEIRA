@@ -127,6 +127,6 @@ def test_ui_balance_summary_and_manual_update():
     assert 'data-action="bank-update-balance"' in js
     assert 'id="bank-balance-form"' in html
     assert 'id="bank-manual-balance"' in html
-    assert "banking.js?v=family-total-r5" in html
+    assert "banking.js?v=single-registry-r1" in html
     assert "bank-balance-grid" in css
     assert "banking.balance_overview" in (BASE/"main.py").read_text()
