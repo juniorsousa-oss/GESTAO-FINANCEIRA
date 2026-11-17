@@ -248,6 +248,21 @@ def install(app, auth, authorized):
             "p_category": category, "p_label": payload["label"],
             "p_costs": costs, "p_payments": payments})
 
+    @app.get("/api/family/provisions/{rule_id}/shares")
+    def planned_provision_shares(rule_id: int, user=Depends(auth)):
+        """Somente o principal pode ver o rateio planejado de qualquer membro."""
+        ctx = family_service.require_principal(user)
+        if rule_id < 1:
+            raise HTTPException(422, "Provisão inválida.")
+        rules = family_service.table("finance_provision_rules", ctx["workspace_id"],
+            fields="id", filters={"id": "eq."+str(rule_id)}, limit=1)
+        if not rules:
+            raise HTTPException(404, "Provisão não encontrada.")
+        shares = family_service.table("finance_provision_cost_shares", ctx["workspace_id"],
+            fields="profile_id,percentage", filters={"rule_id": "eq."+str(rule_id)},
+            order="profile_id.asc", limit=50)
+        return {"shares": shares}
+
     @app.post("/api/family/provisions/{occurrence_id}/pay")
     def pay_family_provision(occurrence_id: int, payload: dict, user=Depends(authorized)):
         ctx = _context(user)
