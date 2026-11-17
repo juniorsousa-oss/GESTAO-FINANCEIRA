@@ -256,7 +256,7 @@ function render(){
       [...(body.querySelectorAll?.("details.bank-person-card[open][data-bank-holder-id]")||[])]
         .map(el=>el.dataset.bankHolderId)) : new Set();
     const expandedAccounts=samePage?new Set(
-      [...(body.querySelectorAll?.(".bank-person-account[data-bank-account-id] > details.bank-account-menu[open]")||[])]
+      [...(body.querySelectorAll?.(".bank-person-account[data-bank-account-id] details.bank-account-menu[open]")||[])]
         .map(el=>el.parentElement.dataset.bankAccountId)) : new Set();
     body.innerHTML=nextMarkup;
     if(samePage&&page==="bank-accounts"){
@@ -265,7 +265,7 @@ function render(){
       });
       body.querySelectorAll(".bank-person-account[data-bank-account-id]").forEach(el=>{
         if(expandedAccounts.has(el.dataset.bankAccountId)){
-          const menu=el.querySelector(":scope > details.bank-account-menu");
+          const menu=el.querySelector(".bank-card-top > details.bank-account-menu");
           if(menu)menu.open=true;
         }
       });
