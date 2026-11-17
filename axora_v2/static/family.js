@@ -48,11 +48,142 @@ const AxoraFamily = (() => {
         ' de '+esc(p.display_name)+'"><span class="family-unit">'+(type==="cost"?"%":"R$")+'</span></label>';
     }).join("");
   }
+
+  // Carteira do próprio workspace. Subusuários não recebem esta seleção nem
+  // podem modificar saldos; permissões continuam validadas pelo servidor.
+  function walletAvailableAccounts(){
+    if(!own()||!bankingData||bankingData.mode!=="manual")return [];
+    const holders=new Map((bankingData.holders||[]).map(h=>[Number(h.id),h]));
+    return (bankingData.accounts||[]).flatMap(a=>{
+      const holder=holders.get(Number(a.holder_id));
+      if(!holder||!Number.isInteger(Number(holder.family_profile_id))||
+         Number(holder.family_profile_id)<1||a.manual_balance==null||
+         a.pluggy_account_id||a.pluggy_item_id)return [];
+      return [{id:Number(a.id),profile_id:Number(holder.family_profile_id),
+        label:[a.bank_name,a.nickname].filter(Boolean).join(" · "),
+        balance:Number(a.manual_balance)}];
+    }).filter(a=>Number.isFinite(a.balance)).sort((a,b)=>a.label.localeCompare(b.label,"pt-BR"));
+  }
+  function walletPayingProfiles(form){
+    return people().filter(p=>{
+      const input=form.querySelector('[data-family-pagador="'+Number(p.id)+'"]');
+      return input&&Number(input.value)>0;
+    });
+  }
+  function walletAccountSelect(form,row,previous=0){
+    const payer=Number(row.querySelector("[data-wallet-payer]").value);
+    const select=row.querySelector("[data-wallet-account]");
+    const accounts=walletAvailableAccounts().filter(a=>a.profile_id===payer);
+    select.innerHTML='<option value="">Selecione uma conta</option>'+
+      accounts.map(a=>'<option value="'+a.id+'">'+esc(a.label)+' — '+esc(money(a.balance))+'</option>').join("");
+    if(accounts.some(a=>a.id===Number(previous)))select.value=String(previous);
+    walletTotals(form);
+  }
+  function walletAddSource(form){
+    const payers=walletPayingProfiles(form);
+    if(!payers.length){showToast("Informe quem pagou antes de selecionar as contas.",true);return}
+    const accounts=walletAvailableAccounts();
+    const row=document.createElement("div");
+    row.className="family-wallet-source";
+    row.innerHTML='<label>Pagador<select data-wallet-payer aria-label="Pessoa pagadora">'+
+      payers.map(p=>'<option value="'+Number(p.id)+'">'+esc(p.display_name)+'</option>').join("")+'</select></label>'+
+      '<label>Conta de origem<select data-wallet-account aria-label="Conta de origem"></select></label>'+
+      '<label>Valor (R$)<input type="number" data-wallet-amount min="0.01" step="0.01" '+
+      'placeholder="0,00" inputmode="decimal" aria-label="Valor retirado da conta"></label>'+
+      '<button type="button" data-wallet-remove aria-label="Retirar esta conta">×</button>'+
+      '<small class="family-wallet-balance">Selecione a conta para consultar o saldo.</small>';
+    form.querySelector("#family-wallet-source-list").appendChild(row);
+    // Prefere uma pessoa com pagamento informado e contas cadastradas.
+    const defaultPayer=payers.find(p=>accounts.some(a=>a.profile_id===Number(p.id)))||payers[0];
+    row.querySelector("[data-wallet-payer]").value=String(defaultPayer.id);
+    walletAccountSelect(form,row);
+  }
+  function walletRefreshPayers(form){
+    const payers=walletPayingProfiles(form);
+    form.querySelectorAll(".family-wallet-source").forEach(row=>{
+      const select=row.querySelector("[data-wallet-payer]"),old=Number(select.value);
+      select.innerHTML=payers.map(p=>'<option value="'+Number(p.id)+'">'+esc(p.display_name)+'</option>').join("");
+      if(payers.some(p=>Number(p.id)===old))select.value=String(old);
+      walletAccountSelect(form,row,Number(row.querySelector("[data-wallet-account]").value));
+    });
+    walletTotals(form);
+  }
+  function walletTotals(form){
+    const output=form.querySelector("#family-wallet-total");
+    const amount=Number(form.elements.value.value)||0;
+    const rows=[...form.querySelectorAll(".family-wallet-source")];
+    const total=rows.reduce((n,row)=>n+(Number(row.querySelector("[data-wallet-amount]").value)||0),0);
+    const perPayer=new Map();
+    for(const row of rows){
+      const id=Number(row.querySelector("[data-wallet-payer]").value);
+      perPayer.set(id,(perPayer.get(id)||0)+(Number(row.querySelector("[data-wallet-amount]").value)||0));
+      const account=walletAvailableAccounts().find(a=>a.id===Number(row.querySelector("[data-wallet-account]").value));
+      row.querySelector(".family-wallet-balance").textContent=account?
+        "Saldo informado: "+money(account.balance):"Selecione uma conta da carteira.";
+    }
+    const payers=walletPayingProfiles(form);
+    const valid=payers.length>0&&rows.length>0&&Math.abs(total-amount)<.001&&
+      payers.every(p=>{
+        const input=form.querySelector('[data-family-pagador="'+Number(p.id)+'"]');
+        return Math.abs((perPayer.get(Number(p.id))||0)-Number(input.value))<.001;
+      });
+    output.dataset.invalid=String(!valid);
+    output.textContent="Contas: "+money(total)+" de "+money(amount)+(valid?"":" · confira o rateio");
+  }
+  function walletUpdateMode(form){
+    const expenses=form.elements.classification.value==="SAÍDA";
+    const block=form.querySelector("[data-family-wallet]");
+    block.hidden=!expenses;
+    const available=own()&&walletAvailableAccounts().length>0;
+    const choice=form.querySelector('[name="balance_mode"][value="wallet"]');
+    choice.disabled=!available;
+    choice.closest("label").hidden=!own();
+    if(!available&&choice.checked)form.querySelector('[name="balance_mode"][value="none"]').checked=true;
+    const active=expenses&&available&&choice.checked;
+    form.querySelector("#family-wallet-details").hidden=!active;
+    if(active&&!form.querySelector(".family-wallet-source"))walletAddSource(form);
+    if(active)walletRefreshPayers(form);
+  }
+  function walletPaymentSources(form){
+    if(form.elements.classification.value!=="SAÍDA"||
+      form.querySelector('[name="balance_mode"]:checked')?.value!=="wallet")return null;
+    if(!own())throw Error("A movimentação de saldos é exclusiva do usuário principal.");
+    const accounts=new Map(walletAvailableAccounts().map(a=>[a.id,a]));
+    const totals=new Map(),used=new Set();
+    const result=[...form.querySelectorAll(".family-wallet-source")].map(row=>{
+      const profile_id=Number(row.querySelector("[data-wallet-payer]").value);
+      const account_id=Number(row.querySelector("[data-wallet-account]").value);
+      const raw=row.querySelector("[data-wallet-amount]").value;
+      const amount=Number(raw),account=accounts.get(account_id);
+      if(!account||account.profile_id!==profile_id||!raw||!Number.isFinite(amount)||
+         amount<=0||Math.abs(Math.round(amount*100)-amount*100)>.00001)
+        throw Error("Escolha conta, pagador e valor positivo com até dois decimais.");
+      if(used.has(account_id))throw Error("Uma conta só pode aparecer uma vez no mesmo pagamento.");
+      used.add(account_id);
+      if(amount>account.balance+.001)throw Error("Saldo insuficiente em "+account.label+".");
+      totals.set(profile_id,(totals.get(profile_id)||0)+Math.round(amount*100));
+      return {profile_id,account_id,amount};
+    });
+    if(!result.length)throw Error("Selecione ao menos uma conta de origem.");
+    const payers=walletPayingProfiles(form);
+    for(const payer of payers){
+      const value=Number(form.querySelector('[data-family-pagador="'+Number(payer.id)+'"]').value);
+      if(totals.get(Number(payer.id))!==Math.round(value*100))
+        throw Error("As contas de "+payer.display_name+" precisam somar "+money(value)+".");
+    }
+    const total=Math.round(Number(form.elements.value.value)*100);
+    if([...totals.values()].reduce((a,b)=>a+b,0)!==total)
+      throw Error("Os valores das contas devem somar o pagamento integral.");
+    return result;
+  }
   function togglePayers(form){
     form.querySelector("[data-family-payers]").hidden=form.elements.classification.value==="ENTRADA";
+    walletUpdateMode(form);
   }
   function initExpense(form,config={}){
     form.reset();
+    form.querySelector("#family-wallet-source-list").replaceChildren();
+    form.dataset.walletRequestId=crypto.randomUUID();
     form.dataset.occurrenceId=config.occurrence_id||"";
     form.elements.classification.value=config.occurrence_id?"SAÍDA":"SAÍDA";
     form.elements.entry_date.value=new Date().toLocaleDateString("en-CA");
@@ -74,6 +205,7 @@ const AxoraFamily = (() => {
     if(!hasAccess())throw Error("Ative o ambiente familiar para utilizar o rateio.");
     if(!family)await load(true);
     if(!people().length)throw Error("Cadastre perfis antes de registrar custos.");
+    if(own()&&typeof loadBanking==="function")await loadBanking(false).catch(()=>null);
     // Rateio planejado é sugerido na quitação, mas o usuário pode revisá-lo.
     // O endpoint não revela os percentuais de terceiros aos subusuários.
     if(config.rule_id&&own()){
@@ -292,21 +424,31 @@ const AxoraFamily = (() => {
         id:Number(x.dataset.familyPagador),value:Number(x.value)})),"amount"):[];
     if(classification==="SAÍDA"&&Math.abs(payments.reduce((n,x)=>n+x.amount,0)-value)>.001)
       throw Error("Pagadores precisam somar o valor integral.");
+    const accountSources=walletPaymentSources(form);
+    const useWallet=accountSources!==null;
     const occurrenceId=Number(form.dataset.occurrenceId||0);
-    if(occurrenceId&&!confirm("Confirmar quitação? Será criado um Registro com este rateio, sem conciliação automática."))return;
+    if(occurrenceId&&!confirm(useWallet?
+      "Confirmar quitação e descontar "+money(value)+" das contas escolhidas?":
+      "Confirmar quitação sem alterar os saldos? Será criado um Registro de pagamento."))return;
     const body=occurrenceId?
       {payment_date:form.elements.entry_date.value,amount:value,label:form.elements.label.value,
         costs,payments}:
       {date:form.elements.entry_date.value,description:form.elements.description.value,
        value,classification,category:form.elements.category.value,label:form.elements.label.value,
        costs,payments};
+    if(useWallet){
+      body.balance_mode="wallet";
+      body.account_sources=accountSources;
+      body.request_id=form.dataset.walletRequestId;
+    }
     await api(occurrenceId?"/api/family/provisions/"+occurrenceId+"/pay":"/api/family/transactions",{
       method:"POST",body:JSON.stringify(body)});
     $("#family-entry-dialog").close();
     await refresh();
+    if(useWallet&&typeof loadBanking==="function")await loadBanking(true);
     if(occurrenceId&&typeof loadProvisions==="function")await loadProvisions();
     await load(true);
-    showToast("Registro salvo com rateio por pessoa.");
+    showToast(useWallet?"Pagamento salvo e saldos das contas atualizados.":"Registro salvo sem movimentar os saldos.");
   }
   document.addEventListener("DOMContentLoaded",()=>{
     document.addEventListener("click",e=>{
@@ -367,14 +509,29 @@ const AxoraFamily = (() => {
         .finally(()=>btn.disabled=false);
     });
     $("#family-entry-form").addEventListener("change",e=>{
-      if(e.target.name==="classification")togglePayers(e.target.form);
+      const form=e.target.form;
+      if(e.target.name==="classification")togglePayers(form);
+      if(e.target.name==="balance_mode")walletUpdateMode(form);
+      if(e.target.matches("[data-wallet-payer]"))walletAccountSelect(form,e.target.closest(".family-wallet-source"));
+      if(e.target.matches("[data-wallet-account]"))walletTotals(form);
+    });
+    $("#family-wallet-add-source").addEventListener("click",()=>walletAddSource($("#family-entry-form")));
+    $("#family-wallet-source-list").addEventListener("click",e=>{
+      const btn=e.target.closest("[data-wallet-remove]");
+      if(!btn)return;
+      btn.closest(".family-wallet-source").remove();
+      walletTotals($("#family-entry-form"));
     });
     $("#family-entry-form").addEventListener("input",e=>{
-      if(e.target.name!=="value")return;
-      const form=e.target.form,ownId=current();
-      const payer=form.querySelector('[data-family-pagador="'+ownId+'"]');
-      const others=[...form.querySelectorAll("[data-family-pagador]")].filter(x=>x!==payer);
-      if(payer&&others.every(x=>!Number(x.value)))payer.value=Number(e.target.value||0).toFixed(2);
+      const form=e.target.form;
+      if(e.target.name==="value"){
+        const ownId=current();
+        const payer=form.querySelector('[data-family-pagador="'+ownId+'"]');
+        const others=[...form.querySelectorAll("[data-family-pagador]")].filter(x=>x!==payer);
+        if(payer&&others.every(x=>!Number(x.value)))payer.value=Number(e.target.value||0).toFixed(2);
+      }
+      if(e.target.name==="value"||e.target.matches("[data-family-pagador]"))walletRefreshPayers(form);
+      if(e.target.matches("[data-wallet-amount]"))walletTotals(form);
     });
     $("#family-entry-form").addEventListener("submit",e=>{
       e.preventDefault();const btn=e.target.querySelector('button[type="submit"]');btn.disabled=true;

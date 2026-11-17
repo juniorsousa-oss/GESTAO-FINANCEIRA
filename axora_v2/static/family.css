@@ -126,3 +126,40 @@
   .family-registry-legacy{flex-wrap:wrap}
   .family-registry-legacy .btn{width:100%}
 }
+
+/* AXORA | Origem do pagamento, com múltiplas contas ou quitação histórica. */
+[data-family-wallet][hidden],#family-wallet-details[hidden]{display:none!important}
+.family-wallet-fieldset{min-width:0}
+.family-wallet-hint{font-size:12px;line-height:1.55;color:#58758a;margin:3px 0 12px}
+.family-wallet-mode{display:grid;gap:9px}
+.family-wallet-mode>label{display:grid;grid-template-columns:18px minmax(0,1fr);gap:4px 10px;
+ align-items:center;border:1px solid #dce7ee;padding:11px 12px;border-radius:12px;
+ color:#234d64;font-size:12px;font-weight:750;cursor:pointer}
+.family-wallet-mode input{width:17px;height:17px;margin:0;accent-color:#07a8a7}
+.family-wallet-mode>label small{grid-column:2;color:#6c8397;font-size:11px;font-weight:450}
+.family-wallet-mode>label:has(input:checked){border-color:#35b7b1;background:#f0fbfa}
+#family-wallet-details{margin-top:13px;padding-top:10px;border-top:1px solid #e3edf1}
+.family-wallet-source-list{display:grid;gap:9px;margin:10px 0}
+.family-wallet-source{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) 120px 36px;
+ align-items:end;gap:9px;padding:12px;background:#f8fbfd;border:1px solid #dfebf1;border-radius:12px}
+.family-wallet-source>label{min-width:0;display:grid;gap:5px;font-size:11px;color:#536f86;font-weight:750}
+.family-wallet-source select,.family-wallet-source input{width:100%;min-width:0;padding:9px 10px;min-height:39px;
+ border:1px solid #d2e3eb;border-radius:9px;background:#fff;color:#214158;font:inherit;font-size:12px}
+.family-wallet-source button{height:39px;min-width:36px;padding:0;border:1px solid #e3d7da;
+ border-radius:9px;background:#fff;color:#a14e5b;cursor:pointer}
+.family-wallet-source .family-wallet-balance{grid-column:2/-1;font-size:11px;color:#668598;line-height:1.4}
+.family-wallet-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.family-wallet-toolbar output{font-size:12px;font-weight:800;color:#0e756f;font-variant-numeric:tabular-nums}
+.family-wallet-toolbar output[data-invalid="true"]{color:#b64655}
+#family-wallet-details>small{display:block;margin-top:9px;color:#69849a;line-height:1.5}
+@media(max-width:680px){
+ .family-wallet-source{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 36px}
+ .family-wallet-source>label:nth-child(1){grid-column:1}
+ .family-wallet-source>label:nth-child(2){grid-column:2}
+ .family-wallet-source>label:nth-child(3){grid-column:1/3}
+ .family-wallet-source button{grid-column:3;grid-row:1/3}
+ .family-wallet-source .family-wallet-balance{grid-column:1/-1}
+}
+
+/* Evita que estilos do radio substituam o atributo hidden. */
+[data-family-wallet-allowed][hidden]{display:none!important}

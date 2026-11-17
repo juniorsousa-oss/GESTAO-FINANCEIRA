@@ -1,6 +1,7 @@
 """Rotas do AXORA Familiar V2 — todas baseadas na sessão HTTP-only."""
 from datetime import date
 from decimal import Decimal
+from uuid import UUID
 import re
 
 from fastapi import Depends, HTTPException
@@ -45,12 +46,32 @@ def _allocations(value, costs, payments, classification, ctx):
     )
 
 
+
+def _wallet_payload(payload, payments, amount, ctx):
+    """Somente principal pode alterar dinheiro; histórico não altera o saldo."""
+    if "balance_mode" not in payload:
+        return None  # Compatibilidade com registros familiares anteriores.
+    if payload["balance_mode"] != "wallet":
+        raise HTTPException(422, "Modo de movimentação inválido.")
+    if ctx["role"] != "principal" or ctx["user_id"] != ctx["owner_id"]:
+        raise HTTPException(403, "Somente o principal pode descontar saldos da carteira.")
+    try:
+        uid = UUID(str(payload["request_id"]))
+        if uid.version != 4 or str(uid) != str(payload["request_id"]):
+            raise ValueError
+    except (ValueError, TypeError, KeyError):
+        raise HTTPException(422, "Identificação do pagamento inválida.") from None
+    sources = family_policy.validate_wallet_sources(amount, payments,
+                                                    payload["account_sources"])
+    return {"p_request_id": str(uid), "p_sources": sources}
+
 def _record_fields(data):
     if not isinstance(data, dict):
         raise HTTPException(422, "Informe os dados financeiros.")
     keys = {"date", "description", "value", "classification", "category", "label",
             "costs", "payments"}
-    if set(data) != keys:
+    wallet_keys = {"balance_mode", "account_sources", "request_id"}
+    if set(data) not in (keys, keys | wallet_keys):
         raise HTTPException(422, "Campos inválidos para o registro familiar.")
     try:
         when = date.fromisoformat(str(data["date"])).isoformat()
@@ -241,12 +262,17 @@ def install(app, auth, authorized):
         family_policy.amount_cents(value)
         costs, payments = _allocations(value, payload["costs"], payload["payments"],
                                         payload["classification"], ctx)
-        return db.call("POST", "rpc/axora_family_record", data={
+        wallet = _wallet_payload(payload, payments, value, ctx)
+        if wallet is not None and payload["classification"] != "SAÍDA":
+            raise HTTPException(422, "Somente despesas podem descontar da carteira.")
+        endpoint = ("rpc/axora_family_record_from_wallet" if wallet
+                    else "rpc/axora_family_record")
+        return db.call("POST", endpoint, data={
             "p_workspace_id": ctx["workspace_id"], "p_actor_id": ctx["user_id"],
             "p_movement_date": when, "p_description": description,
             "p_value": str(value), "p_classification": payload["classification"],
             "p_category": category, "p_label": payload["label"],
-            "p_costs": costs, "p_payments": payments})
+            "p_costs": costs, "p_payments": payments, **(wallet or {})})
 
     @app.get("/api/family/provisions/{rule_id}/shares")
     def planned_provision_shares(rule_id: int, user=Depends(auth)):
@@ -268,9 +294,10 @@ def install(app, auth, authorized):
         ctx = _context(user)
         if ctx["role"] not in ("principal","conjuge"):
             raise HTTPException(403, "Este perfil não pode registrar pagamentos.")
-        if occurrence_id <= 0 or not isinstance(payload, dict) or set(payload) != {
-            "payment_date", "amount", "label", "costs", "payments"
-        }:
+        required = {"payment_date", "amount", "label", "costs", "payments"}
+        wallet_keys = {"balance_mode", "account_sources", "request_id"}
+        if (occurrence_id <= 0 or not isinstance(payload, dict)
+                or set(payload) not in (required, required | wallet_keys)):
             raise HTTPException(422, "Pagamento familiar inválido.")
         try:
             payment_date = date.fromisoformat(str(payload["payment_date"])).isoformat()
@@ -287,11 +314,14 @@ def install(app, auth, authorized):
         family_service.assert_visible(user, "provisao", existing[0]["rule_id"])
         costs, payments = _allocations(payload["amount"], payload["costs"],
                                         payload["payments"], "SAÍDA", ctx)
-        return db.call("POST", "rpc/axora_family_pay_provision", data={
+        wallet = _wallet_payload(payload, payments, payload["amount"], ctx)
+        endpoint = ("rpc/axora_family_pay_provision_from_wallet" if wallet
+                    else "rpc/axora_family_pay_provision")
+        return db.call("POST", endpoint, data={
             "p_workspace_id": ctx["workspace_id"], "p_actor_id": ctx["user_id"],
             "p_occurrence_id": occurrence_id, "p_payment_date": payment_date,
             "p_amount": str(payload["amount"]), "p_label": payload["label"],
-            "p_costs": costs, "p_payments": payments})
+            "p_costs": costs, "p_payments": payments, **(wallet or {})})
 
     @app.get("/api/family/summary")
     def family_summary(user=Depends(auth)):
