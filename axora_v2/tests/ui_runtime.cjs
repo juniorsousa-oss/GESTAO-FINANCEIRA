@@ -59,7 +59,8 @@ assert.ok(element("#page-content").innerHTML.includes("settings-connection-statu
 assert.ok(element("#page-content").innerHTML.includes("Falha ao atualizar informações financeiras"));
 console.log("AXORA: iconografia comum e indicadores de sincronização validados");
 
-\n// O total da Visão Financeira vem do módulo bancário já filtrado pelo backend,
+
+// O total da Visão Financeira vem do módulo bancário já filtrado pelo backend,
  // nunca dos agregados antigos de patrimônio nem de outras pessoas.
  vm.runInContext(`var bankingData={balances:{
    combined:"123.45",cash_total:"100.00",investment_total:"23.45",
