@@ -64,3 +64,46 @@
  .family-member-role{align-items:stretch}
  .family-member-role label{flex:1 1 100%}
 }
+
+/* Cadastro familiar centralizado e ações contextuais — AXORA desktop/mobile. */
+.family-person-identity{min-width:0;flex:1}
+.family-person-heading{min-width:0;align-items:center}
+.family-person-summary{position:relative}
+.family-member-menu{margin-left:auto;position:relative;flex:none;min-width:0}
+.family-member-menu>summary{
+  display:flex;align-items:center;justify-content:center;list-style:none;
+  width:35px;height:35px;border:1px solid #d6e4ec;background:#fff;border-radius:11px;
+  color:#31526b;font-weight:800;font-size:23px;line-height:1;cursor:pointer;
+}
+.family-member-menu>summary::-webkit-details-marker{display:none}
+.family-member-menu[open]>summary{background:#edf8f9;border-color:#91ced4}
+.family-member-menu-panel{
+  position:absolute;right:0;top:calc(100% + 6px);z-index:35;
+  width:min(290px,calc(100vw - 56px));padding:13px;
+  display:grid;gap:12px;background:#fff;border:1px solid #d9e7ec;
+  border-radius:13px;box-shadow:0 15px 35px rgba(13,46,71,.17)
+}
+.family-member-menu .family-member-role{
+  display:grid;gap:8px;margin:0;min-width:0
+}
+.family-member-menu .family-member-role label{font-size:11px}
+.family-member-menu .family-member-role select,
+.family-member-menu .family-member-role .btn{width:100%;min-width:0}
+.family-member-menu-panel>.btn{width:100%;white-space:normal}
+.family-member-menu-panel .family-access-status{font-size:11px}
+.family-person-summary:has(.family-member-menu[open]){z-index:4}
+.family-registry-settings{display:grid;gap:18px}
+.family-registry-settings .family-profile-form{margin-top:0}
+.family-bank-setup-list{border-top:1px solid #dfebf1;padding-top:16px;display:grid;gap:10px}
+.family-bank-setup-list h3{font-size:14px;margin:0;color:#244760}
+.family-registry-legacy{
+  display:flex;gap:12px;align-items:center;justify-content:space-between;
+  border:1px solid #dbe8ee;border-radius:12px;padding:11px 13px;
+}
+.family-registry-legacy span{font-size:12px;font-weight:700;color:#31546e}
+.family-bank-only .family-bank-status{margin-top:0}
+@media(max-width:600px){
+  .family-member-menu-panel{width:min(260px,calc(100vw - 52px))}
+  .family-registry-legacy{flex-wrap:wrap}
+  .family-registry-legacy .btn{width:100%}
+}
