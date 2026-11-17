@@ -192,7 +192,10 @@ async function openPixDialog(id){
 }
 
 async function openProvisionDialog(){
-  await loadFinanceCatalogs(true);
+  await Promise.all([
+    loadFinanceCatalogs(true),
+    typeof loadBanking==="function" ? loadBanking(false) : Promise.resolve(null)
+  ]);
   const d=$("#provision-dialog"),f=$("#provision-form");
   f.reset();
   hydrateProvisionCatalogs();
@@ -295,7 +298,10 @@ function provisionEffective(item,field){
 }
 async function openEditProvisionDialog(id){
   const item=findOpenProvision(id);
-  await loadFinanceCatalogs(true);
+  await Promise.all([
+    loadFinanceCatalogs(true),
+    typeof loadBanking==="function" ? loadBanking(false) : Promise.resolve(null)
+  ]);
   const dialog=$("#provision-edit-dialog"),form=$("#provision-edit-form");
   form.reset();
   hydrateProvisionCatalogs("#provision-edit-form");
