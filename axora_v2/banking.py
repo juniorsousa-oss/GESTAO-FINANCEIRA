@@ -6,6 +6,7 @@ manualmente pelo operador nesta primeira etapa.
 from datetime import date
 import os
 from decimal import Decimal, InvalidOperation
+from uuid import UUID
 from difflib import SequenceMatcher
 import unicodedata
 import re
@@ -13,7 +14,6 @@ import re
 from fastapi import HTTPException
 
 RELATIONSHIPS = {"proprio", "conjuge", "mae", "pai", "familiar", "outro"}
-ACCOUNT_TYPES = {"corrente", "poupanca", "pagamento", "outro"}
 ACTIONS = {"matched_record", "matched_provision", "recorded", "transfer", "ignored"}
 
 
@@ -38,7 +38,7 @@ def clean_account(data):
     required = {"holder_id", "bank_name", "nickname", "account_type"}
     if not isinstance(data, dict) or set(data) != required:
         raise HTTPException(422, "Preencha os dados obrigatórios da conta.")
-    if data["account_type"] not in ACCOUNT_TYPES:
+    if not isinstance(data["account_type"], str) or not re.fullmatch(r"[a-z][a-z0-9_-]{1,63}",data["account_type"]):
         raise HTTPException(422, "Tipo de conta inválido.")
     return {"holder_id": positive_id(data["holder_id"]),
             "bank_name": clean_text(data["bank_name"], "Banco", 80, 2),
@@ -71,16 +71,17 @@ def manual_mode():
 
 
 def balance_overview(holders, accounts, *, manual_only=False):
-    """Cada conta contribui apenas uma vez: Pluggy OU saldo manual.
+    """Consolida saldo disponível + investido sem duplicar a mesma conta.
 
-    Não inclui transações, provisões, cartões nem contas sem saldo informado.
-    O valor dos familiares nunca integra o total pessoal.
+    Transferências não geram Registros nem receitas/despesas. Saldo investido
+    não deve incluir o que já compõe o saldo disponível informado.
     """
     totals = {}
     for holder in holders:
         totals[str(holder["id"])] = {
             "holder_id": holder["id"], "name": holder["name"],
             "relationship": holder["relationship"], "total": Decimal("0.00"),
+            "cash": Decimal("0.00"), "investments": Decimal("0.00"),
             "known": 0, "missing": 0
         }
     for account in accounts:
@@ -88,37 +89,99 @@ def balance_overview(holders, accounts, *, manual_only=False):
         if group is None:
             continue
         connected = bool(account.get("pluggy_account_id")) and not manual_only
-        raw = account.get("pluggy_balance") if connected else account.get("manual_balance")
-        if raw is None:
-            group["missing"] += 1
-            continue
+        raw_cash = account.get("pluggy_balance") if connected else account.get("manual_balance")
+        raw_investment = account.get("investment_balance")
         try:
-            balance = Decimal(str(raw))
-            if not balance.is_finite():
+            available = Decimal(str(raw_cash)) if raw_cash is not None else None
+            invested = Decimal(str(raw_investment)) if raw_investment is not None else None
+            if ((available is not None and not available.is_finite()) or
+                    (invested is not None and (not invested.is_finite() or invested < 0))):
                 raise InvalidOperation
         except (ValueError, TypeError, InvalidOperation):
+            available = None
+            invested = None
+        if available is None and invested is None:
             group["missing"] += 1
             continue
-        group["total"] += balance
         group["known"] += 1
-    personal = sum((x["total"] for x in totals.values()
-                    if x["relationship"] == "proprio"), Decimal("0.00"))
-    family = sum((x["total"] for x in totals.values()
-                  if x["relationship"] != "proprio"), Decimal("0.00"))
-    groups = [{**x, "total": str(x["total"].quantize(Decimal("0.01")))}
-              for x in totals.values() if x["known"] or x["missing"]]
+        group["cash"] += available if available is not None else Decimal("0.00")
+        group["investments"] += invested if invested is not None else Decimal("0.00")
+        group["total"] += ((available or Decimal("0.00")) +
+                           (invested or Decimal("0.00")))
+    quant = lambda v: str(v.quantize(Decimal("0.01")))
+    person = [g for g in totals.values() if g["relationship"] == "proprio"]
+    relatives = [g for g in totals.values() if g["relationship"] != "proprio"]
+    sum_field = lambda rows, key: sum((r[key] for r in rows), Decimal("0.00"))
+    personal = sum_field(person, "total")
+    family = sum_field(relatives, "total")
+    groups = [{**g, "total": quant(g["total"]), "cash": quant(g["cash"]),
+               "investments": quant(g["investments"])}
+              for g in totals.values() if g["known"] or g["missing"]]
     return {
-        "personal": str(personal.quantize(Decimal("0.01"))),
-        "family": str(family.quantize(Decimal("0.01"))),
-        "combined": str((personal + family).quantize(Decimal("0.01"))),
-        "known_accounts": sum(x["known"] for x in totals.values()),
-        "missing_accounts": sum(x["missing"] for x in totals.values()),
-        "personal_missing": sum(x["missing"] for x in totals.values()
-                                if x["relationship"] == "proprio"),
-        "family_missing": sum(x["missing"] for x in totals.values()
-                              if x["relationship"] != "proprio"),
+        "personal": quant(personal), "family": quant(family),
+        "combined": quant(personal + family),
+        "cash_total": quant(sum_field(totals.values(), "cash")),
+        "investment_total": quant(sum_field(totals.values(), "investments")),
+        "known_accounts": sum(g["known"] for g in totals.values()),
+        "missing_accounts": sum(g["missing"] for g in totals.values()),
+        "personal_missing": sum(g["missing"] for g in person),
+        "family_missing": sum(g["missing"] for g in relatives),
         "holders": groups,
     }
+
+
+
+def clean_investment_balance(payload):
+    if not isinstance(payload, dict) or set(payload) != {"investment_balance"}:
+        raise HTTPException(422, "Informe somente o saldo de investimentos.")
+    raw = payload["investment_balance"]
+    if raw is None:
+        return None
+    value = clean_manual_balance({"balance":raw})
+    if Decimal(value) < 0:
+        raise HTTPException(422, "O saldo investido não pode ser negativo.")
+    return value
+
+
+def clean_account_type(payload, *, editing=False):
+    if not isinstance(payload,dict) or set(payload) != ({"label","active"} if editing else {"label"}):
+        raise HTTPException(422, "Informe o nome do tipo de conta.")
+    label = clean_text(payload["label"],"Tipo de conta",60,2)
+    result = {"label":label}
+    if editing:
+        if not isinstance(payload["active"],bool):
+            raise HTTPException(422, "Situação inválida.")
+        result["active"] = payload["active"]
+    return result
+
+
+def clean_transfer(payload):
+    if not isinstance(payload,dict) or set(payload)!={"from_account_id","to_account_id","amount","note","request_id"}:
+        raise HTTPException(422, "Informe origem, destino, valor e identificação da transferência.")
+    origin=positive_id(payload["from_account_id"])
+    target=positive_id(payload["to_account_id"])
+    if origin==target:
+        raise HTTPException(422, "Escolha contas diferentes.")
+    raw=payload["amount"]
+    if isinstance(raw,bool) or not isinstance(raw,(str,int,float)):
+        raise HTTPException(422, "Valor da transferência inválido.")
+    try:
+        value=Decimal(str(raw))
+        if not value.is_finite() or value<=0 or value>Decimal("999999999999.99") or value.as_tuple().exponent < -2:
+            raise InvalidOperation
+    except (InvalidOperation,ValueError):
+        raise HTTPException(422, "Informe valor positivo com até duas casas decimais.") from None
+    note=payload["note"]
+    if note is not None:
+        note=clean_text(note,"Observação",250,1) if str(note).strip() else None
+    try:
+        request_id=str(UUID(str(payload["request_id"])))
+    except (ValueError,TypeError,AttributeError):
+        raise HTTPException(422, "Identificação de transferência inválida.") from None
+    return {"p_from_account_id":origin,"p_to_account_id":target,
+            "p_amount":str(value.quantize(Decimal("0.01"))),
+            "p_note":note,"p_request_id":request_id}
+
 
 
 def positive_id(value):

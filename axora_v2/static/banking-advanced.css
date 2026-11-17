@@ -1,0 +1,132 @@
+/* AXORA — banking operations & balanced settings layout */
+.bank-account-topline{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;min-width:0;margin-bottom:5px
+}
+.bank-account-topline .bank-account-name{
+  flex:1 1 auto;min-width:0;overflow-wrap:anywhere
+}
+.bank-account-menu{position:relative;flex:0 0 auto;min-width:0}
+.bank-account-menu>summary{
+  cursor:pointer;display:grid;place-items:center;
+  width:35px;height:35px;border:1px solid #d6e6ee;
+  border-radius:11px;background:#fff;color:#21546b;
+  font-size:21px;font-weight:900;line-height:1;
+  list-style:none;transition:background .2s,border-color .2s
+}
+.bank-account-menu>summary::-webkit-details-marker{display:none}
+.bank-account-menu>summary:hover,.bank-account-menu[open]>summary{
+  background:#eaf8f9;border-color:#39c8c7
+}
+.bank-account-menu>summary:focus-visible{
+  outline:3px solid #00b9b6;outline-offset:2px
+}
+.bank-account-menu-panel{
+  margin-top:9px;padding:10px;
+  display:flex;flex-wrap:wrap;gap:7px;
+  border:1px solid #dcebf1;border-radius:12px;background:#fff
+}
+.bank-account-menu-panel>.btn{
+  min-height:35px;flex:1 1 130px;
+  justify-content:center;white-space:normal
+}
+.bank-investments-line{
+  margin-top:9px;padding:9px 0;
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  color:#55738a;font-size:12px
+}
+.bank-investments-line strong{font-size:14px;color:#166b79;white-space:nowrap;font-variant-numeric:tabular-nums}
+.bank-total-line{
+  padding:10px 0 0;margin-top:4px;
+  border-top:1px solid #dbeaf0;
+  display:flex;align-items:center;justify-content:space-between;gap:10px
+}
+.bank-total-line span{font-weight:750;font-size:12px;color:#597083}
+.bank-total-line strong{color:#153b53;font-size:clamp(15px,1.1vw,20px);white-space:nowrap;font-variant-numeric:tabular-nums}
+.bank-people-grid .bank-person-detail{
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,245px),1fr))
+}
+.bank-person-detail>.bank-person-account{min-width:0;align-self:start}
+.bank-person-account>.bank-card-top{margin-bottom:9px}
+.bank-transfer-history{margin:12px 0 0;padding:18px;border-radius:17px;background:#fff;border:1px solid #e2edf2}
+.bank-transfer-history-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.bank-transfer-history-head h3{margin:0 0 12px;color:#173c54;font-size:15px}
+.bank-transfer-row{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 2px;border-bottom:1px solid #e6eff4
+}
+.bank-transfer-row:last-child{border-bottom:0}
+.bank-transfer-row>div{min-width:0;display:grid;gap:5px}
+.bank-transfer-row b{font-size:12px;color:#29465b;overflow-wrap:anywhere}
+.bank-transfer-row small{font-size:11px;color:#71899b}
+.bank-transfer-row>strong{font-size:14px;color:#155c6d;white-space:nowrap}
+.bank-type-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.bank-type-toolbar span{font-size:12px;font-weight:700;color:#6c8292}
+.bank-type-list{display:grid;gap:9px}
+.bank-type-row{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  border:1px solid #e1eaf1;border-radius:13px;background:#fbfdff;padding:11px 13px
+}
+.bank-type-row>div{display:grid;gap:3px;min-width:0}
+.bank-type-row b{color:#24495f;font-size:13px;overflow-wrap:anywhere}
+.bank-type-row small{color:#7390a2;font-size:10px}
+.bank-type-active{padding:8px 2px}
+.bank-type-active label{display:flex;align-items:center;gap:10px;font-size:13px;color:#31566b}
+.bank-type-active input{width:17px;height:17px;accent-color:#05b6b2}
+.bank-transfer-notice{font-size:12px}
+.bank-balance-invested{
+  margin-top:10px;padding-top:10px;border-top:1px solid #dcebe9;
+  font-size:12px;color:#607d8d
+}
+.bank-balance-invested strong{color:#0b6f7e}
+.bank-person-summary .bank-person-amount>small{font-size:10px}
+/* A seção de configurações deixa de concentrar quase todos os cards em uma coluna. */
+.settings-grid.settings-balanced{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  align-items:start;gap:18px
+}
+.settings-grid.settings-balanced>.stack{min-width:0;align-self:start}
+.settings-grid.settings-balanced>.stack>.panel{
+  min-width:0;overflow-wrap:anywhere
+}
+.settings-grid.settings-balanced .settings-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+.settings-grid.settings-balanced .panel{padding:20px}
+.settings-grid.settings-balanced .bank-entities{grid-template-columns:1fr}
+.settings-grid.settings-balanced .bank-entity{padding:12px 13px}
+.member-only-row{
+  padding:13px 15px;border:1px solid #dce7ef;border-radius:14px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px
+}
+.member-only-row>div{min-width:0;display:grid;gap:5px}
+.member-only-row strong{font-size:13px;color:#214b62}
+.member-only-row small{font-size:11px;color:#7190a3}
+.family-bank-roster{margin:14px 0 0}
+.family-bank-roster .panel-heading{margin-bottom:15px}
+.family-bank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+.family-bank-only{
+  border:1px solid #dce8ef;border-radius:15px;padding:15px;
+  background:#f9fcfe;display:grid;gap:9px
+}
+.family-bank-only strong{color:#214a60;font-size:14px}
+.family-bank-only small{color:#6d879a;font-size:11px}
+.family-bank-only p{margin:0;font-size:11px;color:#638092;line-height:1.5}
+@media(max-width:1000px){
+  .settings-grid.settings-balanced{grid-template-columns:1fr;max-width:780px}
+}
+@media(max-width:650px){
+  .settings-grid.settings-balanced .settings-form{grid-template-columns:1fr}
+  .settings-grid.settings-balanced .panel{padding:15px}
+  .bank-account-menu-panel>.btn{flex:1 1 100%}
+  .bank-transfer-row{align-items:flex-start}
+  .bank-people-grid .bank-person-detail{grid-template-columns:1fr}
+  .bank-investments-line,.bank-total-line{flex-wrap:wrap}
+}
+
+/* Menu montado após o saldo, com acionador sempre no canto superior. */
+.bank-person-account{position:relative}
+.bank-person-account .bank-card-top{padding-right:42px}
+.bank-account-menu>summary{
+  position:absolute;top:14px;right:14px;z-index:1
+}
+.bank-account-menu-panel{position:relative;z-index:0;margin-top:15px}
+.bank-member-family-only .btn{flex:0 0 auto}

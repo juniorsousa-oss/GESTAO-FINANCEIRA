@@ -115,6 +115,24 @@ const AxoraFamily = (() => {
       '<small>O subusuário entra apenas com a própria senha e recebe somente informações autorizadas por rótulo.</small></div>'+
       '<button class="btn primary" type="submit">Cadastrar na minha família</button></form>';
   }
+  function bankOnlyMembers(){
+    if(!own()||typeof bankingHolderOptions!=="function")return [];
+    const linkedUserIds=new Set(people().filter(p=>p.linked_user_id).map(p=>Number(p.linked_user_id)));
+    const named=new Set(people().map(p=>String(p.display_name||"").trim().toLocaleLowerCase("pt-BR")));
+    return bankingHolders().filter(h=>
+      !(h.linked_user_id && linkedUserIds.has(Number(h.linked_user_id))) &&
+      !named.has(String(h.name||"").trim().toLocaleLowerCase("pt-BR")));
+  }
+  function bankMemberRow(h){
+    const relation=typeof holderRelations!=="undefined" ?
+      (holderRelations[h.relationship]||"Familiar") : "Familiar";
+    return '<article class="family-bank-only"><div class="family-person-heading">'+
+      '<div class="family-avatar">'+esc((h.name||"M").trim().slice(0,1).toUpperCase())+'</div>'+
+      '<div><strong>'+esc(h.name)+'</strong><small>'+esc(relation)+
+      ' · Membro financeiro</small></div></div>'+
+      '<p>Vinculado às contas do espaço. Para acompanhar rateios e criar acesso próprio, '+
+      'cadastre também um perfil familiar. Nenhuma permissão foi concedida automaticamente.</p></article>';
+  }
   function pageHtml(){
     if(!hasAccess())return '<section class="panel"><h2>Gestão familiar indisponível</h2>'+
       '<p>Esta instância ainda não tem uma família configurada.</p></section>';
@@ -134,6 +152,9 @@ const AxoraFamily = (() => {
       '<button class="btn primary" type="button" data-family-action="new-expense">Novo registro com rateio</button></section>'+
       summaryNote+
       '<div class="family-people">'+people().map(tableRow).join("")+'</div>'+
+      (own()&&bankOnlyMembers().length?
+        panel("Demais membros cadastrados","Pessoas associadas a contas bancárias, ainda sem perfil de rateio.",
+          '<div class="family-bank-grid">'+bankOnlyMembers().map(bankMemberRow).join("")+'</div>'):"")+
       (own()?panel("Adicionar subusuário ou dependente",
         "Cadastre cônjuge, filho(a) ou outra pessoa no seu próprio espaço financeiro.",newProfileForm()):"")+
       '</div>';
@@ -325,6 +346,7 @@ const AxoraFamily = (() => {
       btn.closest("dialog").close();
     }));
   });
-  return {load,page:pageHtml,openEntry,openVisibility,hasAccess,own,reset};
+  return {load,page:pageHtml,openEntry,openVisibility,hasAccess,own,reset,
+    profiles:()=>own()?people():[]};
 })();
 window.AxoraFamily=AxoraFamily;

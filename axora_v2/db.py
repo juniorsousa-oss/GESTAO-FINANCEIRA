@@ -127,4 +127,10 @@ def verify():
     for kind in TABLES:
         identifier = "key" if kind == "branding" else "id"
         select(kind, fields=identifier, params={"limit": "1"})
+    if selected_schema() == "axora_beta":
+        # Novo BETA deve falhar fechado caso qualquer tabela recém-criada
+        # esteja fora do Data API. Evita o aplicativo Live com funções quebradas.
+        for table in ("finance_bank_accounts", "finance_bank_account_types",
+                      "finance_balance_transfers"):
+            call("GET", table, params={"select": "id", "limit": 1})
     return True

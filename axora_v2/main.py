@@ -7,6 +7,7 @@ import math
 import os
 import re
 from datetime import date
+from decimal import Decimal
 from contextlib import asynccontextmanager
 
 import pandas as pd
@@ -570,6 +571,74 @@ def banking_rows(workspace, name, *, filters=None, select="*", order=None, limit
     return db.call("GET",name,params=params)
 
 
+def require_bank_principal(user):
+    """Secondary profiles cannot access balance mutations, types or transfer history."""
+    ctx = user.get("_family")
+    if ctx and ctx["role"] != "principal":
+        raise HTTPException(403, "Somente a conta principal gerencia saldos e tipos.")
+
+
+def bank_types(workspace):
+    db.call("POST", "rpc/axora_ensure_bank_account_types",
+            data={"p_workspace_id": workspace})
+    return banking_rows(workspace, "finance_bank_account_types",
+                        order="label.asc", limit=150)
+
+
+def validate_bank_type(workspace, code, *, existing=None):
+    # Default codes remain valid for legacy installations; custom types must
+    # be registered and ACTIVE in the current workspace.
+    if code in {"corrente", "poupanca", "pagamento", "outro"}:
+        return
+    if existing is not None and code == existing:
+        return
+    types = banking_rows(workspace, "finance_bank_account_types",
+                         filters={"code": "eq." + code, "active": "eq.true"}, limit=1)
+    if not types:
+        raise HTTPException(422, "Tipo de conta não cadastrado ou inativo neste espaço.")
+
+
+@app.get("/api/banking/account-types")
+def banking_account_types(user=Depends(auth)):
+    require_bank_principal(user)
+    return {"items": bank_types(user_workspace(user))}
+
+
+@app.post("/api/banking/account-types")
+def banking_add_type(payload: dict, user=Depends(authorized)):
+    require_bank_principal(user)
+    workspace = user_workspace(user)
+    details = banking.clean_account_type(payload)
+    rows = bank_types(workspace)
+    if any(r["label"].casefold() == details["label"].casefold() for r in rows):
+        raise HTTPException(409, "Já existe um tipo com esse nome.")
+    from uuid import uuid4
+    code = "custom_" + uuid4().hex
+    created = db.call("POST", "finance_bank_account_types",
+        data={"workspace_id": workspace, "code": code, **details},
+        prefer="return=representation")
+    return {"item": created[0]}
+
+
+@app.patch("/api/banking/account-types/{pk}")
+def banking_edit_type(pk: int, payload: dict, user=Depends(authorized)):
+    require_bank_principal(user)
+    banking.positive_id(pk)
+    workspace = user_workspace(user)
+    details = banking.clean_account_type(payload, editing=True)
+    rows = bank_types(workspace)
+    selected = next((r for r in rows if int(r["id"]) == pk), None)
+    if not selected:
+        raise HTTPException(404, "Tipo não encontrado.")
+    if any(int(r["id"]) != pk and r["label"].casefold() == details["label"].casefold()
+           for r in rows):
+        raise HTTPException(409, "Já existe um tipo com esse nome.")
+    updated = db.call("PATCH", "finance_bank_account_types",
+        params={"id": "eq." + str(pk), "workspace_id": "eq." + workspace},
+        data=details, prefer="return=representation")
+    return {"item": updated[0]}
+
+
 @app.get("/api/banking")
 def banking_overview(user=Depends(auth)):
     workspace = user_workspace(user)
@@ -592,7 +661,8 @@ def banking_overview(user=Depends(auth)):
             {"id": a["id"], "holder_id": a["holder_id"],
              "bank_name": a["bank_name"], "nickname": a["nickname"],
              "account_type": a.get("account_type") or "conta",
-             "manual_balance": a.get("manual_balance")}
+             "manual_balance": a.get("manual_balance"),
+             "investment_balance": a.get("investment_balance")}
             for a in accounts
         ]
         return {
@@ -634,6 +704,7 @@ def banking_add_account(payload:dict,user=Depends(authorized)):
     holders=banking_rows(workspace,"finance_bank_holders",
                           filters={"id":"eq."+str(cleaned["holder_id"])},limit=1)
     if not holders:raise HTTPException(404,"Titular não encontrado neste espaço.")
+    validate_bank_type(workspace, cleaned["account_type"])
     created=db.call("POST","finance_bank_accounts",
       data={"workspace_id":workspace,**cleaned},prefer="return=representation")
     return {"item":created[0]}
@@ -689,6 +760,7 @@ def banking_edit_account(account_id:int,payload:dict,user=Depends(authorized)):
         filters={"id":"eq."+str(details["holder_id"])},select="id",limit=1)
     if not holders:
         raise HTTPException(404,"Novo titular não encontrado neste espaço.")
+    validate_bank_type(workspace, details["account_type"], existing=original[0]["account_type"])
     transactions=banking_rows(workspace,"finance_bank_transactions",
         filters={"account_id":"eq."+str(account_id)},select="id",limit=1)
     if (transactions or original[0].get("pluggy_account_id")) and any(
@@ -728,6 +800,62 @@ def banking_update_manual_balance(account_id: int, payload: dict, user=Depends(a
     return {"item":updated[0], "source":"manual"}
 
 
+@app.patch("/api/banking/accounts/{account_id}/investments")
+def banking_update_investments(account_id: int, payload: dict, user=Depends(authorized)):
+    require_bank_principal(user)
+    account_id = banking.positive_id(account_id)
+    amount = banking.clean_investment_balance(payload)
+    workspace = user_workspace(user)
+    current = banking_rows(workspace, "finance_bank_accounts",
+        filters={"id": "eq." + str(account_id)}, limit=1)
+    if not current:
+        raise HTTPException(404, "Conta não encontrada.")
+    updated = db.call("PATCH", "finance_bank_accounts",
+        params={"id": "eq." + str(account_id), "workspace_id": "eq." + workspace},
+        data={"investment_balance": amount}, prefer="return=representation")
+    if not updated:
+        raise HTTPException(409, "Conta alterada por outra sessão.")
+    return {"item": updated[0]}
+
+
+@app.post("/api/banking/transfers")
+def banking_transfer_manual(payload: dict, user=Depends(authorized)):
+    require_bank_principal(user)
+    values = banking.clean_transfer(payload)
+    workspace = user_workspace(user)
+    from_id, to_id = values["p_from_account_id"], values["p_to_account_id"]
+    accounts = banking_rows(workspace, "finance_bank_accounts",
+        filters={"id": "in.(" + str(from_id) + "," + str(to_id) + ")"}, limit=2)
+    if len(accounts) != 2:
+        raise HTTPException(404, "Origem ou destino não encontrado neste espaço.")
+    by_id = {int(a["id"]): a for a in accounts}
+    source = by_id[from_id]
+    target = by_id[to_id]
+    if source.get("manual_balance") is None or target.get("manual_balance") is None:
+        raise HTTPException(422, "Informe o saldo disponível das duas contas antes de transferir.")
+    if Decimal(str(source["manual_balance"])) < Decimal(values["p_amount"]):
+        raise HTTPException(409, "Saldo disponível insuficiente na conta de origem.")
+    if not banking.manual_mode() and any(
+        a.get("pluggy_account_id") or a.get("pluggy_item_id") for a in accounts):
+        raise HTTPException(409, "Transferências manuais estão disponíveis apenas entre contas manuais.")
+    # Uma RPC transacional bloqueia ambas as contas, evita saldos inconsistentes
+    # e registra uma única transferência com chave idempotente.
+    result = db.call("POST", "rpc/axora_transfer_manual_balance", data={
+        "p_workspace_id": workspace, "p_actor_user_id": int(user["id"]), **values
+    })
+    return {"transfer": result, "ok": True}
+
+
+@app.get("/api/banking/transfers")
+def banking_transfer_history(user=Depends(auth)):
+    require_bank_principal(user)
+    workspace = user_workspace(user)
+    records = banking_rows(workspace, "finance_balance_transfers",
+        select="id,from_account_id,to_account_id,amount,note,created_at",
+        order="created_at.desc,id.desc", limit=25)
+    return {"items": records}
+
+
 @app.delete("/api/banking/accounts/{account_id}")
 def banking_delete_account(account_id:int,user=Depends(authorized)):
     account_id=banking.positive_id(account_id)
@@ -740,6 +868,11 @@ def banking_delete_account(account_id:int,user=Depends(authorized)):
         filters={"account_id":"eq."+str(account_id)},select="id",limit=1)
     if transactions:
         raise HTTPException(409,"Esta conta possui movimentações bancárias. A exclusão está bloqueada para preservar o histórico.")
+    transfers=banking_rows(workspace,"finance_balance_transfers",
+        filters={"or":"(from_account_id.eq."+str(account_id)+",to_account_id.eq."+str(account_id)+")"},
+        select="id",limit=1)
+    if transfers:
+        raise HTTPException(409,"Esta conta possui transferências internas; a exclusão está bloqueada para preservar o histórico.")
     account=banking_rows(workspace,"finance_bank_accounts",filters={"id":"eq."+str(account_id)},limit=1)
     if account and account[0].get("pluggy_account_id"):
         raise HTTPException(409,"Conta conectada ao MeuPluggy. Desvincule-a antes de excluir.")
