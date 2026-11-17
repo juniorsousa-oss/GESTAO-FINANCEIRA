@@ -68,16 +68,22 @@ const AxoraFamily = (() => {
     if(!people().length)throw Error("Cadastre perfis antes de registrar custos.");
     initExpense($("#family-entry-form"),config);
   }
+  function personMetrics(data, pending=false){
+    // Somente informações agregadas devolvidas pelo backend para esta sessão.
+    // Um membro bancário sem perfil de rateio ainda não tem atribuições.
+    const items=[["Entradas","entradas"],["Despesas atribuídas","despesas"],
+      ["Efetivamente pago","pagamentos"],["Saldo pessoal","saldo"]];
+    return '<div class="family-person-metrics">'+items.map(([label,key])=>
+      '<div><span>'+label+'</span><b>'+money(data?.[key]||0)+'</b></div>').join("")+
+      '</div>'+(pending?'<p class="family-bank-status">Ainda sem lançamentos de rateio atribuídos.</p>':"");
+  }
   function tableRow(p){
     const metrics=summary?.people?.find(x=>Number(x.id)===Number(p.id))||{};
     return '<article class="family-person-summary"><div class="family-person-heading"><div class="family-avatar">'+
       esc(p.display_name.slice(0,1).toUpperCase())+'</div><div><strong>'+esc(p.display_name)+
       '</strong><small>'+esc(roleName[p.relationship]||"Outro")+
       (own()?(p.linked_user_id?' · Login vinculado':' · Sem login'):'')+'</small></div></div>'+
-      '<div class="family-person-metrics"><div><span>Entradas</span><b>'+money(metrics.entradas||0)+'</b></div>'+
-      '<div><span>Despesas atribuídas</span><b>'+money(metrics.despesas||0)+'</b></div>'+
-      '<div><span>Efetivamente pago</span><b>'+money(metrics.pagamentos||0)+'</b></div>'+
-      '<div><span>Saldo pessoal</span><b>'+money(metrics.saldo||0)+'</b></div></div>'+
+      personMetrics(metrics)+
       (own()&&p.relationship!=="principal"?memberTools(p):"")+'</article>';
   }
   function relationshipOptions(current){
@@ -130,8 +136,25 @@ const AxoraFamily = (() => {
       '<div class="family-avatar">'+esc((h.name||"M").trim().slice(0,1).toUpperCase())+'</div>'+
       '<div><strong>'+esc(h.name)+'</strong><small>'+esc(relation)+
       ' · Membro financeiro</small></div></div>'+
-      '<p>Vinculado às contas do espaço. Para acompanhar rateios e criar acesso próprio, '+
-      'cadastre também um perfil familiar. Nenhuma permissão foi concedida automaticamente.</p></article>';
+      personMetrics(null,true)+
+      '<div class="family-bank-setup"><small>Para atribuir receitas e despesas a esta pessoa, '+ 
+      'habilite seu perfil de rateio. Isso não cria login nem concede acesso a contas.</small>'+
+      '<button type="button" class="btn ghost small" data-family-action="activate-bank-member" '+
+      'data-holder-id="'+Number(h.id)+'">Habilitar rateios</button></div></article>';
+  }
+  async function activateBankMember(holderId){
+    if(!own())throw Error("Somente o principal pode criar perfis de rateio.");
+    const holder=bankOnlyMembers().find(h=>Number(h.id)===holderId);
+    if(!holder)throw Error("Membro bancário não encontrado ou já vinculado a perfil.");
+    const name=String(holder.name||"").trim();
+    if(!name)throw Error("Nome do membro não informado.");
+    const relationship=holder.relationship==="conjuge"?"conjuge":
+      holder.relationship==="filho"?"filho":"outro";
+    await api("/api/family/members",{
+      method:"POST",body:JSON.stringify({display_name:name,relationship,password:null})
+    });
+    await load(true);
+    showToast("Perfil de rateio habilitado para "+name+". Nenhum acesso criado.");
   }
   function pageHtml(){
     if(!hasAccess())return '<section class="panel"><h2>Gestão familiar indisponível</h2>'+
@@ -284,6 +307,12 @@ const AxoraFamily = (() => {
           .finally(()=>{btn.disabled=false});
       }
       if(action==="set-visibility")openVisibility(btn.dataset.resource,Number(btn.dataset.id),btn.dataset.label||"privado");
+      if(action==="activate-bank-member"){
+        btn.disabled=true;
+        activateBankMember(Number(btn.dataset.holderId))
+          .catch(err=>showToast(err.message,true))
+          .finally(()=>{if(btn.isConnected)btn.disabled=false});
+      }
     });
     $("#page-content").addEventListener("change",e=>{
       if(e.target.closest("#family-profile-form")&&e.target.name==="access_mode"){
