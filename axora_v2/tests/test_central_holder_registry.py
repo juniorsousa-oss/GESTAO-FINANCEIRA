@@ -25,7 +25,7 @@ def test_provision_uses_bank_holder_master_without_cross_workspace(monkeypatch):
         return [{"name": "Bianca"}, {"name": "Sérgio"}, {"name": "Maria José"}]
 
     monkeypatch.setattr(main.db, "call", fake_call)
-    options = main.finance_provision_options(WORKSPACE)
+    options = main.finance_provision_options(WORKSPACE, {"p_responsible": "Maria José"})
     assert len([x for x in options if x["kind"] == "responsible" and x["name"] == "Bianca"]) == 1
     assert set(x["name"] for x in options if x["kind"] == "responsible") == {
         "Responsável histórico", "Bianca", "Sérgio", "Maria José"
