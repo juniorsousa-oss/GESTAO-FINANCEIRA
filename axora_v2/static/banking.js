@@ -110,7 +110,7 @@ function bankingHolderCatalogPanel(){
       '<button type="button" class="btn ghost small bank-delete" data-action="bank-delete-holder" data-id="'+Number(h.id)+'">Excluir</button>'+
     '</div></article>').join("");
 
-  return panel("Titulares cadastrados",
+  return '<div id="bank-holder-settings">'+panel("Titulares cadastrados",
     "Cadastro central utilizado pelas contas bancárias e como referência para responsáveis em novos compromissos.",
     '<div class="bank-holders-toolbar"><span>'+holders.length+' '+
       (holders.length===1?'titular cadastrado':'titulares cadastrados')+'</span>'+
@@ -119,7 +119,7 @@ function bankingHolderCatalogPanel(){
     '<div class="bank-entities">'+(owners||'<div class="empty-state"><b>Nenhum titular cadastrado.</b> '+
     'Adicione um titular para vincular suas contas bancárias.</div>')+'</div>'+
     '<p class="bank-holders-footnote">Este cadastro não cria login nem concede acesso a dados privados. '+
-    'As permissões continuam em Família e usuários.</p>');
+    'As permissões continuam em Família e usuários.</p>')+'</div>';
 }
 function bankingAccountsPage(){
   if(!bankingData||bankingError)return bankUnavailable();
@@ -401,7 +401,11 @@ document.addEventListener("DOMContentLoaded",()=>{
     try{
       if(action==="bank-new-holder")bankOpenHolder();
       else if(action==="bank-retry-holders")await loadBanking(true);
-      else if(action==="open-holder-settings")go("settings");
+      else if(action==="open-holder-settings"){
+        go("settings");
+        await loadBanking(false);
+        window.requestAnimationFrame(()=>$("#bank-holder-settings")?.scrollIntoView({block:"start",behavior:"smooth"}));
+      }
       else if(action==="bank-new-account")bankOpenAccount();
       else if(action==="bank-edit-holder")bankOpenHolder(Number(el.dataset.id));
       else if(action==="bank-edit-account")bankOpenAccount(Number(el.dataset.id));
