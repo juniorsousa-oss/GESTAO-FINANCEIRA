@@ -480,6 +480,16 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#provision-edit-form").elements.value_mode.addEventListener("change",()=>{
     provisionAmountOptions($("#provision-edit-form"),"pve-value-label","pve-value-help");
   });
+  // O evento toggle nativo é assíncrono: atualizar o estado no clique
+  // garante que uma consulta/refresh imediato não reabra os filtros.
+  $("#page-content").addEventListener("click",e=>{
+    const summary=e.target.closest?.(".provision-filter-disclosure > summary");
+    if(!summary)return;
+    e.preventDefault();
+    const section=summary.parentElement;
+    provisionFiltersExpanded=!section.open;
+    section.open=provisionFiltersExpanded;
+  });
   $("#page-content").addEventListener("toggle",e=>{
     if(e.target.matches?.(".provision-filter-disclosure"))
       provisionFiltersExpanded=e.target.open;
