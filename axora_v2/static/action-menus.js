@@ -98,7 +98,7 @@
     }
   },true);
   // Um menu antigo não deve ficar deslocado ao rolar/navegar.
-  window.addEventListener("scroll",()=>{if(active)closeAll()},true);
+  window.addEventListener("scroll",e=>{if(active&&!active.contains(e.target))closeAll()},true);
   window.addEventListener("resize",()=>{if(active)position(active)});
   if(window.visualViewport)
     window.visualViewport.addEventListener("resize",()=>{if(active)position(active)});
