@@ -174,7 +174,7 @@ const AxoraFamily = (() => {
         'Entradas, gastos e pagamentos por pessoa.')+'</p></div>'+
       '<button class="btn primary" type="button" data-family-action="new-expense">Novo registro com rateio</button></section>'+
       summaryNote+
-      '<div class="family-people">'+people().map(tableRow).join("")+'</div>'+
+      '<div class="family-people">'+(own()?people():people().filter(p=>Number(p.id)===current())).map(tableRow).join("")+'</div>'+
       (own()&&bankOnlyMembers().length?
         panel("Demais membros cadastrados","Pessoas associadas a contas bancárias, ainda sem perfil de rateio.",
           '<div class="family-bank-grid">'+bankOnlyMembers().map(bankMemberRow).join("")+'</div>'):"")+
