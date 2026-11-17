@@ -131,9 +131,9 @@ function bankingHolderCatalogPanel(){
     '<div class="bank-holders-toolbar"><span>'+(holders.length+onlyFamily.length)+' '+
       ((holders.length+onlyFamily.length)===1?'membro cadastrado':'membros cadastrados')+'</span>'+
       '<button type="button" class="btn primary small" data-action="bank-new-holder">'+interfaceIcon("plus")+
-      '<span>Adicionar titular</span></button></div>'+
+      '<span>Adicionar membro</span></button></div>'+
     '<div class="bank-entities">'+(owners||'<div class="empty-state"><b>Nenhum membro cadastrado.</b> '+
-    'Adicione um titular para vincular suas contas bancárias.</div>')+'</div>'+
+    'Adicione um membro para vincular suas contas bancárias.</div>')+'</div>'+
     '<p class="bank-holders-footnote">Membros financeiros e perfis familiares aparecem juntos. '+
     'Este cadastro não cria login nem concede acesso a dados privados. As permissões permanecem em Família e usuários.</p>')+'</div>';
 }
