@@ -90,3 +90,31 @@ def validate_payment_sources(value, payments, *, allowed_profile_ids):
     if sum(amount_cents(x["amount"]) for x in result) != total:
         raise HTTPException(422, "Os pagamentos precisam somar exatamente o valor da despesa.")
     return result
+
+
+def validate_wallet_sources(value, payments, sources):
+    """Valida múltiplas origens sem consultar o banco; SQL revalida propriedade e saldos."""
+    total = amount_cents(value)
+    if not isinstance(sources, list) or not 1 <= len(sources) <= 50:
+        raise HTTPException(422, "Selecione entre 1 e 50 contas para o pagamento.")
+    expected = {int(item["profile_id"]): amount_cents(item["amount"])
+                for item in payments}
+    amounts = {}
+    result = []
+    account_ids = set()
+    for src in sources:
+        if not isinstance(src, dict) or set(src) != {"profile_id", "account_id", "amount"}:
+            raise HTTPException(422, "Informe pagador, conta e valor de cada origem.")
+        pid, aid = src["profile_id"], src["account_id"]
+        if (type(pid) is not int or pid not in expected or
+                type(aid) is not int or aid <= 0 or aid in account_ids):
+            raise HTTPException(422, "Conta ou pagador inválido, duplicado ou sem pagamento.")
+        account_ids.add(aid)
+        cents = amount_cents(src["amount"], name="Valor da conta")
+        amounts[pid] = amounts.get(pid, 0) + cents
+        result.append({"profile_id": pid, "account_id": aid,
+                       "amount": f"{Decimal(cents) / 100:.2f}"})
+    if sum(amounts.values()) != total or amounts != expected:
+        raise HTTPException(422,
+            "As contas de cada pessoa devem totalizar o valor que ela pagou.")
+    return result
