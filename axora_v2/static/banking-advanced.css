@@ -214,3 +214,21 @@
 @media(max-width:520px){
   .family-bank-only .family-bank-setup .btn{width:100%}
 }
+
+/* A conciliação ficará fora da navegação enquanto não houver integração. */
+.nav-link[data-page="reconciliation"]{display:none!important}
+.metric-banking-total{
+  border-color:#8bd8d9;
+  background:linear-gradient(135deg,#fff 0%,#f1fafb 100%);
+}
+.metric-banking-total .metric-value{
+  font-size:clamp(25px,2.5vw,38px);
+  overflow-wrap:normal;white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.metric-banking-total .metric-meta{
+  overflow-wrap:anywhere;line-height:1.55;
+}
+@media(max-width:520px){
+  .metric-banking-total .metric-value{font-size:clamp(23px,8vw,33px)}
+}
