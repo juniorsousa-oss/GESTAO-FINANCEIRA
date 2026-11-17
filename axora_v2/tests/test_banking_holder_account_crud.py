@@ -32,6 +32,9 @@ def client_and_calls(monkeypatch):
     calls=[]
     def fake_call(method,table,*,params=None,data=None,prefer=None):
         calls.append((method,table,params,data))
+        if table=="finance_balance_transfers":
+            assert params["workspace_id"]=="eq."+WORKSPACE
+            return []  # Fixture sem transferências internas.
         if table=="rpc/axora_user_workspace":
             assert data=={"p_user_id":12}
             return WORKSPACE
@@ -122,6 +125,6 @@ def test_ui_both_sections_have_actions_and_confirmation():
     assert "method:id?\"PATCH\":\"POST\"" in js
     assert 'id="bank-holder-title"' in html
     assert 'id="bank-account-title"' in html
-    assert "banking.js?v=holder-master-accordion-r3" in html
+    assert "banking.js?v=bank-v4-advanced" in html
     assert ".bank-account-actions" in css
     assert "GRANT UPDATE, DELETE" in sql
