@@ -5,7 +5,7 @@ const path=require("node:path");
 const vm=require("node:vm");
 const assert=require("node:assert/strict");
 const original=fs.readFileSync(path.join(__dirname,"../static/family.js"),"utf8");
-const injection="return {__test:{paymentAllocation,paymentCents,manualPayments,walletPaymentSources},load,page:pageHtml";
+const injection="return {__test:{paymentAllocation,paymentCents,manualPayments,walletPaymentSources,walletPayerOptions,walletAccountOptions,walletChooseAccount},load,page:pageHtml";
 assert.ok(original.includes("return {load,page:pageHtml"),"Contrato de exportação não encontrado");
 const source=original.replace("return {load,page:pageHtml",injection);
 const members=[
@@ -40,10 +40,14 @@ function rowManual(id,amount){
     throw Error("unexpected manual selector "+sel);
   }};
 }
-function rowBank(id,amount){
-  return {querySelector(sel){
-    if(sel==="[data-wallet-account]")return {value:String(id)};
-    if(sel==="[data-wallet-amount]")return {value:String(amount)};
+function rowBank(id,amount,payer=({10:1,11:2,12:1})[id]){
+  const state={account:{value:String(id)},payer:{value:String(payer)},
+    amount:{value:String(amount)},hint:{textContent:""}};
+  return {state,querySelector(sel){
+    if(sel==="[data-wallet-account]")return state.account;
+    if(sel==="[data-wallet-payer]")return state.payer;
+    if(sel==="[data-wallet-amount]")return state.amount;
+    if(sel===".family-wallet-balance")return state.hint;
     throw Error("unexpected bank selector "+sel);
   }};
 }
@@ -94,6 +98,42 @@ function output(input){
   assert.throws(()=>output(form("wallet",[],[
     rowBank(11,99.07)])),/insuficiente/i);
   assert.throws(()=>output(form("none",[rowManual(1,60),rowManual(1,39.07)])),/duplicar/i);
+  // Responsáveis são filtrados antes de escolher conta; nunca mistura titulares.
+  const payerOptions=vm.runInContext("AxoraFamily.__test.walletPayerOptions()",ctx);
+  assert.ok(payerOptions.includes('value="1"'));
+  assert.ok(payerOptions.includes('value="2"'));
+  assert.ok(!payerOptions.includes('value="3"'),"Membro sem conta não deve aparecer");
+  const owner1=vm.runInContext("AxoraFamily.__test.walletAccountOptions(1)",ctx);
+  const owner2=vm.runInContext("AxoraFamily.__test.walletAccountOptions(2)",ctx);
+  assert.ok(owner1.includes('value="10"')&&owner1.includes('value="12"'));
+  assert.ok(!owner1.includes('value="11"'));
+  assert.ok(owner2.includes('value="11"')&&!owner2.includes('value="10"'));
+
+  // No primeiro pagante, a conta selecionada recebe o valor total sugerido.
+  const initial=rowBank(10,"");
+  const outputEl={dataset:{},textContent:""};
+  const firstForm={
+    elements:{value:{value:"99.07"},classification:{value:"SAÍDA"}},
+    querySelector(sel){
+      if(sel==="#family-wallet-total")return outputEl;
+      throw Error("unexpected form selector "+sel);
+    },
+    querySelectorAll(sel){
+      if(sel==="#family-wallet-source-list .family-wallet-source")return [initial];
+      throw Error("unexpected list selector "+sel);
+    }
+  };
+  Object.assign(ctx,{form:firstForm,row:initial});
+  vm.runInContext("AxoraFamily.__test.walletChooseAccount(form,row)",ctx);
+  assert.equal(initial.state.amount.value,"99.07","Primeiro pagador deve sugerir o valor integral");
+  const manual=rowBank(10,"37.15");
+  Object.assign(ctx,{form:{
+    ...firstForm,querySelectorAll:()=>[manual]},row:manual});
+  vm.runInContext("AxoraFamily.__test.walletChooseAccount(form,row)",ctx);
+  assert.equal(manual.state.amount.value,"37.15","Não alterar valor editado manualmente");
+  // Impede atribuição de uma conta de um membro ao responsável errado.
+  assert.throws(()=>output(form("wallet",[],[rowBank(10,99.07,2)])),/conta vinculada/i);
+
   // Receita não exige pagadores e nunca debita contas.
   assert.deepEqual(output(form("wallet",[],[rowBank(10,99.07)],99.07,"ENTRADA")),
     {payments:[],accountSources:null});
