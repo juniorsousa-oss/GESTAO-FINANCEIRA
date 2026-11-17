@@ -159,9 +159,7 @@ function bankingAccountsPage(){
       const detail='<article class="bank-account-card bank-person-account">'+
         '<div class="bank-card-top"><span class="bank-icon">'+interfaceIcon("wallet")+'</span>'+
         '<span class="bank-tag">'+(manual?'Manual':(connected?'Conectada':'Manual'))+'</span></div>'+
-        '<div class="bank-account-topline"><strong class="bank-account-name">'+esc(a.nickname)+'</strong>'+
-        (restricted?"":'<details class="bank-account-menu">'+
-          '<summary aria-label="Opções da conta '+esc(a.nickname)+'" title="Ações da conta">⋮</summary>')+'</div>'+
+        '<div class="bank-account-topline"><strong class="bank-account-name">'+esc(a.nickname)+'</strong></div>'+
         '<span class="bank-account-institution">'+esc(a.bank_name)+'</span>'+
         '<small>'+esc(window.AxoraBankAdvanced?.typeLabel(a.account_type)||a.account_type)+' · BRL</small>'+
         '<div class="bank-manual-balance"><span>Disponível</span><strong class="bank-account-currency">'+
@@ -171,7 +169,9 @@ function bankingAccountsPage(){
         ((investmentKnown&&cashKnown)?
           '<div class="bank-total-line"><span>Total da conta</span><strong>'+money(totalAccount)+'</strong></div>':"");
       if(restricted)return detail+'</article>';
-      const actions='<div class="bank-account-menu-panel">'+
+      const actions='<details class="bank-account-menu">'+
+        '<summary aria-label="Opções da conta '+esc(a.nickname)+'" title="Ações da conta">⋮</summary>'+
+        '<div class="bank-account-menu-panel">'+
         (manual||!connected?'<button type="button" class="btn primary small" data-action="bank-update-balance" data-id="'+Number(a.id)+'">Atualizar saldo</button>':
           (bankingData?.provider?.configured?'<button type="button" class="btn primary small" data-action="meu-pluggy-sync" data-id="'+Number(a.id)+'">Sincronizar</button>':''))+
         '<button type="button" class="btn ghost small" data-action="bank-open-investments" data-id="'+Number(a.id)+'">Investimentos</button>'+
