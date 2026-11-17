@@ -6,7 +6,26 @@
 .family-people{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:15px}
 .family-person-summary{min-width:0;padding:19px;border:1px solid var(--family-line);border-radius:19px;background:linear-gradient(160deg,#fff,#f7fafc);display:grid;gap:20px}
 .family-person-heading{display:flex;align-items:center;gap:12px}
-.family-person-heading>div:last-child{display:grid;gap:3px}
+/* O menu ⋮ ocupa a última posição: o bloco nome/vínculo deve ter
+   layout próprio e não depender de :last-child. */
+.family-person-heading>.family-person-identity{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:flex-start;
+  gap:6px;
+  min-width:0;
+  flex:1;
+}
+.family-person-heading>.family-person-identity strong,
+.family-person-heading>.family-person-identity small{
+  display:block;
+  min-width:0;
+  max-width:100%;
+  margin:0;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
 .family-person-heading strong{color:#183b56;font-size:15px}
 .family-person-heading small{color:#7993a3;font-size:11px}
 .family-avatar{flex:0 0 46px;height:46px;border-radius:15px;background:linear-gradient(130deg,#06b9b9,#0b5b97);display:grid;place-items:center;color:#fff;font-weight:900;font-size:20px}

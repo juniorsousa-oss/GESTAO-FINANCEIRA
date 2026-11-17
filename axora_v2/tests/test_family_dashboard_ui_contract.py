@@ -42,3 +42,18 @@ def test_dashboard_uses_authorized_banking_aggregate_not_global_legacy_cash():
     # Não apresentar o nome "saldo autorizado" nem a existência de dados ocultos.
     assert '"Saldos autorizados"' not in script
     assert '"Saldos ocultos"' not in script
+
+
+def test_family_card_name_and_relationship_have_separate_lines():
+    """Action menus must not collapse member name and relationship inline."""
+    css=(ROOT/"family.css").read_text()
+    js=(ROOT/"family.js").read_text()
+    html=(ROOT/"index.html").read_text()
+    assert js.count('class="family-person-identity"><strong>') >= 2
+    assert '</strong><small>' in js
+    assert '.family-person-heading>.family-person-identity{' in css
+    rules=css.split('.family-person-heading>.family-person-identity{',1)[1].split('}',1)[0]
+    assert 'flex-direction:column;' in rules
+    assert 'gap:6px;' in rules
+    assert '.family-person-heading>div:last-child' not in css
+    assert 'family.css?v=family-card-spacing-r2' in html
