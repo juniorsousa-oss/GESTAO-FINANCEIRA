@@ -7,6 +7,7 @@ import math
 import os
 import re
 from datetime import date
+from decimal import Decimal
 from contextlib import asynccontextmanager
 
 import pandas as pd
@@ -827,6 +828,13 @@ def banking_transfer_manual(payload: dict, user=Depends(authorized)):
         filters={"id": "in.(" + str(from_id) + "," + str(to_id) + ")"}, limit=2)
     if len(accounts) != 2:
         raise HTTPException(404, "Origem ou destino não encontrado neste espaço.")
+    by_id = {int(a["id"]): a for a in accounts}
+    source = by_id[from_id]
+    target = by_id[to_id]
+    if source.get("manual_balance") is None or target.get("manual_balance") is None:
+        raise HTTPException(422, "Informe o saldo disponível das duas contas antes de transferir.")
+    if Decimal(str(source["manual_balance"])) < Decimal(values["p_amount"]):
+        raise HTTPException(409, "Saldo disponível insuficiente na conta de origem.")
     if not banking.manual_mode() and any(
         a.get("pluggy_account_id") or a.get("pluggy_item_id") for a in accounts):
         raise HTTPException(409, "Transferências manuais estão disponíveis apenas entre contas manuais.")
