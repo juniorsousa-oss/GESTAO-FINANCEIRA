@@ -17,8 +17,11 @@ const AxoraBankAdvanced=(()=>{
     typeLoading=(async()=>{
       try{
         const result=await api("/api/banking/account-types");
-        accountTypes=result.items||[];
-        if(page==="settings"||page==="bank-accounts")render();
+        const next=result.items||[];
+        const changed=!accountTypes||JSON.stringify(accountTypes)!==JSON.stringify(next);
+        accountTypes=next;
+        // Evita redesenhar todo o módulo quando a lista não mudou.
+        if(changed&&(page==="settings"||page==="bank-accounts"))render();
         return accountTypes;
       }finally{typeLoading=null}
     })();
@@ -113,8 +116,9 @@ const AxoraBankAdvanced=(()=>{
   }
   function reset(){accountTypes=null;transfers=null;typeLoading=null;transferLoading=null}
   async function afterBankWrite(){
+    // loadBanking já atualiza a tela se os dados mudarem; um segundo render()
+    // causava fechamento das carteiras e salto da rolagem.
     await loadBanking(true);
-    if(page==="bank-accounts")render();
   }
   document.addEventListener("DOMContentLoaded",()=>{
     document.addEventListener("click",async e=>{
