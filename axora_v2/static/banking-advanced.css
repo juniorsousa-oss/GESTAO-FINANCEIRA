@@ -121,3 +121,12 @@
   .bank-people-grid .bank-person-detail{grid-template-columns:1fr}
   .bank-investments-line,.bank-total-line{flex-wrap:wrap}
 }
+
+/* Menu montado após o saldo, com acionador sempre no canto superior. */
+.bank-person-account{position:relative}
+.bank-person-account .bank-card-top{padding-right:42px}
+.bank-account-menu>summary{
+  position:absolute;top:14px;right:14px;z-index:1
+}
+.bank-account-menu-panel{position:relative;z-index:0;margin-top:15px}
+.bank-member-family-only .btn{flex:0 0 auto}
