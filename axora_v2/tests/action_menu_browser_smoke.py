@@ -86,7 +86,16 @@ with sync_playwright() as p:
         assert size(a)==before[0] and size(b)==before[1],("Menu alterou card",width,before,size(a),size(b))
         panel=a.locator(".bank-account-menu-panel")
         rect=panel.bounding_box()
-        assert rect and rect["x"]>=8 and rect["x"]+rect["width"]<=width+1,(width,rect)
+        diagnose=panel.evaluate("""el=>({
+          open:el.parentElement.open,
+          positioned:el.parentElement.dataset.menuPositioned,
+          display:getComputedStyle(el).display,
+          visibility:getComputedStyle(el).visibility,
+          position:getComputedStyle(el).position,
+          offsetWidth:el.offsetWidth,
+          outer:el.outerHTML.slice(0,240)
+        })""")
+        assert rect and rect["x"]>=8 and rect["x"]+rect["width"]<=width+1,(width,rect,diagnose)
         assert rect["y"]>=0 and rect["y"]+rect["height"]<=height+1,(width,rect)
         assert panel.evaluate("""el=>{
           let r=el.getBoundingClientRect(),hit=document.elementFromPoint(r.left+12,r.top+12);
