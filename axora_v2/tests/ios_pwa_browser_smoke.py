@@ -170,6 +170,22 @@ with sync_playwright() as p:
     assert page.locator("#page-content .bank-entity").count()==0
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
 
+    # Formulários avançados, sem API real e sem modificar saldos.
+    assert page.evaluate("Boolean(window.AxoraBankAdvanced)")
+    page.evaluate("AxoraBankAdvanced.openTransfer(10)")
+    transfer_form=page.locator("#bank-transfer-form")
+    assert page.locator("#bank-transfer-dialog").is_visible()
+    origin=transfer_form.locator('[name="from_account_id"]').input_value()
+    destination=transfer_form.locator('[name="to_account_id"]').input_value()
+    assert origin=="10" and destination!="10"
+    page.locator("#bank-transfer-dialog").evaluate("(el)=>el.close()")
+    page.evaluate("AxoraBankAdvanced.openInvestment(10)")
+    assert page.locator("#bank-investment-dialog").is_visible()
+    assert page.locator("#bank-investment-form [name='account_id']").input_value()=="10"
+    page.locator("#bank-investment-dialog").evaluate("(el)=>el.close()")
+    # Menus e modais fechados não devem causar rolagem horizontal indevida.
+    assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+
     # Repetição em largura de iPhone com vários cartões internos.
     page.set_viewport_size({"width":390,"height":844})
     page.wait_for_timeout(90)
