@@ -407,6 +407,8 @@ function filteredRows(kind){
   if(f.classification)rows=rows.filter(r=>(r.classification||r.type)===f.classification);
   if(f.status)rows=rows.filter(r=>r.status===f.status);
   if(f.category)rows=rows.filter(r=>r.category===f.category);
+  if(kind==="movements"&&me?.family_enabled&&me.family_role==="principal"&&f.visibility)
+    rows=rows.filter(r=>(r.visibility_label||"privado")===f.visibility);
   return rows;
 }
 function uniq(kind,field){return [...new Set(snapshot[kind].map(r=>r[field]).filter(Boolean))].sort()}
@@ -424,7 +426,9 @@ function modulePage(kind){
     ((kind==="movements"||kind==="forecasts")?optionFilter("competence","Todas competências",uniq(kind,"competence")):"")+
     (kind==="movements"?optionFilter("classification","Todas classificações",["ENTRADA","SAÍDA"]):"")+
     (kind==="forecasts"?optionFilter("classification","Todos os tipos",["Entrada","Saída"])+optionFilter("status","Todos os status",["Não pago","Pago"]):"")+
-    (kind==="movements"?optionFilter("category","Todas categorias",uniq(kind,"category")):"");
+    (kind==="movements"?optionFilter("category","Todas categorias",uniq(kind,"category")):"")+
+    (kind==="movements"&&me?.family_enabled&&me.family_role==="principal"?
+      optionFilter("visibility","Todos os acessos",["privado","casal","familia","selecionados"]):"");
   const legacyWarning=kind==="forecasts"?'<div class="notice warning"><b>Base antiga:</b> essas previsões ainda não estão ligadas aos pagamentos automáticos. Para novos compromissos, utilize a aba Provisões.</div>':"";
   return legacyWarning+'<div id="module-stats">'+moduleStats(kind,rows)+'</div><section class="panel table-panel"><div class="table-tools"><div class="filters">'+filtersHtml+'</div><button class="btn ghost small btn-clear" data-action="clear-filters">'+interfaceIcon("reset")+'<span>Limpar filtros</span></button></div><div id="table-body">'+moduleTable(kind,rows)+'</div></section>';
 }
@@ -452,11 +456,17 @@ function editor(kind,id){
     else entry='<input id="fld-'+key+'" name="'+key+'" type="'+(type==="integer"?"number":type==="number"?"number":type==="date"?"date":"text")+'" '+(type==="number"?'step="0.01"':type==="integer"?'step="1" min="0"':"")+' '+(required?"required":"")+' value="'+esc(current??"")+'" />';
     return '<div class="field"><label for="fld-'+key+'">'+esc(title)+'</label>'+entry+'</div>';
   }).join("");
+  const incomeAllocator=form.querySelector('[name="allocation_value"]')?.closest(".field");
+  if(incomeAllocator&&kind==="movements"){
+    incomeAllocator.hidden=form.elements.classification.value==="ENTRADA";
+    if(incomeAllocator.hidden)form.elements.allocation_value.value=0;
+  }
   $("#editor-dialog").showModal();
 }
 async function saveEditor(e){
   e.preventDefault();const form=e.currentTarget,kind=form.dataset.kind,id=form.dataset.id;
   const data={};for(const [key,label,type] of meta[kind]){const element=form.elements.namedItem(key);data[key]=type==="checkbox"?element.checked:type==="number"||type==="integer"?Number(element.value||0):element.value}
+  if(kind==="movements"&&data.classification==="ENTRADA")data.allocation_value=0;
   try{await api("/api/rows/"+kind+(id?"/"+id:""),{method:id?"PATCH":"POST",body:JSON.stringify(data)});$("#editor-dialog").close();await refresh();showToast("Registro salvo com sucesso.")}catch(err){showToast(err.message,true)}
 }
 function importPage(){return '<div class="stack">'+panel("Importar planilha","Modelo ACOMPANHAMENTOS.xlsx com as quatro abas financeiras obrigatórias.",'<div class="notice warning"><b>Proteção dos dados:</b> o AXORA não substitui registros existentes. A carga inicial só funciona se todas as quatro tabelas estiverem vazias. Faça backup antes de importar.</div><div class="upload-box"><b>Selecione um arquivo .xlsx</b><p>Movimentações, previsões, dinheiro e demais dívidas.</p><input type="file" id="excel-upload" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div><div id="import-preview"></div><div class="page-actions import-actions"><button class="btn ghost" data-action="preview-import">'+interfaceIcon("check")+'<span>Conferir planilha</span></button><button class="btn primary" data-action="commit-import">'+interfaceIcon("plus")+'<span>Importar dados</span></button></div>')+
@@ -555,6 +565,14 @@ function bind(){
   $("#refresh").onclick=()=>refresh().then(()=>page==="provisions"?loadProvisions({silent:true}):["bank-accounts","reconciliation"].includes(page)?loadBanking(true):null).then(()=>showToast("Dados atualizados.")).catch(e=>showToast(e.message,true));$("#profile-button").onclick=()=>go("settings");
   $("#main-nav").onclick=e=>{const b=e.target.closest("[data-page]");if(b)go(b.dataset.page)};
   $$(".dialog-close").forEach(x=>x.onclick=()=>$("#editor-dialog").close());$("#editor-form").addEventListener("submit",saveEditor);
+  $("#editor-form").addEventListener("change",e=>{
+    if(e.target.name!=="classification"||e.target.form?.dataset.kind!=="movements")return;
+    const field=e.target.form.querySelector('[name="allocation_value"]')?.closest(".field");
+    if(field){
+      field.hidden=e.target.value==="ENTRADA";
+      if(field.hidden)e.target.form.elements.allocation_value.value=0;
+    }
+  });
   $("#page-content").addEventListener("change",e=>{
     const filter=e.target.closest("[data-filter]");if(filter){filters[filter.dataset.filter]=filter.value;updateFiltered()}
     if(e.target.id==="excel-upload")excelFile=e.target.files?.[0]||null;
