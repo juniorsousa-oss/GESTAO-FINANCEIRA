@@ -106,6 +106,22 @@ with sync_playwright() as p:
             assert details.locator(":scope > summary").is_hidden()
             assert page.locator(".provision-row-actions [data-action='edit-provision']").first.is_visible()
             assert page.locator(".provision-mobile-actions").first.is_hidden()
+            # Filtro principal no desktop: segunda linha com De, Até, Buscar e Limpar.
+            grid=page.locator(".provision-filters")
+            assert grid.evaluate("(e)=>getComputedStyle(e).gridTemplateColumns.split(' ').length")==4
+            bounds={name:page.locator(selector).bounding_box() for name,selector in {
+                "de":"#provision-from-filter",
+                "ate":"#provision-to-filter",
+                "buscar":"#provision-search-filter",
+                "limpar":".provision-clear-filters",
+            }.items()}
+            assert all(bounds.values()),(width,bounds)
+            assert max(box["y"] for box in bounds.values())-min(box["y"] for box in bounds.values())<10,(
+                width,"O botão Limpar caiu em outra linha",bounds)
+            assert bounds["de"]["x"]<bounds["ate"]["x"]<bounds["buscar"]["x"]<bounds["limpar"]["x"],(
+                width,"A segunda linha está fora de ordem",bounds)
+            assert bounds["limpar"]["x"]+bounds["limpar"]["width"]<=width,(
+                width,"Botão Limpar excedeu a área visível",bounds)
             assert '<details' not in page.evaluate("bankInfoBanner()")
         # Dashboard mantém ações gerais, nunca inclui o atalho de rateio.
         dashboard_actions=page.evaluate("() => { page='dashboard'; return actionButtons(); }")

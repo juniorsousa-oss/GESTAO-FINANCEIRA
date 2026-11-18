@@ -132,6 +132,6 @@ def test_provision_scrollbar_stays_inside_rounded_modal_on_desktop():
                      'overscroll-behavior-y:contain',
                      'scrollbar-width:thin'):
         assert expected in content
-    assert 'provisions.css?v=modal-scroll-inset-r1' in html
+    assert 'provisions.css?v=filters-clear-row-r1' in html
     assert '.provision-split-participants{display:grid;' in css  # internal scrolling remains independent
     assert '@media(max-width:850px)' in (BASE/"static/ios-pwa-finish.css").read_text()
