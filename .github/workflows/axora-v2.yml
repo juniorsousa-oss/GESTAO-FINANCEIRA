@@ -50,6 +50,7 @@ jobs:
       - run: node axora_v2/tests/ios_pwa_keyboard_runtime.cjs
       - run: node axora_v2/tests/ui_runtime.cjs
       - run: node axora_v2/tests/family_payment_runtime.cjs
+      - run: node axora_v2/tests/debt_runtime.cjs
       - run: node axora_v2/tests/mobile_drawer_runtime.cjs
       - name: Validar layout mobile e teclado com navegador Chromium real
         run: |
