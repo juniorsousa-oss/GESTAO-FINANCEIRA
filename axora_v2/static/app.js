@@ -36,7 +36,7 @@ function interfaceIcon(name){
 const today = () => new Date().toLocaleDateString("en-CA");
 const comp = () => {const d=new Date();return String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear()};
 const dateBR = v => v ? String(v).substring(0,10).split("-").reverse().join("/") : "—";
-const labels = {dashboard:"Visão financeira",movements:"Registros",provisions:"Provisões","bank-accounts":"Contas bancárias",reconciliation:"Central de Conciliação",forecasts:"Previsões antigas",accounts:"Contas e saldos",debts:"Dívidas",import:"Importar / Exportar",settings:"Configurações",family:"Família e usuários"};
+const labels = {dashboard:"Visão financeira",movements:"Registros",provisions:"Provisões","bank-accounts":"Contas bancárias",reconciliation:"Central de Conciliação",forecasts:"Previsões antigas",accounts:"Contas e saldos",debts:"Dívidas em aberto",import:"Importar / Exportar",settings:"Configurações",family:"Família e usuários"};
 const subtitles = {dashboard:"Controle o seu presente. Planeje o seu próximo passo.",movements:"Receitas e despesas realizadas, sem misturar previsões.",provisions:"Somente compromissos pendentes; quitados vão para Registros.","bank-accounts":"Consulte o saldo de cada pessoa e expanda somente suas contas.","reconciliation":"Sugestões inteligentes; o operador confirma cada decisão.",forecasts:"Base antiga: ainda não migrada para a nova lógica de provisões.",accounts:"Saiba exatamente onde está o seu dinheiro.",debts:"Organize pagamentos, renegociações e saldos em aberto.",import:"Leve sua planilha para o AXORA com segurança.",settings:"Personalize seu perfil e defina suas metas financeiras.",family:"Pessoas, custos, pagamentos e permissões."};
 const meta = {
   movements: [
@@ -112,7 +112,7 @@ function logoutVisual(){if(window.AxoraFamily)AxoraFamily.reset();
   if(typeof provisionItems!=="undefined")provisionItems=null;
   if(typeof provisionError!=="undefined")provisionError=null;
   if(typeof resetFinancialCatalogs==="function")resetFinancialCatalogs();document.title="AXORA | Acesso";me=null;snapshot=null;$("#workspace").classList.add("hidden");$("#login").classList.remove("hidden");$("#login-password").value="";$("#login-password").focus()}
-function enterVisual(){if(window.AxoraFamily)AxoraFamily.reset();document.title="AXORA | Gestão Financeira"; $("#login").classList.add("hidden");$("#workspace").classList.remove("hidden");$("#user-name").textContent=me.display_name;const a=$("#avatar");a.replaceChildren();if(me.avatar_data_uri){const i=document.createElement("img");i.src=me.avatar_data_uri;i.alt="";a.append(i)}else a.textContent=(me.display_name||"A")[0].toUpperCase();document.querySelectorAll("[data-family-nav]").forEach(n=>n.hidden=!me.family_enabled);document.querySelectorAll('[data-page="reconciliation"]').forEach(n=>n.hidden=Boolean(me.family_enabled&&me.family_role!=="principal"));}
+function enterVisual(){if(window.AxoraFamily)AxoraFamily.reset();document.title="AXORA | Gestão Financeira"; $("#login").classList.add("hidden");$("#workspace").classList.remove("hidden");$("#user-name").textContent=me.display_name;const a=$("#avatar");a.replaceChildren();if(me.avatar_data_uri){const i=document.createElement("img");i.src=me.avatar_data_uri;i.alt="";a.append(i)}else a.textContent=(me.display_name||"A")[0].toUpperCase();document.querySelectorAll("[data-family-nav]").forEach(n=>n.hidden=!me.family_enabled);document.querySelectorAll('[data-page="reconciliation"]').forEach(n=>n.hidden=Boolean(me.family_enabled&&me.family_role!=="principal"));document.querySelectorAll('[data-page="debts"]').forEach(n=>n.hidden=Boolean(me.family_enabled&&me.family_role!=="principal"));}
 async function start(){
   try{
     me=await api("/api/me");enterVisual();
@@ -179,6 +179,7 @@ function go(next){
   const restricted=Boolean(me?.family_enabled&&me.family_role!=="principal");
   if(restricted&&["reconciliation","accounts","debts","forecasts","import"].includes(next))return;
   page=next;filters={};hideMenu();render();
+  if(next==="debts"&&window.AxoraDebts)AxoraDebts.load(true).catch(e=>showToast(e.message,true));
   if(next==="settings"&&!restricted){
     if(me?.is_admin&&!me?.family_enabled)loadUsers();
     loadFinanceCatalogs(true).catch(e=>showToast(e.message,true));
@@ -251,6 +252,7 @@ function actionButtons(){
     '<button class="btn primary btn-strong" data-action="bank-new-account">'+interfaceIcon("plus")+'<span>Nova conta</span></button>';
   if(page==="reconciliation")return '<button class="btn primary btn-strong" data-action="bank-new-transaction">'+interfaceIcon("plus")+'<span>Adicionar transação manual</span></button>';
   if(page==="provisions")return '<button class="btn primary btn-strong" data-action="new-provision">'+interfaceIcon("plus")+'<span>Adicionar provisão</span></button>';
+  if(page==="debts")return '<button class="btn primary btn-strong" data-debt-action="new">'+interfaceIcon("plus")+'<span>Nova dívida</span></button>';
   if(meta[page])return '<button class="btn primary btn-strong" data-action="new">'+interfaceIcon("plus")+'<span>Novo registro</span></button>';
 
   if(page==="dashboard")return '<button class="btn ghost btn-secondary" data-action="export">'+interfaceIcon("download")+'<span>Exportar Excel</span></button><button class="btn primary btn-strong" data-action="new-movement">'+interfaceIcon("plus")+'<span>Movimentação</span></button>';
@@ -264,7 +266,7 @@ function render(){
   if(!snapshot)return;
   const body=$("#page-content");
   const samePage=lastRenderedPage===page;
-  const nextMarkup=page==="family"?(window.AxoraFamily?AxoraFamily.page():""):page==="dashboard"?dashboard():page==="provisions"?provisionsPage():page==="bank-accounts"?bankingAccountsPage():page==="reconciliation"?bankingReconciliationPage():meta[page]?modulePage(page):page==="import"?importPage():settingsPage();
+  const nextMarkup=page==="family"?(window.AxoraFamily?AxoraFamily.page():""):page==="dashboard"?dashboard():page==="provisions"?provisionsPage():page==="bank-accounts"?bankingAccountsPage():page==="reconciliation"?bankingReconciliationPage():page==="debts"?(window.AxoraDebts?AxoraDebts.page():""):meta[page]?modulePage(page):page==="import"?importPage():settingsPage();
   const nextActions=actionButtons();
   // Evita a reconstrução do DOM e a piscada após solicitações sem alteração.
   if(!samePage||lastRenderedMarkup!==nextMarkup){
