@@ -35,6 +35,7 @@ def client(monkeypatch):
         ("registro",12):{"id":1,"resource_id":12,"creator_user_id":1,"label":"casal"},
         ("provisao",22):{"id":2,"resource_id":22,"creator_user_id":1,"label":"casal"},
         ("conta",32):{"id":3,"resource_id":32,"creator_user_id":1,"label":"casal"},
+        ("perfil",44):{"id":4,"resource_id":44,"creator_user_id":1,"label":"casal"},
     }
     def select(kind,*,fields="*",order=None,params=None):
         if kind=="users":return [{"avatar_data_uri":None}]
@@ -141,6 +142,29 @@ def test_unscreened_routes_are_denied_before_financial_queries(client):
     assert client.post("/api/family/profiles",headers={"X-CSRF-Token":"csrf"},json={
         "display_name":"Outro","relationship":"filho"}).status_code==403
 
+
+
+def test_member_directory_is_independent_of_shared_transactions(client,monkeypatch):
+    original=family_service.visibility_map
+    def no_identity_grants(ctx, kind, ids):
+        return {} if kind=="perfil" else original(ctx, kind, ids)
+    monkeypatch.setattr(family_service,"visibility_map",no_identity_grants)
+    family=client.get("/api/family")
+    assert family.status_code==200
+    # Mesmo participando de uma despesa compartilhada, o dependente 44
+    # não deve ser revelado sem autorização EXPLÍCITA do diretório.
+    assert {p["id"] for p in family.json()["profiles"]}=={22}
+    assert "Dependente relacionado ao gasto" not in family.text
+    summary=client.get("/api/family/summary")
+    assert summary.status_code==200
+    assert {p["id"] for p in summary.json()["people"]}=={22}
+
+
+def test_secondary_cannot_authorize_member_directory(client):
+    result=client.post("/api/family/visibility",headers={"X-CSRF-Token":"csrf"},json={
+        "resource_type":"perfil","resource_id":44,
+        "label":"familia","viewers":[]})
+    assert result.status_code==403
 
 def test_member_may_only_read_family_records_allocated_to_own_view(client):
     family=client.get("/api/family")
