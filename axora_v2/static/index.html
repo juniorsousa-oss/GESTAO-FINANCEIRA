@@ -401,7 +401,12 @@
         <div class="field"><label for="family-entry-category">Categoria</label><input id="family-entry-category" name="category" maxlength="120" placeholder="Ex.: mercado, escola"></div>
         <div class="field full"><label for="family-entry-visibility">Quem pode visualizar?</label><select id="family-entry-visibility" name="label"><option value="privado">Privado</option><option value="casal">Casal</option><option value="familia">Família</option></select></div>
       </div>
-      <fieldset class="family-fieldset"><legend>Para quem é este valor? (100%)</legend><div id="family-cost-list"></div><small>Este campo atribui custo ou receita. Não concede acesso ao registro.</small></fieldset>
+      <div class="field full family-income-recipient" id="family-income-recipient-wrap" hidden>
+        <label for="family-income-recipient">Quem recebeu esta entrada?</label>
+        <select id="family-income-recipient" name="income_profile_id"></select>
+        <small>O valor integral pertence a esta pessoa; receitas não têm rateio percentual.</small>
+      </div>
+      <fieldset class="family-fieldset" id="family-cost-fieldset"><legend>Para quem é este valor? (100%)</legend><div id="family-cost-list"></div><small>Este campo atribui custo ou receita. Não concede acesso ao registro.</small></fieldset>
       <fieldset class="family-fieldset family-wallet-fieldset" data-family-wallet hidden>
         <legend>Como foi pago?</legend>
         <p class="family-wallet-hint">Escolha a forma de registro. O pagador será identificado nesta mesma etapa, sem repetir os participantes do rateio de custos.</p>
