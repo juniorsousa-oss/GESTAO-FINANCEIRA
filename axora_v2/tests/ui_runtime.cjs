@@ -18,7 +18,7 @@ const nav=navNames.map(name=>({
 }));
 nav.forEach(n=>n.classList.owner=n);
 const doc={querySelector(selector){return element(selector)},querySelectorAll(selector){return selector===".nav-link"?nav:[]},addEventListener(){}};
-const ctx=vm.createContext({document:doc,window:{},console,Date,setTimeout,clearTimeout,Intl,URL,FormData,Number,String,Array,Math,Object,Set,Error});
+const ctx=vm.createContext({document:doc,window:{AxoraDebts:{page:()=>`<section class="panel"><h2>Carteira de dívidas</h2><p>Resumo de valores originais, acordos e provisões em aberto.</p></section>`}},console,Date,setTimeout,clearTimeout,Intl,URL,FormData,Number,String,Array,Math,Object,Set,Error});
 vm.runInContext(js,ctx,{filename:"app.js"});
 const summary={realized:395.8,located:395.8,discrepancy:0,to_receive:2000,to_pay:1000,projected:1395.8,debt_open:200,monthly:[],categories:[],next_forecasts:[],conciliation:100,goals:{emergency:100,investment:100,fixed:100,leisure:100}};
 const dummy={
