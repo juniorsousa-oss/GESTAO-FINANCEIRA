@@ -179,7 +179,7 @@ function go(next){
   const restricted=Boolean(me?.family_enabled&&me.family_role!=="principal");
   if(restricted&&["reconciliation","accounts","debts","forecasts","import"].includes(next))return;
   page=next;filters={};hideMenu();render();
-  if(next==="debts"&&window.AxoraDebts)AxoraDebts.load(true).catch(e=>showToast(e.message,true));
+  if(next==="debts"&&window.AxoraDebts)window.AxoraDebts.load(true).catch(e=>showToast(e.message,true));
   if(next==="settings"&&!restricted){
     if(me?.is_admin&&!me?.family_enabled)loadUsers();
     loadFinanceCatalogs(true).catch(e=>showToast(e.message,true));
@@ -266,7 +266,7 @@ function render(){
   if(!snapshot)return;
   const body=$("#page-content");
   const samePage=lastRenderedPage===page;
-  const nextMarkup=page==="family"?(window.AxoraFamily?AxoraFamily.page():""):page==="dashboard"?dashboard():page==="provisions"?provisionsPage():page==="bank-accounts"?bankingAccountsPage():page==="reconciliation"?bankingReconciliationPage():page==="debts"?(window.AxoraDebts?AxoraDebts.page():""):meta[page]?modulePage(page):page==="import"?importPage():settingsPage();
+  const nextMarkup=page==="family"?(window.AxoraFamily?AxoraFamily.page():""):page==="dashboard"?dashboard():page==="provisions"?provisionsPage():page==="bank-accounts"?bankingAccountsPage():page==="reconciliation"?bankingReconciliationPage():page==="debts"?(window.AxoraDebts?window.AxoraDebts.page():""):meta[page]?modulePage(page):page==="import"?importPage():settingsPage();
   const nextActions=actionButtons();
   // Evita a reconstrução do DOM e a piscada após solicitações sem alteração.
   if(!samePage||lastRenderedMarkup!==nextMarkup){
