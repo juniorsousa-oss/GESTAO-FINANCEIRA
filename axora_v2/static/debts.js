@@ -144,6 +144,7 @@ const AxoraDebts=(()=>{
     if(!debt?.linked_provision_rule_id)throw Error("Não há Provisão vinculada.");
     go("provisions");
     provisionView="all";
+    Object.keys(provisionFilters).forEach(key=>provisionFilters[key]="");
     provisionFilters.search=debt.description;
     provisionFiltersExpanded=true;
     loadProvisions().catch(e=>showToast(e.message,true));
