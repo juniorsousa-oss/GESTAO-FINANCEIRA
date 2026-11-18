@@ -102,8 +102,8 @@ def test_mobile_modal_keyboard_stability_and_no_focus_zoom():
     assert 'new MutationObserver' in js
     assert 'visualViewport.addEventListener("resize"' in js
     assert 'Math.abs(window.innerWidth-viewportWidth)<3' in js
-    assert "ios-pwa-finish.css?v=20261116-modal-keyboard-r2" in index
-    assert "ios-pwa-stability.js?v=20261116-dialog-stable-r2" in index
+    assert "ios-pwa-finish.css?v=20261118-pix-date-r1" in index
+    assert "ios-pwa-stability.js?v=20261118-pix-date-r1" in index
 
 
 def test_holder_cards_have_accessible_horizontal_actions():
@@ -118,3 +118,18 @@ def test_holder_cards_have_accessible_horizontal_actions():
     assert ".bank-entity .bank-entity-actions{" in styles
     assert "flex-direction:row;" in styles
     assert "grid-template-columns:minmax(0,1fr)" in styles
+
+
+def test_async_pix_dialog_and_localized_date_controls_are_contained():
+    css = (STATIC / "ios-pwa-finish.css").read_text()
+    js = (STATIC / "ios-pwa-stability.js").read_text()
+    assert 'dialog#provision-pix-dialog.provision-pix-dialog' in css
+    assert 'height:auto!important' in css
+    assert '#provision-pix-image' in css
+    assert 'overflow-y:auto' in css
+    assert 'if(dialog.id==="provision-pix-dialog")return;' in js
+    assert 'input[type="date"]' in css
+    assert 'min-inline-size:0' in css
+    assert 'max-inline-size:100%' in css
+    assert '::-webkit-date-and-time-value' in css
+    assert '::-webkit-datetime-edit' in css
