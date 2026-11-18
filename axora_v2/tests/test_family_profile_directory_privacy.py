@@ -73,7 +73,7 @@ def test_acl_contract_and_ui_separate_directory_from_financial_access():
     assert '"perfil"' in policy
     assert 'data-resource="perfil"' in ui
     assert 'profile?.visibility_viewers||[]' in ui
-    assert "Dados financeiros desta pessoa permanecem privados" in ui
+    assert "Os dados financeiros desta pessoa permanecem privados" in ui
     assert 'id="family-visibility-heading"' in html
     assert "'perfil'" in migration
     assert 'finance_family_profiles' in migration
