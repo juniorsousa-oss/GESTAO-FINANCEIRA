@@ -30,7 +30,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           from pglast import parse_sql
-          for file_name in ("20261116_family_v2.sql","20261116_same_project_beta_schema.sql","20261116_family_hierarchy_management.sql","20261117_family_single_registry.sql","20261117_provision_planned_shares.sql","20261117_family_wallet_payment_sources.sql"):
+          for file_name in ("20261116_family_v2.sql","20261116_same_project_beta_schema.sql","20261116_family_hierarchy_management.sql","20261117_family_single_registry.sql","20261117_provision_planned_shares.sql","20261117_family_wallet_payment_sources.sql","20261118_family_member_directory_privacy.sql"):
             path=Path("axora_v2/migrations")/file_name
             statements=parse_sql(path.read_text())
             assert len(statements) >= 5, f"Migração incompleta: {file_name}"
