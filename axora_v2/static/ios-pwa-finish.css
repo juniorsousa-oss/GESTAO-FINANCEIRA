@@ -200,4 +200,60 @@
   dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog) .dialog-heading>div{
     min-width:0;
   }
+
+  /* Safari iOS mostra datas localizadas extensas (ex.: 6 de nov. de 2026).
+     O campo nativo deve caber dentro do card, sem perder o seletor de calendário. */
+  #workspace .main-area input[type="date"],
+  dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog) input[type="date"]{
+    display:block;
+    inline-size:100%;
+    max-inline-size:100%;
+    min-inline-size:0;
+    width:100%;
+    min-width:0!important;
+    max-width:100%;
+    box-sizing:border-box;
+    padding-inline:10px;
+    overflow:hidden;
+  }
+  #workspace .main-area input[type="date"]::-webkit-date-and-time-value,
+  dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog) input[type="date"]::-webkit-date-and-time-value{
+    min-width:0;
+    max-width:100%;
+    text-align:left;
+  }
+  #workspace .main-area input[type="date"]::-webkit-datetime-edit,
+  dialog:is(.editor-dialog,.provision-dialog,.bank-dialog,.family-dialog) input[type="date"]::-webkit-datetime-edit{
+    min-width:0;
+    max-width:100%;
+    overflow:hidden;
+  }
+
+  /* O Pix recebe o QR DEPOIS da resposta da API. Não pode herdar a altura
+     travada antes do carregamento, senão corta a imagem e os botões no iPhone. */
+  dialog#provision-pix-dialog.provision-pix-dialog{
+    height:auto!important;
+    min-height:0;
+    max-height:calc(var(--axora-login-stage-height,100svh)
+                   - 28px - env(safe-area-inset-top,0px)
+                   - env(safe-area-inset-bottom,0px))!important;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior-y:contain;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y;
+  }
+  dialog#provision-pix-dialog .provision-pix-content{
+    min-width:0;
+    max-width:100%;
+  }
+  dialog#provision-pix-dialog #provision-pix-image{
+    display:block;
+    width:min(264px,100%);
+    max-width:100%;
+    height:auto;
+    aspect-ratio:1 / 1;
+    object-fit:contain;
+    margin-inline:auto;
+  }
 }
