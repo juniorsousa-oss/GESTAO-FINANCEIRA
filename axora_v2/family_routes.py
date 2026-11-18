@@ -36,6 +36,8 @@ def _allocations(value, costs, payments, classification, ctx):
     if classification == "SAÍDA":
         paid = family_policy.validate_payment_sources(value, payments, allowed_profile_ids=allowed)
     else:
+        if len(alloc) != 1 or alloc[0]["percentage"] != "100":
+            raise HTTPException(422, "Receita deve pertencer integralmente a um único responsável.")
         if payments not in ([], None):
             raise HTTPException(422, "Receita não possui pagador de despesa.")
         paid = []
