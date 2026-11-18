@@ -7,7 +7,7 @@ let provisionError=null;
 let provisionView="all";
 let provisionFiltersExpanded=false;
 const provisionMobileMode=()=>typeof window!=="undefined"&&typeof window.matchMedia==="function"&&window.matchMedia("(max-width:850px)").matches;
-const provisionFilters={search:"",category:"",responsible:"",from:"",to:""};
+const provisionFilters={search:"",category:"",responsible:"",visibility:"",from:"",to:""};
 const provisionNorm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 const provisionSafeUrl=value=>{
   if(!value)return null;
@@ -66,6 +66,8 @@ function provisionsPage(){
     const responsible=x.responsible_override||x.rule?.responsible||"";
     if(provisionFilters.category&&category!==provisionFilters.category)return false;
     if(provisionFilters.responsible&&responsible!==provisionFilters.responsible)return false;
+    if(me?.family_enabled&&me.family_role==="principal"&&provisionFilters.visibility&&
+       (x.visibility_label||"privado")!==provisionFilters.visibility)return false;
     if(provisionFilters.from&&x.due_date<provisionFilters.from)return false;
     if(provisionFilters.to&&x.due_date>provisionFilters.to)return false;
     if(provisionFilters.search&&!provisionNorm([description,category,responsible].join(" ")).includes(provisionNorm(provisionFilters.search)))return false;
@@ -91,6 +93,10 @@ function provisionsPage(){
     '<label class="provision-filter-label">Período<select id="provision-filter"><option value="all" '+(provisionView==="all"?"selected":"")+'>Todas as pendentes</option><option value="month" '+(provisionView==="month"?"selected":"")+'>Vencimentos do mês</option><option value="overdue" '+(provisionView==="overdue"?"selected":"")+'>Vencidas</option><option value="soon" '+(provisionView==="soon"?"selected":"")+'>Próximos 30 dias</option><option value="six" '+(provisionView==="six"?"selected":"")+'>Próximos 6 meses</option></select></label>'+
     '<label class="provision-filter-label">Categoria<select id="provision-category-filter">'+filterOptions(categories,provisionFilters.category,"Todas")+'</select></label>'+
     '<label class="provision-filter-label">Responsável<select id="provision-responsible-filter">'+filterOptions(responsibles,provisionFilters.responsible,"Todos")+'</select></label>'+
+    (me?.family_enabled&&me.family_role==="principal"?
+      '<label class="provision-filter-label">Acesso<select id="provision-visibility-filter">'+
+      filterOptions(["privado","casal","familia","selecionados"],provisionFilters.visibility,"Todos os acessos")+
+      '</select></label>':"")+
     '<label class="provision-filter-label">De<input type="date" id="provision-from-filter" value="'+esc(provisionFilters.from)+'"></label>'+
     '<label class="provision-filter-label">Até<input type="date" id="provision-to-filter" value="'+esc(provisionFilters.to)+'"></label>'+
     '<label class="provision-filter-label provision-filter-search">Buscar<input type="search" id="provision-search-filter" maxlength="100" value="'+esc(provisionFilters.search)+'" placeholder="Descrição, categoria ou responsável"></label>'+
@@ -497,7 +503,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#page-content").addEventListener("change",e=>{
     if(e.target.id==="provision-filter"){provisionView=e.target.value;render();}
     const filters={"provision-category-filter":"category","provision-responsible-filter":"responsible",
-      "provision-from-filter":"from","provision-to-filter":"to"};
+      "provision-visibility-filter":"visibility","provision-from-filter":"from","provision-to-filter":"to"};
     if(filters[e.target.id]){provisionFilters[filters[e.target.id]]=e.target.value;render();}
   });
   $("#page-content").addEventListener("input",e=>{

@@ -30,7 +30,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           from pglast import parse_sql
-          for file_name in ("20261116_family_v2.sql","20261116_same_project_beta_schema.sql","20261116_family_hierarchy_management.sql","20261117_family_single_registry.sql","20261117_provision_planned_shares.sql","20261117_family_wallet_payment_sources.sql","20261118_family_member_directory_privacy.sql"):
+          for file_name in ("20261116_family_v2.sql","20261116_same_project_beta_schema.sql","20261116_family_hierarchy_management.sql","20261117_family_single_registry.sql","20261117_provision_planned_shares.sql","20261117_family_wallet_payment_sources.sql","20261118_family_member_directory_privacy.sql","20261118_debt_portfolio_renegotiation.sql"):
             path=Path("axora_v2/migrations")/file_name
             statements=parse_sql(path.read_text())
             assert len(statements) >= 5, f"Migração incompleta: {file_name}"
@@ -44,11 +44,13 @@ jobs:
       - run: node --check axora_v2/static/catalogs.js
       - run: node --check axora_v2/static/banking.js
       - run: node --check axora_v2/static/family.js
+      - run: node --check axora_v2/static/debts.js
       - run: node --check axora_v2/static/brand-kit.js
       - run: node --check axora_v2/static/ios-pwa-stability.js
       - run: node axora_v2/tests/ios_pwa_keyboard_runtime.cjs
       - run: node axora_v2/tests/ui_runtime.cjs
       - run: node axora_v2/tests/family_payment_runtime.cjs
+      - run: node axora_v2/tests/debt_runtime.cjs
       - run: node axora_v2/tests/mobile_drawer_runtime.cjs
       - name: Validar layout mobile e teclado com navegador Chromium real
         run: |

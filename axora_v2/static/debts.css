@@ -1,0 +1,45 @@
+/* AXORA — carteira de dívidas, linguagem visual alinhada às contas e provisões */
+.debt-page{min-width:0}
+.debt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(265px,1fr));gap:14px;margin-top:16px}
+.debt-card{display:flex;flex-direction:column;min-width:0;background:linear-gradient(175deg,#fff,#f8fbfd);
+ border:1px solid #d9e6ed;border-radius:18px;padding:18px;gap:15px;box-shadow:0 6px 19px rgba(20,63,84,.04)}
+.debt-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:13px}
+.debt-card-head h3{margin:0;color:#153f5b;font-weight:800;font-size:16px;overflow-wrap:anywhere}
+.debt-card-head p{font-size:11px;line-height:1.5;color:#7590a4;margin:6px 0 0;overflow-wrap:anywhere}
+.debt-status{font-size:10px;line-height:1.2;font-weight:800;border-radius:22px;padding:7px 9px;
+ border:1px solid #efd7ce;color:#ab7049;background:#fff7f2;white-space:nowrap}
+.debt-status.is-agreed{background:#e9f8f3;color:#177b73;border-color:#c4e6db}
+.debt-money-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;
+ padding:13px 0;border-top:1px solid #e3edf2;border-bottom:1px solid #e3edf2}
+.debt-money-row>div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.debt-money-row small{color:#7390a1;font-size:11px}
+.debt-money-row strong{color:#0b3a56;font-size:19px;letter-spacing:-.35px;overflow-wrap:anywhere}
+.debt-money-row>div:last-child strong{color:#4a7487;font-size:16px}
+.debt-installments{margin:0;line-height:1.55;color:#647e90;font-size:11px}
+.debt-card-actions{display:flex;gap:8px;align-items:center;margin-top:auto;padding-top:5px}
+.debt-card-actions>.btn{flex:1;min-height:39px}
+.debt-action-menu{position:relative}
+.debt-action-menu>summary{display:grid;place-items:center;min-width:38px;min-height:38px;cursor:pointer;
+ background:#f5fafc;border:1px solid #d8e6ed;border-radius:11px;color:#28617a;font-size:19px;list-style:none}
+.debt-action-menu>summary::-webkit-details-marker{display:none}
+.debt-action-panel.axora-action-menu-panel{position:fixed;top:0;left:0;width:min(215px,calc(100vw - 24px));max-height:90dvh;
+ border:1px solid #d8e6ed;border-radius:13px;background:white;box-shadow:0 12px 27px rgba(20,50,70,.12);
+ z-index:1002;padding:10px;box-sizing:border-box}
+.debt-action-panel .btn{width:100%;justify-content:flex-start;min-height:37px}
+.debt-filters{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px}
+.debt-filters label{display:flex;flex-direction:column;gap:6px;min-width:0;color:#4a7187;font-size:11px;font-weight:700}
+.debt-filters input,.debt-filters select{max-width:100%;width:100%;min-width:0;min-height:43px;
+ border:1px solid #d9e5ee;border-radius:11px;background:#fff;color:#143c57;
+ font:inherit;font-size:13px;box-sizing:border-box;padding:9px 12px}
+.debt-agreement-preview{display:block;border:1px solid #c7e8e1;border-radius:12px;padding:13px 16px;
+ background:#f2fbf9;color:#106d75;font-weight:800;font-size:13px;margin-top:15px}
+.debt-card[hidden]{display:none!important}
+@media(max-width:850px){
+  .debt-grid{grid-template-columns:minmax(0,1fr);gap:12px}
+  .debt-card{padding:15px;gap:12px;border-radius:16px}
+  .debt-filters{grid-template-columns:minmax(0,1fr)}
+  .debt-filters input,.debt-filters select{font-size:16px}
+  .debt-card-head{flex-wrap:wrap}
+  .debt-money-row strong{font-size:20px}
+  .debt-card-actions>.btn{min-height:44px}
+}

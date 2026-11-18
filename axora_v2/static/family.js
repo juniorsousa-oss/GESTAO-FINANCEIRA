@@ -201,6 +201,13 @@ const AxoraFamily = (() => {
   }
   function walletUpdateMode(form){
     const expense=form.elements.classification.value==="SAÍDA";
+    const income=form.querySelector("#family-income-recipient-wrap");
+    const split=form.querySelector("#family-cost-fieldset");
+    if(income)income.hidden=expense;
+    if(split)split.hidden=!expense;
+    form.querySelector("#family-entry-heading").textContent=form.dataset.occurrenceId?
+      "Pagar provisão com rateio":expense?"Novo lançamento com rateio":"Nova entrada";
+    form.querySelector('[type="submit"]').textContent=expense?"Salvar rateio":"Salvar entrada";
     form.querySelector("[data-family-wallet]").hidden=!expense;
     const available=own()&&walletAvailableAccounts().length>0;
     const choice=form.querySelector('[name="balance_mode"][value="wallet"]');
@@ -269,6 +276,9 @@ const AxoraFamily = (() => {
     form.elements.classification.disabled=Boolean(config.occurrence_id);
     form.elements.description.readOnly=Boolean(config.occurrence_id);
     form.querySelector("#family-cost-list").innerHTML=entryRows("cost",null,config.shares);
+    form.elements.income_profile_id.innerHTML=people().map(p=>
+      '<option value="'+Number(p.id)+'">'+esc(p.display_name)+'</option>').join("");
+    form.elements.income_profile_id.value=String(current()||Number(people()[0]?.id||0));
     manualAddPayer(form,true);
     form.querySelector("#family-entry-heading").textContent=config.occurrence_id?
       "Pagar provisão com rateio":"Novo lançamento com rateio";
@@ -503,11 +513,13 @@ const AxoraFamily = (() => {
   async function saveTransaction(form){
     const value=Number(form.elements.value.value);
     if(!Number.isFinite(value)||value<=0)throw Error("Valor de pagamento inválido.");
-    const costs=ensureAllocation(value,Array.from(form.querySelectorAll("[data-family-beneficiario]")).map(x=>
-      ({id:Number(x.dataset.familyBeneficiario),value:Number(x.value)})),"percentage");
-    const percent=costs.reduce((n,x)=>n+x.percentage,0);
-    if(Math.abs(percent-100)>.001)throw Error("Beneficiários devem somar exatamente 100%.");
     const classification=form.elements.classification.value;
+    const costs=classification==="ENTRADA"?
+      [{profile_id:Number(form.elements.income_profile_id.value),percentage:100}]:
+      ensureAllocation(value,Array.from(form.querySelectorAll("[data-family-beneficiario]")).map(x=>
+        ({id:Number(x.dataset.familyBeneficiario),value:Number(x.value)})),"percentage");
+    if(classification==="SAÍDA"&&Math.abs(costs.reduce((n,x)=>n+x.percentage,0)-100)>.001)
+      throw Error("Beneficiários devem somar exatamente 100%.");
     const {payments,accountSources}=paymentAllocation(form);
     const useWallet=accountSources!==null;
     const occurrenceId=Number(form.dataset.occurrenceId||0);
