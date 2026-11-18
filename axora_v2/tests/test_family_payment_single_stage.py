@@ -18,7 +18,7 @@ def test_payment_form_has_only_one_payment_stage():
     assert 'Sem descontar saldo' in html
     assert 'Descontar da carteira' in html
     assert 'name="balance_mode" value="none" checked' in html
-    assert 'family.css?v=wallet-payer-filter-r1' in html
+    assert 'family.css?v=profile-directory-privacy-r1' in html
     assert 'family.js?v=wallet-payer-filter-r1' in html
     assert 'form.querySelector("#family-manual-payer-list").replaceChildren()' in js
     assert 'manualAddPayer(form,true)' in js
