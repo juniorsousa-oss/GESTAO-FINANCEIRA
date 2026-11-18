@@ -199,3 +199,12 @@
  #family-wallet-source-list>.family-wallet-source>label:nth-child(3){grid-column:2;grid-row:2}
  #family-wallet-source-list>.family-wallet-source>button{grid-column:3;grid-row:2}
 }
+
+/* Identidade visível não equivale a autorização para dados financeiros. */
+.family-person-private-note{
+  margin:0; padding:12px 13px; border:1px solid #dce8f1; border-radius:11px;
+  background:#f6fafc; color:#5e7891; font-size:11px; line-height:1.55;
+}
+.family-member-menu-panel>[data-resource="perfil"]{
+  border-color:#a9dadb;background:#f0faf9;color:#176e75;
+}
