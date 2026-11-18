@@ -260,7 +260,8 @@ def check_profile_ids(ctx, profile_ids):
 
 def check_resource(ctx, kind, resource_id):
     tables = {"registro": "finance_movements", "provisao": "finance_provision_rules",
-              "conta": "finance_bank_accounts", "transacao": "finance_bank_transactions"}
+              "conta": "finance_bank_accounts", "transacao": "finance_bank_transactions",
+              "perfil": "finance_family_profiles"}
     name = tables.get(kind)
     if not name:
         raise HTTPException(422, "Tipo de recurso inválido.")
