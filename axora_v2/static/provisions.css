@@ -96,7 +96,8 @@
 .provision-filters .provision-filter-label{min-width:0}
 .provision-filters .provision-filter-label input,
 .provision-filters .provision-filter-label select{width:100%;min-width:0;box-sizing:border-box;min-height:42px;border:1px solid #d8e3ee;border-radius:11px;background:#fff;padding:9px 12px;color:#1b3855;font:inherit;font-size:12px}
-.provision-filters .provision-filter-search{grid-column:span 2}
+/* Com quatro colunas, De / Até / Buscar / Limpar ficam na mesma segunda linha. */
+.provision-filters .provision-filter-search{grid-column:span 1}
 .provision-filters .provision-clear-filters{min-height:42px}
 .provision-table tr[hidden]{display:none!important}
 .provision-payment-matches{border:1px solid #dce9f1;border-radius:14px;padding:14px;margin:17px 0 0;display:grid;gap:10px;min-width:0}
