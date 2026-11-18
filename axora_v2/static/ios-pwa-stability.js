@@ -48,6 +48,9 @@
     }
     function lockDialog(dialog){
       if(!dialog?.open || !mobile() || dialog.dataset.axoraFixedHeight)return;
+      // O Pix começa só com "Gerando..." e recebe o QR assincronamente.
+      // Não congelar a altura antes da imagem e do Copia e Cola chegarem.
+      if(dialog.id==="provision-pix-dialog")return;
       window.requestAnimationFrame(()=>{
         if(!dialog.open || !mobile() || dialog.dataset.axoraFixedHeight)return;
         const height=Math.ceil(dialog.getBoundingClientRect().height);
