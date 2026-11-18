@@ -144,7 +144,7 @@ def install(app, auth, authorized):
         result = {"enabled": True, "my_role": ctx["role"],
                   "my_profile_id": ctx["profile_id"],
                   "can_manage": ctx["role"] == "principal",
-                  "profiles": family_service.accessible_profiles(user)}
+                  "profiles": family_service.directory_profiles(user)}
         if ctx["role"] == "principal":
             workspace = db.call("GET", "finance_workspaces", params={
                 "select":"name", "id":"eq."+ctx["workspace_id"], "limit":1})

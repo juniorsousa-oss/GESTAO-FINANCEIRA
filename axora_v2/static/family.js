@@ -304,8 +304,10 @@ const AxoraFamily = (() => {
       esc(p.display_name.slice(0,1).toUpperCase())+'</div><div class="family-person-identity"><strong>'+esc(p.display_name)+
       '</strong><small>'+esc(roleName[p.relationship]||"Outro")+
       (own()?(p.linked_user_id?' · Login vinculado':' · Sem login'):'')+'</small></div>'+
-      (own()&&p.relationship!=="principal"?memberTools(p):"")+'</div>'+
-      personMetrics(metrics)+'</article>';
+      (own()?memberTools(p):"")+'</div>'+
+      (!own()&&Number(p.id)!==current()?
+        '<p class="family-person-private-note">Perfil autorizado para visualização. Os dados financeiros desta pessoa permanecem privados.</p>':
+        personMetrics(metrics))+'</article>';
   }
   function relationshipOptions(current){
     return [["conjuge","Cônjuge"],["pai","Pai"],["mae","Mãe"],["filho","Filho(a)"],["sogro","Sogro(a)"],["tio","Tio(a)"],["outro","Outro"]]
@@ -315,14 +317,18 @@ const AxoraFamily = (() => {
     const uid=Number(p.id);
     return '<details class="family-member-menu axora-action-menu" data-family-profile-id="'+uid+'">'+
       '<summary aria-expanded="false" aria-label="Opções do membro '+esc(p.display_name)+'" title="Ações do membro">⋮</summary>'+
-      '<div class="family-member-menu-panel axora-action-menu-panel"><div class="family-member-role">'+
-      '<label for="family-role-'+uid+'">Vínculo familiar</label>'+
-      '<select id="family-role-'+uid+'" data-family-role="'+uid+'">'+
-      relationshipOptions(p.relationship)+'</select>'+
-      '<button type="button" class="btn ghost small" data-family-action="save-relationship" data-id="'+uid+'">Salvar vínculo</button></div>'+
-      (p.linked_user_id?
+      '<div class="family-member-menu-panel axora-action-menu-panel">'+
+      (p.relationship==="principal"?"":'<div class="family-member-role">'+
+        '<label for="family-role-'+uid+'">Vínculo familiar</label>'+
+        '<select id="family-role-'+uid+'" data-family-role="'+uid+'">'+
+        relationshipOptions(p.relationship)+'</select>'+
+        '<button type="button" class="btn ghost small" data-family-action="save-relationship" data-id="'+uid+'">Salvar vínculo</button></div>')+
+      '<button type="button" class="btn ghost small" data-family-action="set-visibility" '+
+        'data-resource="perfil" data-id="'+uid+'" data-label="'+esc(p.visibility_label||"privado")+'">Visibilidade: '+
+        esc(labels[p.visibility_label]||"Privado")+'</button>'+
+      (p.relationship==="principal"?'':(p.linked_user_id?
        '<span class="family-access-status">Acesso individual ativo</span>':
-       '<button type="button" class="btn ghost small" data-family-action="enable-login" data-id="'+uid+'">Criar acesso com senha</button>')+
+       '<button type="button" class="btn ghost small" data-family-action="enable-login" data-id="'+uid+'">Criar acesso com senha</button>'))+
       '</div></details>';
   }
   function newProfileForm(){
@@ -409,7 +415,7 @@ const AxoraFamily = (() => {
         'Entradas, gastos e pagamentos por pessoa.')+'</p></div>'+
       '<button class="btn primary" type="button" data-family-action="new-expense">Novo registro com rateio</button></section>'+
       summaryNote+
-      '<div class="family-people">'+(own()?people():people().filter(p=>Number(p.id)===current())).map(tableRow).join("")+'</div>'+
+      '<div class="family-people">'+people().map(tableRow).join("")+'</div>'+
       (own()&&bankOnlyMembers().length?
         panel("Demais membros cadastrados","Pessoas associadas a contas bancárias, ainda sem perfil de rateio.",
           '<div class="family-bank-grid">'+bankOnlyMembers().map(bankMemberRow).join("")+'</div>'):"")+
@@ -475,8 +481,16 @@ const AxoraFamily = (() => {
     form.elements.resource_type.value=kind;
     form.elements.resource_id.value=id;
     form.elements.label.value=existing;
-    form.querySelector("#family-visibility-users").innerHTML=people().filter(p=>p.linked_user_id&&p.relationship!=="principal").map(p=>
-      '<label class="family-check-row"><input type="checkbox" name="viewer" value="'+Number(p.linked_user_id)+'">'+
+    const profile=kind==="perfil"?people().find(p=>Number(p.id)===id):null;
+    const granted=new Set(profile?.visibility_viewers||[]);
+    const heading=form.querySelector("#family-visibility-heading");
+    heading.textContent=kind==="perfil"?"Visibilidade do membro":"Visibilidade do registro";
+    form.querySelector("#family-visibility-explanation").textContent=kind==="perfil"?
+      "Esta permissão mostra somente nome e vínculo familiar. Não autoriza visualizar contas, saldos, receitas, despesas ou registros financeiros.":
+      "O acesso ao registro é controlado pelo servidor. Ser pagador ou beneficiário não libera outros registros.";
+    form.querySelector("#family-visibility-users").innerHTML=people().filter(p=>p.linked_user_id&&p.relationship!=="principal"&&(kind!=="perfil"||Number(p.id)!==id)).map(p=>
+      '<label class="family-check-row"><input type="checkbox" name="viewer" value="'+Number(p.linked_user_id)+'" '+
+      (granted.has(Number(p.linked_user_id))?'checked':'')+'>'+
       esc(p.display_name)+'</label>').join("")||'<p>Nenhum usuário secundário vinculado.</p>';
     form.querySelector("#family-visibility-users").hidden=existing!=="selecionados";
     $("#family-visibility-dialog").showModal();
@@ -636,10 +650,15 @@ const AxoraFamily = (() => {
           viewers:[...f.querySelectorAll('input[name="viewer"]:checked')].map(x=>Number(x.value))};
         await api("/api/family/visibility",{method:"POST",body:JSON.stringify(payload)});
         $("#family-visibility-dialog").close();
-        await refresh();
-        if(page==="provisions")await loadProvisions();
-        if(page==="bank-accounts")await loadBanking(true);
-        showToast("Rótulo de acesso atualizado.");
+        if(payload.resource_type==="perfil"){
+          await load(true);
+          if(page==="family")render();
+        }else{
+          await refresh();
+          if(page==="provisions")await loadProvisions();
+          if(page==="bank-accounts")await loadBanking(true);
+        }
+        showToast(payload.resource_type==="perfil"?"Visibilidade do membro atualizada.":"Rótulo de acesso atualizado.");
       }catch(err){showToast(err.message,true)}
       finally{btn.disabled=false}
     });

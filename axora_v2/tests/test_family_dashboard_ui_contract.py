@@ -56,4 +56,4 @@ def test_family_card_name_and_relationship_have_separate_lines():
     assert 'flex-direction:column;' in rules
     assert 'gap:6px;' in rules
     assert '.family-person-heading>div:last-child' not in css
-    assert 'family.css?v=wallet-payer-filter-r1' in html
+    assert 'family.css?v=profile-directory-privacy-r1' in html

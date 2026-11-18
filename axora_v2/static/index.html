@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AXORA">
   <link rel="manifest" href="/assets/pwa/manifest.json">
-  <link rel="stylesheet" href="/assets/family.css?v=wallet-payer-filter-r1">
+  <link rel="stylesheet" href="/assets/family.css?v=profile-directory-privacy-r1">
   <link rel="apple-touch-icon" sizes="192x192" href="/assets/pwa/icon-192.png">
   <meta name="description" content="AXORA — inteligência e controle financeiro, by Nexon Labs.">
   <title>AXORA | Acesso</title>
@@ -432,7 +432,7 @@
   </dialog>
   <dialog id="family-visibility-dialog" class="family-dialog">
     <form id="family-visibility-form">
-      <div class="dialog-heading"><div><span class="overline">AXORA · PRIVACIDADE</span><h2>Visibilidade do registro</h2></div><button type="button" class="icon-button" data-family-close aria-label="Fechar">×</button></div>
+      <div class="dialog-heading"><div><span class="overline">AXORA · PRIVACIDADE</span><h2 id="family-visibility-heading">Visibilidade do registro</h2></div><button type="button" class="icon-button" data-family-close aria-label="Fechar">×</button></div>
       <input type="hidden" name="resource_type"><input type="hidden" name="resource_id">
       <div class="field"><label for="family-visibility-label">Rótulo de acesso</label><select id="family-visibility-label" name="label">
         <option value="privado">Privado · titular e conta principal</option>
@@ -441,7 +441,7 @@
         <option value="selecionados">Selecionados · pessoas específicas</option>
       </select></div>
       <fieldset class="family-fieldset" id="family-visibility-users" hidden><legend>Usuários autorizados</legend></fieldset>
-      <p class="notice">Acesso controlado pelo servidor. Ser pagador ou beneficiário não libera outros registros.</p>
+      <p class="notice" id="family-visibility-explanation">O acesso é controlado pelo servidor. A participação em um rateio não libera dados privados.</p>
       <div class="dialog-actions"><button type="button" class="btn ghost" data-family-close>Cancelar</button><button class="btn primary" type="submit">Salvar privacidade</button></div>
     </form>
   </dialog>
@@ -523,7 +523,7 @@
   <script src="/assets/banking.js?v=mobile-audit-r1" defer></script>
   <script src="/assets/banking-advanced.js?v=bank-v4-advanced" defer></script>
   <script src="/assets/brand-kit.js?v=brand-icon-flash-r1" defer></script>
-  <script src="/assets/family.js?v=wallet-payer-filter-r1" defer></script>
+  <script src="/assets/family.js?v=profile-directory-privacy-r1" defer></script>
   <script src="/assets/ios-pwa-stability.js?v=20261116-dialog-stable-r2" defer></script>
 </body>
 </html>

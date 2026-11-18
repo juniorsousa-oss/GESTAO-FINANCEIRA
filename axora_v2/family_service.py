@@ -227,6 +227,30 @@ def accessible_profiles(user):
     ]
 
 
+
+def directory_profiles(user):
+    """Família visível a cada login; não concede visibilidade financeira.
+
+    Nem participação em rateios nem conhecimento de IDs concede permissão
+    para mostrar nome, vínculo ou a existência de outro perfil.
+    """
+    ctx = user.get("_family")
+    if not ctx:
+        raise HTTPException(503, "Gestão familiar indisponível.")
+    listed = profiles(user)
+    if ctx["role"] == "principal":
+        tags = visibility_map(ctx, "perfil", [x["id"] for x in listed])
+        return [{**item,
+                 "visibility_label": tags.get(int(item["id"]), {}).get("label", "privado"),
+                 "visibility_viewers": tags.get(int(item["id"]), {}).get("granted_user_ids", [])}
+                for item in listed if item.get("active")]
+    tags = visibility_map(ctx, "perfil", [x["id"] for x in listed])
+    return [{"id": x["id"], "display_name": x["display_name"],
+             "relationship": x["relationship"], "active": True}
+            for x in listed if x.get("active") and
+            (int(x["id"]) == int(ctx["profile_id"]) or
+             visible(ctx, "perfil", x["id"], tag=tags.get(int(x["id"]))))]
+
 def check_profile_ids(ctx, profile_ids):
     listed = profiles({"_family": ctx})
     known = {int(p["id"]) for p in listed if p.get("active")}
@@ -236,7 +260,8 @@ def check_profile_ids(ctx, profile_ids):
 
 def check_resource(ctx, kind, resource_id):
     tables = {"registro": "finance_movements", "provisao": "finance_provision_rules",
-              "conta": "finance_bank_accounts", "transacao": "finance_bank_transactions"}
+              "conta": "finance_bank_accounts", "transacao": "finance_bank_transactions",
+              "perfil": "finance_family_profiles"}
     name = tables.get(kind)
     if not name:
         raise HTTPException(422, "Tipo de recurso inválido.")
