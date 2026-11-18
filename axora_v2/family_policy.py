@@ -8,7 +8,7 @@ from fastapi import HTTPException
 
 ROLES = frozenset({"principal", "conjuge", "pai", "mae", "filho", "sogro", "tio", "outro"})
 LABELS = frozenset({"privado", "casal", "familia", "selecionados"})
-RESOURCE_KINDS = frozenset({"registro", "provisao", "conta", "transacao"})
+RESOURCE_KINDS = frozenset({"registro", "provisao", "conta", "transacao", "perfil"})
 MAX_CENTS = 10**14
 
 
