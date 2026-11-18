@@ -317,11 +317,12 @@ const AxoraFamily = (() => {
     const uid=Number(p.id);
     return '<details class="family-member-menu axora-action-menu" data-family-profile-id="'+uid+'">'+
       '<summary aria-expanded="false" aria-label="Opções do membro '+esc(p.display_name)+'" title="Ações do membro">⋮</summary>'+
-      '<div class="family-member-menu-panel axora-action-menu-panel"><div class="family-member-role">'+
-      '<label for="family-role-'+uid+'">Vínculo familiar</label>'+
-      '<select id="family-role-'+uid+'" data-family-role="'+uid+'">'+
-      relationshipOptions(p.relationship)+'</select>'+
-      '<button type="button" class="btn ghost small" data-family-action="save-relationship" data-id="'+uid+'">Salvar vínculo</button></div>'+
+      '<div class="family-member-menu-panel axora-action-menu-panel">'+
+      (p.relationship==="principal"?"":'<div class="family-member-role">'+
+        '<label for="family-role-'+uid+'">Vínculo familiar</label>'+
+        '<select id="family-role-'+uid+'" data-family-role="'+uid+'">'+
+        relationshipOptions(p.relationship)+'</select>'+
+        '<button type="button" class="btn ghost small" data-family-action="save-relationship" data-id="'+uid+'">Salvar vínculo</button></div>')+
       '<button type="button" class="btn ghost small" data-family-action="set-visibility" '+
         'data-resource="perfil" data-id="'+uid+'" data-label="'+esc(p.visibility_label||"privado")+'">Visibilidade: '+
         esc(labels[p.visibility_label]||"Privado")+'</button>'+
@@ -487,7 +488,7 @@ const AxoraFamily = (() => {
     form.querySelector("#family-visibility-explanation").textContent=kind==="perfil"?
       "Esta permissão mostra somente nome e vínculo familiar. Não autoriza visualizar contas, saldos, receitas, despesas ou registros financeiros.":
       "O acesso ao registro é controlado pelo servidor. Ser pagador ou beneficiário não libera outros registros.";
-    form.querySelector("#family-visibility-users").innerHTML=people().filter(p=>p.linked_user_id&&p.relationship!=="principal").map(p=>
+    form.querySelector("#family-visibility-users").innerHTML=people().filter(p=>p.linked_user_id&&p.relationship!=="principal"&&(kind!=="perfil"||Number(p.id)!==id)).map(p=>
       '<label class="family-check-row"><input type="checkbox" name="viewer" value="'+Number(p.linked_user_id)+'" '+
       (granted.has(Number(p.linked_user_id))?'checked':'')+'>'+
       esc(p.display_name)+'</label>').join("")||'<p>Nenhum usuário secundário vinculado.</p>';
