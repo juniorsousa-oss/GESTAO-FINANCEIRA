@@ -141,6 +141,7 @@ function output(input){
   ctx.me.family_role="conjuge";
   assert.throws(()=>output(form("wallet",[],[rowBank(10,99.07)])),/Somente o usuário principal/);
   // Receita: cartão histórico não movimenta saldo e débito permanece independente.
+  ctx.me.family_role="principal";
   function incomeRow(id,amount){
     const state={account:{value:String(id)},amount:{value:String(amount)},hint:{textContent:""}};
     return {state,querySelector(sel){
