@@ -22,7 +22,7 @@ def test_payment_form_has_only_one_payment_stage():
     assert 'family.js?v=income-wallet-20261119-r1' in html
     assert 'form.querySelector("#family-manual-payer-list").replaceChildren()' in js
     assert 'manualAddPayer(form,true)' in js
-    assert 'const {payments,accountSources}=paymentAllocation(form)' in js
+    assert 'const {payments,accountSources:expenseSources}=paymentAllocation(form)' in js
     assert 'data-wallet-payer' in js
     assert 'data-family-pagador' not in js
     assert 'form.querySelectorAll("#family-wallet-source-list .family-wallet-source")' in js
@@ -34,7 +34,7 @@ def test_cost_split_and_existing_backend_contract_remain_separate():
     js=(ROOT/"static/family.js").read_text()
     assert 'entryRows("cost",null,config.shares)' in js
     assert 'walletPaymentSources(form)' in js
-    assert 'accountSources!==null' in js
+    assert 'const useWallet=accountSources!==null' in js
     assert 'body.account_sources=accountSources' in js
     assert 'body.balance_mode="wallet"' in js
     assert 'body.request_id=form.dataset.walletRequestId' in js
