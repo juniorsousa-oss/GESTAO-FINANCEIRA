@@ -246,7 +246,7 @@ function actionButtons(){
   // Dashboard é exclusivamente de leitura; cadastros e rateios ficam nos módulos.
   // Rateio somente nos módulos de movimentação. Dashboard conserva ações gerais existentes.
   if(me?.family_enabled && page==="movements")
-    return '<button class="btn primary btn-strong" data-family-action="new-expense">'+interfaceIcon("plus")+'<span>Movimentação com rateio</span></button>';
+    return '<button class="btn primary btn-strong" data-family-action="new-expense">'+interfaceIcon("plus")+'<span>Adicionar registro</span></button>';
   if(me?.family_enabled && me.family_role!=="principal" && page==="provisions")return "";
   if(page==="bank-accounts")return '<button class="btn ghost btn-secondary" data-action="bank-transfer-open">'+interfaceIcon("wallet")+'<span>Transferir saldo</span></button>'+
     '<button class="btn primary btn-strong" data-action="bank-new-account">'+interfaceIcon("plus")+'<span>Nova conta</span></button>';
