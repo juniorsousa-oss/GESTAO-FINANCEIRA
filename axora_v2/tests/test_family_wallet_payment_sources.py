@@ -146,7 +146,7 @@ def test_ui_account_selection_and_no_balance_are_explicit():
     assert 'body.account_sources=accountSources' in js
     assert 'form.dataset.walletRequestId=crypto.randomUUID()' in js
     assert "walletAvailableAccounts()" in js
-    assert 'family.css?v=profile-directory-privacy-r1' in html
+    assert 'family.css?v=income-wallet-20261119-r1' in html
     assert '.family-wallet-source{' in css
     assert 'axora_family_record_from_wallet' in sql
     assert 'axora_family_pay_provision_from_wallet' in sql
@@ -155,3 +155,111 @@ def test_ui_account_selection_and_no_balance_are_explicit():
     assert 'a.manual_balance>=s.amount' in sql
     assert 'ALTER TABLE public.' not in sql
     assert 'DROP TABLE' not in sql and 'TRUNCATE' not in sql
+
+
+def income_payload(balance=False, *, recipient=7):
+    body={"date":"2026-11-19","description":"Salário histórico",
+          "value":120,"classification":"ENTRADA","category":"Salário",
+          "label":"privado","costs":[{"profile_id":recipient,"percentage":100}],
+          "payments":[]}
+    if balance:
+        body.update(balance_mode="wallet",request_id=str(uuid4()),
+                    account_sources=[{"profile_id":recipient,"account_id":101,"amount":65},
+                                     {"profile_id":recipient,"account_id":102,"amount":55}])
+    return body
+
+
+def test_income_credit_amounts_validate_recipient_ownership_duplicates_and_exact_cents():
+    sources=income_payload(True)["account_sources"]
+    assert family_policy.validate_income_wallet_sources(120,7,sources)==[
+        {"profile_id":7,"account_id":101,"amount":"65.00"},
+        {"profile_id":7,"account_id":102,"amount":"55.00"}]
+    invalid=[
+        sources[:1],[sources[0],dict(sources[1],account_id=101)],
+        [dict(sources[0],profile_id=8),sources[1]],
+        [dict(sources[0],amount=65.001),sources[1]],
+        [dict(sources[0],account_id=0),sources[1]],
+        "bad",
+    ]
+    for entry in invalid:
+        with pytest.raises(HTTPException) as err:
+            family_policy.validate_income_wallet_sources(120,7,entry)
+        assert err.value.status_code==422
+
+
+def test_income_history_is_record_only_and_wallet_increases_balance_via_atomic_rpc(monkeypatch):
+    setup_family(monkeypatch)
+    calls=[]
+    def fake_call(method,table,*,params=None,data=None,prefer=None):
+        calls.append((table,data))
+        if table=="rpc/axora_family_record":return {"ok":True,"movement_id":21}
+        if table=="rpc/axora_family_record_income_to_wallet":
+            return {"ok":True,"movement_id":22,"balance_credited":True}
+        raise AssertionError(table)
+    monkeypatch.setattr(db,"call",fake_call)
+    with TestClient(app) as client:
+        history=client.post("/api/family/transactions",headers=HEADERS,json=income_payload())
+        assert history.status_code==200,history.text
+        assert calls[-1][0]=="rpc/axora_family_record"
+        assert "p_sources" not in calls[-1][1]
+        current=income_payload(True)
+        credited=client.post("/api/family/transactions",headers=HEADERS,json=current)
+        assert credited.status_code==200,credited.text
+        assert credited.json()["balance_credited"] is True
+        assert calls[-1][0]=="rpc/axora_family_record_income_to_wallet"
+        assert calls[-1][1]["p_payments"]==[]
+        assert calls[-1][1]["p_sources"]==[
+          {"profile_id":7,"account_id":101,"amount":"65.00"},
+          {"profile_id":7,"account_id":102,"amount":"55.00"}]
+        assert calls[-1][1]["p_request_id"]==current["request_id"]
+
+
+def test_income_credit_rejected_for_secondary_and_invalid_splits(monkeypatch):
+    setup_family(monkeypatch)
+    calls=[]
+    monkeypatch.setattr(db,"call",lambda *a,**k:calls.append((a,k)))
+    with TestClient(app) as client:
+        invalid=income_payload(True)
+        invalid["account_sources"][0]["amount"]=60
+        assert client.post("/api/family/transactions",headers=HEADERS,json=invalid).status_code==422
+        invalid=income_payload(True)
+        invalid["account_sources"][0]["profile_id"]=8
+        assert client.post("/api/family/transactions",headers=HEADERS,json=invalid).status_code==422
+        invalid=income_payload(True)
+        invalid["request_id"]="bad"
+        assert client.post("/api/family/transactions",headers=HEADERS,json=invalid).status_code==422
+        invalid=income_payload(True)
+        invalid["costs"]=[{"profile_id":7,"percentage":50},{"profile_id":8,"percentage":50}]
+        assert client.post("/api/family/transactions",headers=HEADERS,json=invalid).status_code==422
+        assert client.post("/api/family/transactions",json=income_payload(True)).status_code==403
+    assert calls==[]
+    setup_family(monkeypatch,role="conjuge")
+    with TestClient(app) as client:
+        assert client.post("/api/family/transactions",headers=HEADERS,json=income_payload(True)).status_code==403
+    assert calls==[]
+
+
+def test_income_wallet_ui_migration_and_record_button_contract():
+    index=(ROOT/"static/index.html").read_text()
+    js=(ROOT/"static/family.js").read_text()
+    app=(ROOT/"static/app.js").read_text()
+    sql=(ROOT/"migrations/20261119_income_wallet_credits.sql").read_text()
+    assert '<span>Adicionar registro</span>' in app
+    assert 'name="income_balance_mode" value="none" checked' in index
+    assert 'name="income_balance_mode" value="wallet"' in index
+    assert 'id="family-income-wallet-source-list"' in index
+    assert 'data-income-wallet-account' in js
+    assert 'incomeWalletSources(form)' in js
+    assert 'accountSources=classification==="ENTRADA"?incomeWalletSources(form)' in js
+    assert "axora_family_record_income_to_wallet" in sql
+    assert "manual_balance=manual_balance+v_row.amount" in sql
+    assert "pg_advisory_xact_lock" in sql
+    assert "FOR UPDATE OF a" in sql
+    assert "SELECT movement_id INTO v_prior" in sql
+    assert "p_payments" in sql
+    assert "h.family_profile_id=v_profile" in sql
+    assert "pluggy_account_id IS NULL" in sql
+    assert "finance_family_balance_credits" in sql
+    assert "finance_family_balance_credit_sources" in sql
+    assert "public.finance_movements" not in sql
+    assert "TRUNCATE" not in sql and "DELETE FROM" not in sql

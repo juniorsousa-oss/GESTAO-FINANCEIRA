@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AXORA">
   <link rel="manifest" href="/assets/pwa/manifest.json">
-  <link rel="stylesheet" href="/assets/family.css?v=profile-directory-privacy-r1">
+  <link rel="stylesheet" href="/assets/family.css?v=income-wallet-20261119-r1">
   <link rel="apple-touch-icon" sizes="192x192" href="/assets/pwa/icon-192.png">
   <meta name="description" content="AXORA — inteligência e controle financeiro, by Nexon Labs.">
   <title>AXORA | Acesso</title>
@@ -438,6 +438,23 @@
         <select id="family-income-recipient" name="income_profile_id"></select>
         <small>O valor integral pertence a esta pessoa; receitas não têm rateio percentual.</small>
       </div>
+      <fieldset class="family-fieldset family-wallet-fieldset" id="family-income-wallet-fieldset" hidden>
+        <legend>Atualizar saldo com esta entrada?</legend>
+        <p class="family-wallet-hint">Escolha se o recebimento já está incluído nos saldos atuais ou se o dinheiro está entrando agora.</p>
+        <div class="family-wallet-mode" role="radiogroup" aria-label="Atualização de saldo da entrada">
+          <label><input type="radio" name="income_balance_mode" value="none" checked> Não atualizar saldo <small>Histórico, lançamento retroativo ou saldo já atualizado</small></label>
+          <label data-income-wallet-allowed><input type="radio" name="income_balance_mode" value="wallet"> Adicionar ao saldo da carteira <small>Selecione uma ou mais contas de destino do recebedor e os valores creditados</small></label>
+        </div>
+        <div id="family-income-wallet-details" hidden>
+          <p class="family-wallet-hint">Selecione uma conta de quem recebeu. A primeira sugere o valor total; se quiser distribuir entre contas, adicione outra.</p>
+          <div id="family-income-wallet-source-list" class="family-wallet-source-list"></div>
+          <div class="family-wallet-toolbar">
+            <button type="button" class="btn ghost small" id="family-income-add-account">+ Adicionar outra conta</button>
+            <output id="family-income-wallet-total" aria-live="polite"></output>
+          </div>
+          <small>Somente o saldo manual disponível das contas escolhidas será acrescido. Investimentos e integrações automáticas não serão alterados.</small>
+        </div>
+      </fieldset>
       <fieldset class="family-fieldset" id="family-cost-fieldset"><legend>Para quem é este valor? (100%)</legend><div id="family-cost-list"></div><small>Este campo atribui custo ou receita. Não concede acesso ao registro.</small></fieldset>
       <fieldset class="family-fieldset family-wallet-fieldset" data-family-wallet hidden>
         <legend>Como foi pago?</legend>
@@ -553,7 +570,7 @@
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/assets/action-menus.js?v=global-overlays-r1" defer></script>
-  <script src="/assets/app.js?v=mobile-audit-r1" defer></script>
+  <script src="/assets/app.js?v=add-registro-20261119-r1" defer></script>
   <script src="/assets/debts.js?v=debt-portfolio-r1" defer></script>
   <script src="/assets/provisions.js?v=mobile-audit-r1" defer></script>
   <script src="/assets/catalogs.js?v=split-modes-r1" defer></script>
@@ -561,7 +578,7 @@
   <script src="/assets/banking.js?v=mobile-audit-r1" defer></script>
   <script src="/assets/banking-advanced.js?v=bank-v4-advanced" defer></script>
   <script src="/assets/brand-kit.js?v=brand-icon-flash-r1" defer></script>
-  <script src="/assets/family.js?v=profile-directory-privacy-r1" defer></script>
+  <script src="/assets/family.js?v=income-wallet-20261119-r1" defer></script>
   <script src="/assets/ios-pwa-stability.js?v=20261118-pix-date-r1" defer></script>
 </body>
 </html>

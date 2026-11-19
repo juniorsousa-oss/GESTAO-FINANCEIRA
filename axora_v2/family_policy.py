@@ -118,3 +118,34 @@ def validate_wallet_sources(value, payments, sources):
         raise HTTPException(422,
             "As contas de cada pessoa devem totalizar o valor que ela pagou.")
     return result
+
+
+def validate_income_wallet_sources(value, recipient_profile_id, sources):
+    """Destino da receita: uma ou mais contas do recebedor, sem rateio de receita.
+
+    Validação de centavos e contas duplicadas no servidor; o PostgreSQL revalida
+    workspace, titularidade, modo manual e valor sob locks transacionais.
+    """
+    total = amount_cents(value)
+    if type(recipient_profile_id) is not int or recipient_profile_id <= 0:
+        raise HTTPException(422, "Recebedor inválido.")
+    if not isinstance(sources, list) or not (1 <= len(sources) <= 50):
+        raise HTTPException(422, "Selecione de 1 a 50 contas para creditar a entrada.")
+    used = set()
+    credited = 0
+    result = []
+    for src in sources:
+        if not isinstance(src, dict) or set(src) != {"profile_id", "account_id", "amount"}:
+            raise HTTPException(422, "Informe responsável, conta e valor de cada crédito.")
+        pid, aid = src["profile_id"], src["account_id"]
+        if (type(pid) is not int or pid != recipient_profile_id or
+                type(aid) is not int or aid <= 0 or aid in used):
+            raise HTTPException(422, "Conta repetida, inválida ou diferente do recebedor.")
+        used.add(aid)
+        cents = amount_cents(src["amount"], name="Crédito")
+        credited += cents
+        result.append({"profile_id": pid, "account_id": aid,
+                       "amount": f"{Decimal(cents) / 100:.2f}"})
+    if credited != total:
+        raise HTTPException(422, "As contas de destino devem somar o valor total da entrada.")
+    return result

@@ -5,7 +5,7 @@ const path=require("node:path");
 const vm=require("node:vm");
 const assert=require("node:assert/strict");
 const original=fs.readFileSync(path.join(__dirname,"../static/family.js"),"utf8");
-const injection="return {__test:{paymentAllocation,paymentCents,manualPayments,walletPaymentSources,walletPayerOptions,walletAccountOptions,walletChooseAccount},load,page:pageHtml";
+const injection="return {__test:{paymentAllocation,paymentCents,manualPayments,walletPaymentSources,walletPayerOptions,walletAccountOptions,walletChooseAccount,incomeWalletSources,incomeAccounts,incomeChooseAccount},load,page:pageHtml";
 assert.ok(original.includes("return {load,page:pageHtml"),"Contrato de exportação não encontrado");
 const source=original.replace("return {load,page:pageHtml",injection);
 const members=[
@@ -140,5 +140,56 @@ function output(input){
   // Secundário não pode movimentar conta, mesmo simulando o radio ativo.
   ctx.me.family_role="conjuge";
   assert.throws(()=>output(form("wallet",[],[rowBank(10,99.07)])),/Somente o usuário principal/);
+  // Receita: cartão histórico não movimenta saldo e débito permanece independente.
+  ctx.me.family_role="principal";
+  function incomeRow(id,amount){
+    const state={account:{value:String(id)},amount:{value:String(amount)},hint:{textContent:""}};
+    return {state,querySelector(sel){
+      if(sel==="[data-income-wallet-account]")return state.account;
+      if(sel==="[data-income-wallet-amount]")return state.amount;
+      if(sel===".family-wallet-balance")return state.hint;
+      throw Error("unexpected income selector "+sel);
+    }};
+  }
+  function incomeForm(mode,rows,recipient=1,value=99.07){
+    return {
+      elements:{classification:{value:"ENTRADA"},income_profile_id:{value:String(recipient)},
+        value:{value:String(value)}},
+      querySelector(sel){
+        if(sel==='[name="income_balance_mode"]:checked')return {value:mode};
+        if(sel==="#family-income-wallet-total")return {dataset:{},textContent:""};
+        throw Error("unexpected income form selector "+sel);
+      },
+      querySelectorAll(sel){
+        if(sel==="#family-income-wallet-source-list .family-wallet-source")return rows;
+        throw Error("unexpected income list selector "+sel);
+      }
+    };
+  }
+  function incomeOutput(form){
+    return JSON.parse(JSON.stringify(
+      vm.runInContext("AxoraFamily.__test.incomeWalletSources(incomeForm)",Object.assign(ctx,{incomeForm:form}))));
+  }
+  assert.equal(incomeOutput(incomeForm("none",[])),null);
+  assert.deepEqual(incomeOutput(incomeForm("wallet",[incomeRow(10,55),incomeRow(12,44.07)])),[
+    {profile_id:1,account_id:10,amount:55},
+    {profile_id:1,account_id:12,amount:44.07}]);
+  assert.throws(()=>incomeOutput(incomeForm("wallet",[incomeRow(11,99.07)])),/contas distintas do recebedor/);
+  assert.throws(()=>incomeOutput(incomeForm("wallet",[incomeRow(10,55),incomeRow(10,44.07)])),/contas distintas/);
+  assert.throws(()=>incomeOutput(incomeForm("wallet",[incomeRow(10,15)])),/somar/);
+  const recebedor2=vm.runInContext("AxoraFamily.__test.incomeAccounts(incomeForm)",Object.assign(ctx,{
+    incomeForm:incomeForm("wallet",[],2)}));
+  assert.deepEqual(Array.from(recebedor2.map(x=>x.id)),[11]);
+  const incomeSingle=incomeRow(10,"");
+  const firstIncomeForm=incomeForm("wallet",[incomeSingle]);
+  Object.assign(ctx,{incomeForm:firstIncomeForm,incomeRow:incomeSingle});
+  vm.runInContext("AxoraFamily.__test.incomeChooseAccount(incomeForm,incomeRow)",ctx);
+  assert.equal(incomeSingle.state.amount.value,"99.07");
+  const custom=incomeRow(10,"37.15");
+  Object.assign(ctx,{incomeForm:incomeForm("wallet",[custom]),incomeRow:custom});
+  vm.runInContext("AxoraFamily.__test.incomeChooseAccount(incomeForm,incomeRow)",ctx);
+  assert.equal(custom.state.amount.value,"37.15");
+  ctx.me.family_role="conjuge";
+  assert.throws(()=>incomeOutput(incomeForm("wallet",[incomeRow(10,99.07)])),/Somente o principal/);
   console.log("AXORA: pagamento único por pagador ou conta, 10 cenários validados");
 })().catch(err=>{console.error(err);process.exitCode=1});
