@@ -199,6 +199,84 @@ const AxoraFamily = (() => {
     output.textContent="Contas: "+money(total/100)+" de "+money((expected||0)/100)+
       (valid?"":" · confira os valores");
   }
+  // Entradas possuem um único recebedor; conta de destino deve ser dele.
+  // É possível dividir a mesma entrada entre contas distintas desse perfil.
+  function incomeAccounts(form){
+    const profileId=Number(form.elements.income_profile_id.value);
+    return walletAvailableAccounts().filter(a=>a.profile_id===profileId);
+  }
+  function incomeAddSource(form){
+    const accounts=incomeAccounts(form);
+    if(!accounts.length){
+      showToast("Nenhuma conta manual do recebedor está disponível para crédito.",true);
+      return;
+    }
+    const row=document.createElement("div");
+    row.className="family-wallet-source";
+    row.innerHTML='<label>Conta de destino<select data-income-wallet-account aria-label="Conta para receber a entrada">'+
+      '<option value="">Selecione uma conta</option>'+
+      accounts.map(a=>'<option value="'+a.id+'">'+esc(a.label)+' — '+esc(money(a.balance))+
+        '</option>').join("")+'</select></label>'+
+      '<label>Valor recebido (R$)<input data-income-wallet-amount type="number" '+
+      'inputmode="decimal" min="0.01" step="0.01" placeholder="0,00" '+
+      'aria-label="Valor a creditar na conta"></label>'+
+      '<button type="button" data-income-wallet-remove aria-label="Remover conta de destino">×</button>'+
+      '<small class="family-wallet-balance">Selecione a conta para receber a entrada.</small>';
+    form.querySelector("#family-income-wallet-source-list").appendChild(row);
+    incomeTotals(form);
+  }
+  function incomeChooseAccount(form,row){
+    const account=incomeAccounts(form).find(a=>a.id===Number(row.querySelector("[data-income-wallet-account]").value));
+    const amount=row.querySelector("[data-income-wallet-amount]");
+    if(account && form.querySelectorAll("#family-income-wallet-source-list .family-wallet-source").length===1 &&
+       !amount.value.trim() && paymentCents(form.elements.value.value)!==null){
+      amount.value=Number(form.elements.value.value).toFixed(2);
+    }
+    incomeTotals(form);
+  }
+  function incomeTotals(form){
+    const accounts=new Map(incomeAccounts(form).map(a=>[a.id,a]));
+    const rows=[...form.querySelectorAll("#family-income-wallet-source-list .family-wallet-source")];
+    let total=0,valid=rows.length>0;
+    const ids=[];
+    for(const row of rows){
+      const id=Number(row.querySelector("[data-income-wallet-account]").value);
+      const account=accounts.get(id);
+      const cents=paymentCents(row.querySelector("[data-income-wallet-amount]").value);
+      ids.push(id);total+=cents||0;
+      if(!account||cents===null)valid=false;
+      row.querySelector(".family-wallet-balance").textContent=account?
+        "Saldo atual: "+money(account.balance)+" · Após crédito: "+money(account.balance+(cents||0)/100):
+        "Selecione uma conta deste recebedor.";
+    }
+    const expected=paymentCents(form.elements.value.value);
+    valid=valid && expected!==null && total===expected && new Set(ids).size===ids.length;
+    const output=form.querySelector("#family-income-wallet-total");
+    output.dataset.invalid=String(!valid);
+    output.textContent="Créditos: "+money(total/100)+" de "+money((expected||0)/100)+
+      (valid?"":" · confira os valores");
+  }
+  function incomeWalletSources(form){
+    if(form.elements.classification.value!=="ENTRADA" ||
+       form.querySelector('[name="income_balance_mode"]:checked')?.value!=="wallet")return null;
+    if(!own())throw Error("Somente o principal pode atualizar saldos.");
+    const profile_id=Number(form.elements.income_profile_id.value);
+    const accounts=new Map(incomeAccounts(form).map(a=>[a.id,a]));
+    const used=new Set(),sources=[];
+    let total=0;
+    for(const row of form.querySelectorAll("#family-income-wallet-source-list .family-wallet-source")){
+      const account_id=Number(row.querySelector("[data-income-wallet-account]").value);
+      const account=accounts.get(account_id);
+      const cents=paymentCents(row.querySelector("[data-income-wallet-amount]").value);
+      if(!account||account.profile_id!==profile_id||cents===null||used.has(account_id))
+        throw Error("Selecione contas distintas do recebedor e valores positivos.");
+      used.add(account_id);total+=cents;
+      sources.push({profile_id,account_id,amount:cents/100});
+    }
+    if(!sources.length||total!==paymentCents(form.elements.value.value))
+      throw Error("Os créditos precisam somar exatamente o valor da entrada.");
+    return sources;
+  }
   function walletUpdateMode(form){
     const expense=form.elements.classification.value==="SAÍDA";
     const income=form.querySelector("#family-income-recipient-wrap");
@@ -209,6 +287,18 @@ const AxoraFamily = (() => {
       "Pagar provisão com rateio":expense?"Novo lançamento com rateio":"Nova entrada";
     form.querySelector('[type="submit"]').textContent=expense?"Salvar rateio":"Salvar entrada";
     form.querySelector("[data-family-wallet]").hidden=!expense;
+    form.querySelector("#family-income-wallet-fieldset").hidden=expense;
+    const incomeChoice=form.querySelector('[name="income_balance_mode"][value="wallet"]');
+    const incomeAvailable=own()&&incomeAccounts(form).length>0;
+    incomeChoice.disabled=!incomeAvailable;
+    incomeChoice.closest("label").hidden=!own();
+    if(!incomeAvailable&&incomeChoice.checked)
+      form.querySelector('[name="income_balance_mode"][value="none"]').checked=true;
+    const incomeWallet=!expense&&incomeAvailable&&incomeChoice.checked;
+    form.querySelector("#family-income-wallet-details").hidden=!incomeWallet;
+    if(incomeWallet&&!form.querySelector("#family-income-wallet-source-list .family-wallet-source"))
+      incomeAddSource(form);
+    if(incomeWallet)incomeTotals(form);
     const available=own()&&walletAvailableAccounts().length>0;
     const choice=form.querySelector('[name="balance_mode"][value="wallet"]');
     choice.disabled=!available;
@@ -264,6 +354,7 @@ const AxoraFamily = (() => {
   function initExpense(form,config={}){
     form.reset();
     form.querySelector("#family-wallet-source-list").replaceChildren();
+    form.querySelector("#family-income-wallet-source-list").replaceChildren();
     form.querySelector("#family-manual-payer-list").replaceChildren();
     form.dataset.walletRequestId=crypto.randomUUID();
     form.dataset.occurrenceId=config.occurrence_id||"";
@@ -520,7 +611,8 @@ const AxoraFamily = (() => {
         ({id:Number(x.dataset.familyBeneficiario),value:Number(x.value)})),"percentage");
     if(classification==="SAÍDA"&&Math.abs(costs.reduce((n,x)=>n+x.percentage,0)-100)>.001)
       throw Error("Beneficiários devem somar exatamente 100%.");
-    const {payments,accountSources}=paymentAllocation(form);
+    const {payments,accountSources:expenseSources}=paymentAllocation(form);
+    const accountSources=classification==="ENTRADA"?incomeWalletSources(form):expenseSources;
     const useWallet=accountSources!==null;
     const occurrenceId=Number(form.dataset.occurrenceId||0);
     if(occurrenceId&&!confirm(useWallet?
@@ -544,7 +636,9 @@ const AxoraFamily = (() => {
     if(useWallet&&typeof loadBanking==="function")await loadBanking(true);
     if(occurrenceId&&typeof loadProvisions==="function")await loadProvisions();
     await load(true);
-    showToast(useWallet?"Pagamento salvo e saldos das contas atualizados.":"Registro salvo sem movimentar os saldos.");
+    showToast(useWallet?(classification==="ENTRADA"?
+      "Entrada salva e saldos das contas atualizados.":"Pagamento salvo e saldos das contas atualizados."):
+      "Registro salvo sem movimentar os saldos.");
   }
   document.addEventListener("DOMContentLoaded",()=>{
     document.addEventListener("click",e=>{
@@ -606,8 +700,14 @@ const AxoraFamily = (() => {
     });
     $("#family-entry-form").addEventListener("change",e=>{
       const form=e.target.form;
-      if(e.target.name==="classification"||e.target.name==="balance_mode")
+      if(e.target.name==="income_profile_id"){
+        form.querySelector("#family-income-wallet-source-list").replaceChildren();
         walletUpdateMode(form);
+      }
+      if(e.target.name==="classification"||e.target.name==="balance_mode"||
+         e.target.name==="income_balance_mode")walletUpdateMode(form);
+      if(e.target.matches("[data-income-wallet-account]"))
+        incomeChooseAccount(form,e.target.closest(".family-wallet-source"));
       if(e.target.matches("[data-wallet-payer]"))
         walletChoosePayer(form,e.target.closest(".family-wallet-source"));
       if(e.target.matches("[data-wallet-account]"))
@@ -622,6 +722,13 @@ const AxoraFamily = (() => {
       manualTotals($("#family-entry-form"));
     });
     $("#family-wallet-add-source").addEventListener("click",()=>walletAddSource($("#family-entry-form")));
+    $("#family-income-add-account").addEventListener("click",()=>incomeAddSource($("#family-entry-form")));
+    $("#family-income-wallet-source-list").addEventListener("click",e=>{
+      const btn=e.target.closest("[data-income-wallet-remove]");
+      if(!btn)return;
+      btn.closest(".family-wallet-source").remove();
+      incomeTotals($("#family-entry-form"));
+    });
     $("#family-wallet-source-list").addEventListener("click",e=>{
       const btn=e.target.closest("[data-wallet-remove]");
       if(!btn)return;
@@ -639,12 +746,14 @@ const AxoraFamily = (() => {
         }
         manualTotals(form);
         walletTotals(form);
+        incomeTotals(form);
       }
       if(e.target.matches("[data-manual-amount]")){
         e.target.dataset.customAmount="true";
         manualTotals(form);
       }
       if(e.target.matches("[data-wallet-amount]"))walletTotals(form);
+      if(e.target.matches("[data-income-wallet-amount]"))incomeTotals(form);
     });
     $("#family-entry-form").addEventListener("submit",e=>{
       e.preventDefault();const btn=e.target.querySelector('button[type="submit"]');btn.disabled=true;
