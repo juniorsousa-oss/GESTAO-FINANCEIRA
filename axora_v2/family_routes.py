@@ -67,6 +67,27 @@ def _wallet_payload(payload, payments, amount, ctx):
                                                     payload["account_sources"])
     return {"p_request_id": str(uid), "p_sources": sources}
 
+def _income_wallet_payload(payload, costs, value, ctx):
+    """Crédito bancário apenas para titular principal e um único recebedor."""
+    if "balance_mode" not in payload:
+        return None
+    if payload["balance_mode"] != "wallet":
+        raise HTTPException(422, "Modo de atualização de saldo inválido.")
+    if ctx["role"] != "principal" or ctx["user_id"] != ctx["owner_id"]:
+        raise HTTPException(403, "Somente o usuário principal pode creditar saldos.")
+    if len(costs) != 1:
+        raise HTTPException(422, "A entrada deve ter apenas um recebedor.")
+    try:
+        uid = UUID(str(payload["request_id"]))
+        if uid.version != 4 or str(uid) != str(payload["request_id"]):
+            raise ValueError
+    except (ValueError, TypeError, KeyError):
+        raise HTTPException(422, "Identificação do crédito inválida.") from None
+    sources = family_policy.validate_income_wallet_sources(
+        value, int(costs[0]["profile_id"]), payload.get("account_sources"))
+    return {"p_request_id": str(uid), "p_sources": sources}
+
+
 def _record_fields(data):
     if not isinstance(data, dict):
         raise HTTPException(422, "Informe os dados financeiros.")
@@ -264,11 +285,12 @@ def install(app, auth, authorized):
         family_policy.amount_cents(value)
         costs, payments = _allocations(value, payload["costs"], payload["payments"],
                                         payload["classification"], ctx)
-        wallet = _wallet_payload(payload, payments, value, ctx)
-        if wallet is not None and payload["classification"] != "SAÍDA":
-            raise HTTPException(422, "Somente despesas podem descontar da carteira.")
-        endpoint = ("rpc/axora_family_record_from_wallet" if wallet
-                    else "rpc/axora_family_record")
+        classification = payload["classification"]
+        wallet = (_wallet_payload(payload, payments, value, ctx)
+                  if classification == "SAÍDA"
+                  else _income_wallet_payload(payload, costs, value, ctx))
+        endpoint = ("rpc/axora_family_record_from_wallet" if classification == "SAÍDA"
+                    else "rpc/axora_family_record_income_to_wallet") if wallet else "rpc/axora_family_record"
         return db.call("POST", endpoint, data={
             "p_workspace_id": ctx["workspace_id"], "p_actor_id": ctx["user_id"],
             "p_movement_date": when, "p_description": description,
