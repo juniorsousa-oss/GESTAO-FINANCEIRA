@@ -107,6 +107,6 @@ def test_manual_delete_sql_contract_and_ui():
     assert 'id="family-manual-delete-wallet"' in html
     assert 'id="family-manual-delete-error" role="alert" hidden' in html
     assert 'openManualDeletion' in js
-    assert '"delete-preview"' in js
+    assert '"/delete-preview"' in js
     assert '"DELETE"' in js
     assert 'window.AxoraFamily.openManualDeletion' in appjs
