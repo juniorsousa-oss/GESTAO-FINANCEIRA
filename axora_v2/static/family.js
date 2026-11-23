@@ -641,6 +641,46 @@ const AxoraFamily = (() => {
       "Entrada salva e saldos das contas atualizados.":"Pagamento salvo e saldos das contas atualizados."):
       "Registro salvo sem movimentar os saldos.");
   }
+  async function undoProvisionPayment(occurrenceId){
+    if(!own())throw Error("Somente o usuário principal pode desfazer pagamentos.");
+    if(!Number.isSafeInteger(occurrenceId)||occurrenceId<1)
+      throw Error("Identificador da provisão inválido.");
+    const preview=await api("/api/family/provisions/"+occurrenceId+"/reversal-preview");
+    if(preview.bank_linked)
+      throw Error("Desfaça primeiro a conciliação bancária deste pagamento.");
+    let reference=null;
+    if(preview.needs_reference){
+      const original=prompt("Provisão variável: informe o valor de referência que existia ANTES deste pagamento (R$). A reversão atualizará os próximos vencimentos:");
+      if(original===null)return;
+      const normalized=String(original).trim().replace(/^R\\$\\s*/,"");
+      const value=Number(normalized.includes(",")?
+        normalized.replace(/\\./g,"").replace(",","."):normalized);
+      if(!Number.isFinite(value)||value<=0||value>999999999999.99||
+         Math.abs(Math.round(value*100)-value*100)>0.00001)
+        throw Error("Informe o valor anterior da provisão com até duas casas decimais.");
+      reference=value;
+    }
+    const refund=Number(preview.restored_wallet_amount||0);
+    const amount=Number(preview.paid_amount||0);
+    const note=preview.linked_existing_record?
+      "O registro original será preservado, apenas desvinculado da provisão.":
+      "O registro criado pela quitação será retirado do histórico ativo.";
+    const message="Desfazer o pagamento de "+money(amount)+" e reabrir a provisão?\\n\\n"+
+      note+(refund>0?"\\nO valor de "+money(refund)+" será devolvido às contas usadas.":"\\nNenhum saldo bancário será alterado.")+
+      "\\nA operação será registrada na auditoria.";
+    if(!confirm(message))return;
+    const body={confirm:true};
+    if(reference!==null)body.reference_value=reference;
+    const result=await api("/api/family/provisions/"+occurrenceId+"/undo",{
+      method:"POST",body:JSON.stringify(body)});
+    showToast("Pagamento desfeito. Provisão reaberta."+
+      (Number(result.restored_wallet_amount)>0?" Saldos restaurados.":""));
+    await refresh();
+    if(typeof loadBanking==="function"&&Number(result.restored_wallet_amount)>0)
+      await loadBanking(true);
+    if(typeof loadProvisions==="function"&&page==="provisions")await loadProvisions();
+    await load(true);
+  }
   document.addEventListener("DOMContentLoaded",()=>{
     document.addEventListener("click",e=>{
       // Impede o diálogo antigo de quitação quando o rateio familiar está ativo.
@@ -658,6 +698,14 @@ const AxoraFamily = (() => {
       const btn=e.target.closest("[data-family-action]");
       if(!btn)return;
       const action=btn.dataset.familyAction;
+      if(action==="undo-provision-payment"){
+        if(btn.disabled)return;
+        btn.disabled=true;
+        undoProvisionPayment(Number(btn.dataset.occurrenceId))
+          .catch(err=>showToast(err.message,true))
+          .finally(()=>{if(btn.isConnected)btn.disabled=false});
+        return;
+      }
       if(action==="retry")load(true);
       if(action==="new-expense")openEntry().catch(err=>showToast(err.message,true));
       if(action==="navigate-family")go("family");
