@@ -347,6 +347,37 @@ def install(app, auth, authorized):
             "p_amount": str(payload["amount"]), "p_label": payload["label"],
             "p_costs": costs, "p_payments": payments, **(wallet or {})})
 
+    @app.get("/api/family/provisions/{occurrence_id}/reversal-preview")
+    def preview_provision_payment_reversal(occurrence_id: int, user=Depends(auth)):
+        """Titular visualiza o impacto antes de desfazer uma quitacao."""
+        ctx = family_service.require_principal(user)
+        if occurrence_id < 1:
+            raise HTTPException(422, "Provisao invalida.")
+        return db.call("POST", "rpc/axora_family_reverse_payment_preview", data={
+            "p_workspace_id": ctx["workspace_id"],
+            "p_actor_id": ctx["user_id"],
+            "p_occurrence_id": occurrence_id,
+        })
+
+    @app.post("/api/family/provisions/{occurrence_id}/undo")
+    def undo_provision_payment(occurrence_id: int, payload: dict,
+                               user=Depends(authorized)):
+        """Estorno transacional e auditado no Supabase axora_beta."""
+        ctx = family_service.require_principal(user)
+        if occurrence_id < 1 or not isinstance(payload, dict) or \
+                payload.get("confirm") is not True or \
+                set(payload) - {"confirm", "reference_value"}:
+            raise HTTPException(422, "Confirme o estorno do pagamento.")
+        reference = payload.get("reference_value")
+        if reference is not None:
+            family_policy.amount_cents(reference)
+        return db.call("POST", "rpc/axora_family_reverse_provision_payment", data={
+            "p_workspace_id": ctx["workspace_id"],
+            "p_actor_id": ctx["user_id"],
+            "p_occurrence_id": occurrence_id,
+            "p_reference_value": str(reference) if reference is not None else None,
+        })
+
     @app.get("/api/family/summary")
     def family_summary(user=Depends(auth)):
         ctx = _context(user)
