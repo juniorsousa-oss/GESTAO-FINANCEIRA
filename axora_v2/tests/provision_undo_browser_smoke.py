@@ -64,7 +64,7 @@ with sync_playwright() as playwright:
         modal.wait_for(state="visible")
         assert tab.locator("#family-reversal-description").inner_text() == "Fotos Formatura"
         assert " ".join(tab.locator("#family-reversal-amount").inner_text().split()) == "R$ 91,05"
-        assert "R$ 91,05" in tab.locator("#family-reversal-wallet").inner_text()
+        assert "R$ 91,05" in " ".join(tab.locator("#family-reversal-wallet").inner_text().split())
         assert "retirado" in tab.locator("#family-reversal-record-note").inner_text()
         assert tab.locator("#family-reversal-reference-row").is_visible()
         assert tab.locator("#family-reversal-intro").is_visible()
