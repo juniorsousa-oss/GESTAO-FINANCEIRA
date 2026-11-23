@@ -18,8 +18,8 @@ def test_payment_form_has_only_one_payment_stage():
     assert 'Sem descontar saldo' in html
     assert 'Descontar da carteira' in html
     assert 'name="balance_mode" value="none" checked' in html
-    assert 'family.css?v=reversal-modal-premium-20261123-r1' in html
-    assert 'family.js?v=reversal-modal-premium-20261123-r1' in html
+    assert 'family.css?v=manual-delete-20261123-r1' in html
+    assert 'family.js?v=manual-delete-20261123-r1' in html
     assert 'form.querySelector("#family-manual-payer-list").replaceChildren()' in js
     assert 'manualAddPayer(form,true)' in js
     assert 'const {payments,accountSources:expenseSources}=paymentAllocation(form)' in js
