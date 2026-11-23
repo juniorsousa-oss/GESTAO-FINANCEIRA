@@ -128,3 +128,32 @@ def test_ui_renders_undo_only_for_principal():
     assert '"confirm":true' not in family_js  # request uses object semantics
     assert "const body={confirm:true}" in family_js
     assert '"/undo"' in family_js
+
+
+def test_reversal_uses_axora_dialog_instead_of_native_browser_prompts():
+    html = (ROOT / "static" / "index.html").read_text()
+    js = (ROOT / "static" / "family.js").read_text()
+    app_js = (ROOT / "static" / "app.js").read_text()
+    css = (ROOT / "static" / "family.css").read_text()
+    assert 'id="family-reversal-dialog"' in html
+    assert 'id="family-reversal-form"' in html
+    assert 'id="family-reversal-description"' in html
+    assert 'id="family-reversal-wallet"' in html
+    assert 'id="family-reversal-reference-row" hidden' in html
+    assert 'id="family-reversal-error" role="alert" hidden' in html
+    assert 'data-family-reversal-close' in html
+    assert 'data-provision-description=' in app_js
+    assert 'dialog.showModal()' in js
+    assert 'btn.dataset.provisionDescription' in js
+    assert 'reversalError(err.message)' in js
+    undo_js = js.split('  async function openProvisionReversal(', 1)[1].split(
+        '  document.addEventListener("DOMContentLoaded"', 1)[0]
+    assert 'confirm(' not in undo_js and 'prompt(' not in undo_js
+    assert 'textContent=String(description||"Provisão")' in undo_js
+    assert 'body={confirm:true}' in undo_js
+    assert 'reversalSaving=true' in undo_js
+    assert 'dialog.close()' in undo_js
+    assert '.family-reversal-dialog .family-reversal-reference[hidden]' in css
+    assert '@media(max-width:600px)' in css
+    assert 'family.css?v=reversal-modal-premium-20261123-r1' in html
+    assert 'family.js?v=reversal-modal-premium-20261123-r1' in html

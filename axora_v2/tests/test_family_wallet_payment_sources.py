@@ -146,7 +146,7 @@ def test_ui_account_selection_and_no_balance_are_explicit():
     assert 'body.account_sources=accountSources' in js
     assert 'form.dataset.walletRequestId=crypto.randomUUID()' in js
     assert "walletAvailableAccounts()" in js
-    assert 'family.css?v=family-hidden-payment-20261123-r1' in html
+    assert 'family.css?v=reversal-modal-premium-20261123-r1' in html
     assert '.family-wallet-source{' in css
     assert 'axora_family_record_from_wallet' in sql
     assert 'axora_family_pay_provision_from_wallet' in sql

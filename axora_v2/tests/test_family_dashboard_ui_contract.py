@@ -56,4 +56,4 @@ def test_family_card_name_and_relationship_have_separate_lines():
     assert 'flex-direction:column;' in rules
     assert 'gap:6px;' in rules
     assert '.family-person-heading>div:last-child' not in css
-    assert 'family.css?v=family-hidden-payment-20261123-r1' in html
+    assert 'family.css?v=reversal-modal-premium-20261123-r1' in html

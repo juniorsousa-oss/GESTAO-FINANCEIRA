@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AXORA">
   <link rel="manifest" href="/assets/pwa/manifest.json">
-  <link rel="stylesheet" href="/assets/family.css?v=family-hidden-payment-20261123-r1">
+  <link rel="stylesheet" href="/assets/family.css?v=reversal-modal-premium-20261123-r1">
   <link rel="apple-touch-icon" sizes="192x192" href="/assets/pwa/icon-192.png">
   <meta name="description" content="AXORA — inteligência e controle financeiro, by Nexon Labs.">
   <title>AXORA | Acesso</title>
@@ -484,6 +484,54 @@
       <div class="dialog-actions"><button type="button" class="btn ghost" data-family-close>Cancelar</button><button class="btn primary" type="submit">Salvar rateio</button></div>
     </form>
   </dialog>
+  <dialog id="family-reversal-dialog" class="family-dialog family-reversal-dialog"
+          aria-labelledby="family-reversal-heading" aria-describedby="family-reversal-intro">
+    <form id="family-reversal-form">
+      <div class="dialog-heading family-reversal-heading">
+        <div><span class="overline">AXORA · REVERSÃO FINANCEIRA</span>
+          <h2 id="family-reversal-heading">Desfazer pagamento</h2>
+        </div>
+        <button type="button" class="icon-button" data-family-reversal-close
+                aria-label="Fechar sem desfazer o pagamento">×</button>
+      </div>
+      <div class="family-reversal-lead">
+        <span class="family-reversal-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 8v5h5"/><path d="M5.5 13a7 7 0 1 0 2-7"/>
+            <path d="M12 8v4l2.5 1.5"/>
+          </svg>
+        </span>
+        <p id="family-reversal-intro">
+          Esta ação reabrirá a provisão e desfará os efeitos da quitação.
+        </p>
+      </div>
+      <dl class="family-reversal-facts">
+        <div><dt>Provisão</dt><dd id="family-reversal-description">—</dd></div>
+        <div><dt>Valor pago</dt><dd id="family-reversal-amount">—</dd></div>
+        <div><dt>Impacto na carteira</dt><dd id="family-reversal-wallet">—</dd></div>
+        <div><dt>Resultado</dt><dd id="family-reversal-status">Provisão reaberta</dd></div>
+      </dl>
+      <div class="family-reversal-explanation">
+        <strong>O que acontecerá com o registro?</strong>
+        <p id="family-reversal-record-note"></p>
+        <p class="family-reversal-audit-note">A reversão será preservada no histórico de auditoria.</p>
+      </div>
+      <div class="field family-reversal-reference" id="family-reversal-reference-row" hidden>
+        <label for="family-reversal-reference">Valor anterior da provisão variável (R$)</label>
+        <input id="family-reversal-reference" name="reference_value" type="text"
+               inputmode="decimal" autocomplete="off" maxlength="22"
+               placeholder="Ex.: 74,50" aria-describedby="family-reversal-reference-help">
+        <small id="family-reversal-reference-help">Informe o valor usado antes deste pagamento.
+          Ele servirá como referência para os próximos vencimentos.</small>
+      </div>
+      <p class="family-reversal-error" id="family-reversal-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-family-reversal-close>Cancelar</button>
+        <button type="submit" class="btn danger family-reversal-confirm">Desfazer pagamento</button>
+      </div>
+    </form>
+  </dialog>
   <dialog id="family-visibility-dialog" class="family-dialog">
     <form id="family-visibility-form">
       <div class="dialog-heading"><div><span class="overline">AXORA · PRIVACIDADE</span><h2 id="family-visibility-heading">Visibilidade do registro</h2></div><button type="button" class="icon-button" data-family-close aria-label="Fechar">×</button></div>
@@ -570,7 +618,7 @@
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/assets/action-menus.js?v=global-overlays-r1" defer></script>
-  <script src="/assets/app.js?v=reversal-20261123-r1" defer></script>
+  <script src="/assets/app.js?v=reversal-modal-premium-20261123-r1" defer></script>
   <script src="/assets/debts.js?v=debt-portfolio-r1" defer></script>
   <script src="/assets/provisions.js?v=mobile-audit-r1" defer></script>
   <script src="/assets/catalogs.js?v=split-modes-r1" defer></script>
@@ -578,7 +626,7 @@
   <script src="/assets/banking.js?v=mobile-audit-r1" defer></script>
   <script src="/assets/banking-advanced.js?v=bank-v4-advanced" defer></script>
   <script src="/assets/brand-kit.js?v=brand-icon-flash-r1" defer></script>
-  <script src="/assets/family.js?v=family-reversal-20261123-r1" defer></script>
+  <script src="/assets/family.js?v=reversal-modal-premium-20261123-r1" defer></script>
   <script src="/assets/ios-pwa-stability.js?v=20261118-pix-date-r1" defer></script>
 </body>
 </html>

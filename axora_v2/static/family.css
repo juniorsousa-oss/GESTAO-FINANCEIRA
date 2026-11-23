@@ -241,3 +241,91 @@
     grid-column:1/-1;
   }
 }
+
+
+/* AXORA · Confirmação de reversão: mesma linguagem dos demais modais premium. */
+dialog.family-reversal-dialog{
+  max-width:min(95vw,560px);
+  width:100%;
+  border-radius:22px;
+}
+.family-reversal-dialog form{gap:16px}
+.family-reversal-heading{margin-bottom:0}
+.family-reversal-heading h2{font-size:clamp(20px,2vw,24px);line-height:1.25}
+.family-reversal-lead{display:flex;align-items:center;gap:13px}
+.family-reversal-lead p{
+  margin:0;font-size:12px;line-height:1.6;color:#60778d;
+}
+.family-reversal-mark{
+  flex:0 0 43px;width:43px;height:43px;display:grid;place-items:center;
+  border-radius:14px;background:#fff2ed;border:1px solid #f7ded7;color:#bf5962;
+}
+.family-reversal-mark svg{width:23px;height:23px}
+.family-reversal-facts{
+  display:grid;gap:0;margin:0;border:1px solid #deebef;
+  border-radius:15px;background:#f7fafc;overflow:hidden;
+}
+.family-reversal-facts>div{
+  display:grid;grid-template-columns:minmax(112px,.8fr) minmax(0,1.6fr);
+  gap:12px;align-items:start;padding:12px 15px;
+  border-bottom:1px solid #e5edf2;
+}
+.family-reversal-facts>div:last-child{border-bottom:0}
+.family-reversal-facts dt{color:#7890a4;font-size:11px;font-weight:650}
+.family-reversal-facts dd{
+  margin:0;color:#203b57;font-size:12px;font-weight:750;
+  line-height:1.5;overflow-wrap:anywhere;
+}
+#family-reversal-wallet{color:#147d78}
+.family-reversal-explanation{
+  border:1px solid #e2edf1;background:#fff;border-radius:13px;
+  padding:14px 16px;color:#516a7c;
+}
+.family-reversal-explanation strong{
+  display:block;color:#24415b;font-size:12px;margin-bottom:7px;
+}
+.family-reversal-explanation p{margin:0;font-size:12px;line-height:1.65}
+.family-reversal-explanation .family-reversal-audit-note{
+  margin-top:9px;color:#7c91a2;font-size:11px;
+}
+.family-reversal-dialog .family-reversal-reference{
+  padding:12px 13px;background:#f5f9fc;border:1px solid #dce9f0;
+  border-radius:13px;min-width:0;
+}
+.family-reversal-dialog .family-reversal-reference input{background:#fff}
+.family-reversal-reference small{color:#738a9b;font-size:11px;line-height:1.55}
+.family-reversal-dialog .family-reversal-reference[hidden],
+.family-reversal-dialog .family-reversal-error[hidden]{display:none!important}
+.family-reversal-error{
+  margin:0;border:1px solid #f0cad2;background:#fff2f4;
+  border-radius:10px;color:#a33545;padding:10px 12px;
+  font-size:12px;line-height:1.5;
+}
+.family-reversal-dialog .dialog-actions{
+  margin-top:1px;border-top:1px solid #edf2f6;padding-top:15px;
+  gap:10px;align-items:center;
+}
+.family-reversal-dialog .dialog-actions .btn{min-height:41px}
+.family-reversal-dialog .family-reversal-confirm{
+  background:#bd4658;color:white;border-color:#bd4658;
+}
+.family-reversal-dialog .family-reversal-confirm:hover,
+.family-reversal-dialog .family-reversal-confirm:focus-visible{
+  background:#a93649;border-color:#a93649;color:#fff;
+}
+.family-reversal-dialog :is(button,input):focus-visible{
+  outline:2px solid #20bcb4;outline-offset:3px;
+}
+@media(max-width:600px){
+  dialog.family-reversal-dialog{width:calc(100vw - 22px);max-width:calc(100vw - 22px)}
+  .family-reversal-dialog form{padding:18px 15px;gap:13px}
+  .family-reversal-facts>div{
+    grid-template-columns:minmax(90px,.85fr) minmax(0,1.35fr);
+    padding:11px 12px;gap:8px;
+  }
+  .family-reversal-lead{gap:9px}
+  .family-reversal-mark{flex-basis:38px;width:38px;height:38px}
+  .family-reversal-explanation{padding:12px}
+  .family-reversal-dialog .dialog-actions{flex-direction:column-reverse}
+  .family-reversal-dialog .dialog-actions .btn{width:100%}
+}
