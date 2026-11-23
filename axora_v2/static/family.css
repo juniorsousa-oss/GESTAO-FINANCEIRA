@@ -55,6 +55,11 @@
 .family-dialog .notice{font-size:12px}
 @media(max-width:600px){.family-profile-form{grid-template-columns:1fr}.family-intro .btn{width:100%}.family-dialog form{padding:16px}.family-allocation-row{grid-template-columns:minmax(0,1fr) 88px 22px}}
 
+/* Campos do modal usam display:grid; respeitar [hidden] também nestes campos.
+   Sem esta regra, o recebedor de ENTRADA aparece indevidamente ao pagar uma PROVISÃO. */
+.family-dialog .field[hidden],
+.family-dialog fieldset[hidden] {display:none!important}
+
 /* A visibilidade HTML também resiste a regras .nav-link {display:flex}. */
 [data-family-nav][hidden], [data-family-existing][hidden], [data-family-new][hidden], [data-family-payers][hidden], [data-family-provision-note][hidden], #family-visibility-users[hidden] {display:none!important}
 .family-labels-list{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
