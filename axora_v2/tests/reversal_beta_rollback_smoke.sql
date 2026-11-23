@@ -72,8 +72,8 @@ BEGIN
   IF v<>171.05 THEN RAISE EXCEPTION 'Conta B apos estorno deveria ser 171,05: %',v; END IF;
   SELECT count(*) INTO c FROM axora_beta.finance_movements WHERE id=movement_id;
   IF c<>0 THEN RAISE EXCEPTION 'Pagamento original continua ativo'; END IF;
-  SELECT count(*) INTO c FROM axora_beta.finance_provision_payment_reversals
-    WHERE workspace_id=wid AND movement_id=smoke_block.movement_id
+  SELECT count(*) INTO c FROM axora_beta.finance_provision_payment_reversals rv
+    WHERE rv.workspace_id=wid AND rv.movement_id=smoke_block.movement_id
       AND restored_wallet_amount=91.05;
   IF c<>1 THEN RAISE EXCEPTION 'Historico da reversao nao gravado'; END IF;
   BEGIN
@@ -139,8 +139,8 @@ BEGIN
   SELECT planned_value INTO v FROM axora_beta.finance_provision_rules
     WHERE id=rule_id;
   IF v<>74.50 THEN RAISE EXCEPTION 'Referencia variavel da regra nao restaurada'; END IF;
-  SELECT planned_value INTO v FROM axora_beta.finance_provision_occurrences
-    WHERE rule_id=smoke_block.rule_id AND sequence_no=2 AND workspace_id=wid;
+  SELECT planned_value INTO v FROM axora_beta.finance_provision_occurrences occ
+    WHERE occ.rule_id=smoke_block.rule_id AND occ.sequence_no=2 AND occ.workspace_id=wid;
   IF v<>74.50 THEN RAISE EXCEPTION 'Referencia futura nao restaurada'; END IF;
 END;
 $smoke$;
