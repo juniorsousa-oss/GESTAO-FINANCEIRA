@@ -641,46 +641,100 @@ const AxoraFamily = (() => {
       "Entrada salva e saldos das contas atualizados.":"Pagamento salvo e saldos das contas atualizados."):
       "Registro salvo sem movimentar os saldos.");
   }
-  async function undoProvisionPayment(occurrenceId){
+  let reversalLoading=false,reversalSaving=false,reversalContext=null;
+  const reversalDialog=()=>$("#family-reversal-dialog");
+  function reversalError(message){
+    const el=$("#family-reversal-error");
+    el.textContent=message||"";
+    el.hidden=!message;
+  }
+  function reversalReferenceValue(raw){
+    const compact=String(raw??"").trim().replace(/^R\$\s*/i,"").replace(/\s/g,"");
+    const normalized=compact.includes(",")?
+      compact.replace(/\./g,"").replace(",","."):compact;
+    if(!/^[0-9]+(?:\.[0-9]{1,2})?$/.test(normalized))
+      throw Error("Informe o valor anterior em reais, com até duas casas decimais.");
+    const value=Number(normalized);
+    if(!Number.isFinite(value)||value<=0||value>999999999999.99)
+      throw Error("Informe um valor de referência válido.");
+    return value;
+  }
+  async function openProvisionReversal(occurrenceId,description){
     if(!own())throw Error("Somente o usuário principal pode desfazer pagamentos.");
     if(!Number.isSafeInteger(occurrenceId)||occurrenceId<1)
       throw Error("Identificador da provisão inválido.");
-    const preview=await api("/api/family/provisions/"+occurrenceId+"/reversal-preview");
-    if(preview.bank_linked)
-      throw Error("Desfaça primeiro a conciliação bancária deste pagamento.");
+    const dialog=reversalDialog();
+    if(reversalLoading||reversalSaving||dialog.open)return;
+    reversalLoading=true;
+    try{
+      const preview=await api("/api/family/provisions/"+occurrenceId+"/reversal-preview");
+      if(preview.bank_linked)
+        throw Error("Desfaça primeiro a conciliação bancária deste pagamento.");
+      const amount=Number(preview.paid_amount),refund=Number(preview.restored_wallet_amount||0);
+      if(!Number.isFinite(amount)||amount<=0||!Number.isFinite(refund)||refund<0)
+        throw Error("Não foi possível conferir os valores deste pagamento.");
+      $("#family-reversal-description").textContent=String(description||"Provisão").trim()||"Provisão";
+      $("#family-reversal-amount").textContent=money(amount);
+      $("#family-reversal-wallet").textContent=refund>0?
+        money(refund)+" devolvidos às contas utilizadas.":"Nenhum saldo será alterado.";
+      $("#family-reversal-status").textContent="Provisão reaberta";
+      $("#family-reversal-record-note").textContent=preview.linked_existing_record?
+        "O registro original será preservado. Apenas o vínculo com a provisão será desfeito.":
+        "O registro criado pela quitação será retirado dos registros ativos.";
+      const referenceRow=$("#family-reversal-reference-row");
+      referenceRow.hidden=!preview.needs_reference;
+      const input=$("#family-reversal-reference");
+      input.value="";
+      input.setAttribute("aria-required",String(Boolean(preview.needs_reference)));
+      reversalError("");
+      reversalContext={occurrenceId,needsReference:Boolean(preview.needs_reference)};
+      dialog.showModal();
+    }finally{reversalLoading=false}
+  }
+  async function submitProvisionReversal(e){
+    e.preventDefault();
+    if(reversalSaving||!reversalContext)return;
+    const dialog=reversalDialog();
+    if(!dialog.open)return;
+    reversalError("");
     let reference=null;
-    if(preview.needs_reference){
-      const original=prompt("Provisão variável: informe o valor de referência que existia ANTES deste pagamento (R$). A reversão atualizará os próximos vencimentos:");
-      if(original===null)return;
-      const normalized=String(original).trim().replace("R$","").trim();
-      const value=Number(normalized.includes(",")?
-        normalized.replaceAll(".","").replace(",","."):normalized);
-      if(!Number.isFinite(value)||value<=0||value>999999999999.99||
-         Math.abs(Math.round(value*100)-value*100)>0.00001)
-        throw Error("Informe o valor anterior da provisão com até duas casas decimais.");
-      reference=value;
+    if(reversalContext.needsReference){
+      try{reference=reversalReferenceValue($("#family-reversal-reference").value)}
+      catch(err){
+        reversalError(err.message);
+        $("#family-reversal-reference").focus();
+        return;
+      }
     }
-    const refund=Number(preview.restored_wallet_amount||0);
-    const amount=Number(preview.paid_amount||0);
-    const note=preview.linked_existing_record?
-      "O registro original será preservado, apenas desvinculado da provisão.":
-      "O registro criado pela quitação será retirado do histórico ativo.";
-    const nl=String.fromCharCode(10);
-    const message="Desfazer o pagamento de "+money(amount)+" e reabrir a provisão?"+nl+nl+
-      note+(refund>0?nl+"O valor de "+money(refund)+" será devolvido às contas usadas.":nl+"Nenhum saldo bancário será alterado.")+
-      nl+"A operação será registrada na auditoria.";
-    if(!confirm(message))return;
-    const body={confirm:true};
-    if(reference!==null)body.reference_value=reference;
-    const result=await api("/api/family/provisions/"+occurrenceId+"/undo",{
-      method:"POST",body:JSON.stringify(body)});
+    const occurrenceId=reversalContext.occurrenceId;
+    const buttons=[...dialog.querySelectorAll("button")];
+    reversalSaving=true;
+    buttons.forEach(button=>{button.disabled=true});
+    let result;
+    try{
+      const body={confirm:true};
+      if(reference!==null)body.reference_value=reference;
+      result=await api("/api/family/provisions/"+occurrenceId+"/undo",{
+        method:"POST",body:JSON.stringify(body)});
+    }catch(err){
+      reversalError(err.message);
+      return;
+    }finally{
+      reversalSaving=false;
+      buttons.forEach(button=>{button.disabled=false});
+    }
+    dialog.close();
     showToast("Pagamento desfeito. Provisão reaberta."+
       (Number(result.restored_wallet_amount)>0?" Saldos restaurados.":""));
-    await refresh();
-    if(typeof loadBanking==="function"&&Number(result.restored_wallet_amount)>0)
-      await loadBanking(true);
-    if(typeof loadProvisions==="function"&&page==="provisions")await loadProvisions();
-    await load(true);
+    try{
+      await refresh();
+      if(typeof loadBanking==="function"&&Number(result.restored_wallet_amount)>0)
+        await loadBanking(true);
+      if(typeof loadProvisions==="function"&&page==="provisions")await loadProvisions();
+      await load(true);
+    }catch(err){
+      showToast("Pagamento desfeito, mas a atualização da tela falhou. Atualize a página.",true);
+    }
   }
   document.addEventListener("DOMContentLoaded",()=>{
     document.addEventListener("click",e=>{
@@ -702,7 +756,7 @@ const AxoraFamily = (() => {
       if(action==="undo-provision-payment"){
         if(btn.disabled)return;
         btn.disabled=true;
-        undoProvisionPayment(Number(btn.dataset.occurrenceId))
+        openProvisionReversal(Number(btn.dataset.occurrenceId),btn.dataset.provisionDescription)
           .catch(err=>showToast(err.message,true))
           .finally(()=>{if(btn.isConnected)btn.disabled=false});
         return;
@@ -741,6 +795,21 @@ const AxoraFamily = (() => {
       const button=e.target.querySelector('button[type="submit"]');button.disabled=true;
       saveProfile(e.target).catch(err=>showToast(err.message,true)).finally(()=>button.disabled=false);
     });
+    const reverseDialog=reversalDialog();
+    reverseDialog.addEventListener("cancel",e=>{
+      if(reversalSaving)e.preventDefault();
+    });
+    reverseDialog.addEventListener("close",()=>{
+      reversalContext=null;
+      reversalError("");
+      $("#family-reversal-reference").value="";
+    });
+    reverseDialog.querySelectorAll("[data-family-reversal-close]").forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        if(!reversalSaving)reverseDialog.close();
+      });
+    });
+    $("#family-reversal-form").addEventListener("submit",submitProvisionReversal);
     $("#family-access-form").addEventListener("submit",e=>{
       e.preventDefault();
       const btn=e.target.querySelector('button[type="submit"]');
