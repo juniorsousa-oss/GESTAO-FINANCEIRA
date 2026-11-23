@@ -2,6 +2,7 @@
 -- ficticios e alteracoes sao revertidos ao final pela transacao externa.
 BEGIN;
 DO $smoke$
+<<smoke_block>>
 DECLARE
   uid bigint; wid uuid; fid bigint; holder bigint; a1 bigint; a2 bigint;
   rule_id bigint; occurrence_id bigint; movement_id bigint;
@@ -72,7 +73,7 @@ BEGIN
   SELECT count(*) INTO c FROM axora_beta.finance_movements WHERE id=movement_id;
   IF c<>0 THEN RAISE EXCEPTION 'Pagamento original continua ativo'; END IF;
   SELECT count(*) INTO c FROM axora_beta.finance_provision_payment_reversals
-    WHERE workspace_id=wid AND movement_id=movement_id
+    WHERE workspace_id=wid AND movement_id=smoke_block.movement_id
       AND restored_wallet_amount=91.05;
   IF c<>1 THEN RAISE EXCEPTION 'Historico da reversao nao gravado'; END IF;
   BEGIN
@@ -139,7 +140,7 @@ BEGIN
     WHERE id=rule_id;
   IF v<>74.50 THEN RAISE EXCEPTION 'Referencia variavel da regra nao restaurada'; END IF;
   SELECT planned_value INTO v FROM axora_beta.finance_provision_occurrences
-    WHERE rule_id=rule_id AND sequence_no=2 AND workspace_id=wid;
+    WHERE rule_id=smoke_block.rule_id AND sequence_no=2 AND workspace_id=wid;
   IF v<>74.50 THEN RAISE EXCEPTION 'Referencia futura nao restaurada'; END IF;
 END;
 $smoke$;
