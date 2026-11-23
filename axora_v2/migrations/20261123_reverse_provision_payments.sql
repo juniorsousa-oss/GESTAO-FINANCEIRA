@@ -269,5 +269,67 @@ REVOKE ALL ON FUNCTION axora_beta.axora_family_reverse_provision_payment(
 GRANT EXECUTE ON FUNCTION axora_beta.axora_family_reverse_provision_payment(
   uuid,bigint,bigint,numeric) TO service_role;
 
+-- Consulta previa somente ao titular: a interface informa o impacto antes de confirmar.
+CREATE OR REPLACE FUNCTION axora_beta.axora_family_reverse_payment_preview(
+  p_workspace_id uuid,p_actor_id bigint,p_occurrence_id bigint
+) RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER
+SET search_path TO 'axora_beta','pg_temp' AS $preview$
+DECLARE v_occ record; v_movement_id bigint; v_amount numeric;
+        v_linked boolean; v_wallet numeric; v_reference_needed boolean;
+        v_bank_linked boolean;
+BEGIN
+  IF p_occurrence_id IS NULL OR p_occurrence_id<1 THEN
+    RAISE EXCEPTION 'Provisao invalida';
+  END IF;
+  PERFORM axora_beta.axora_family_validate_actor(p_workspace_id,p_actor_id);
+  IF NOT EXISTS(
+    SELECT 1 FROM finance_workspaces w JOIN finance_family_profiles f
+      ON f.workspace_id=w.id AND f.linked_user_id=p_actor_id AND f.active
+    JOIN finance_users u ON u.id=p_actor_id AND u.is_active
+    WHERE w.id=p_workspace_id AND w.is_active AND w.created_by=p_actor_id
+      AND f.relationship='principal'
+  ) THEN RAISE EXCEPTION 'Somente o principal pode consultar reversao'; END IF;
+  SELECT o.*,coalesce(o.value_mode_override,r.value_mode) AS effective_mode
+    INTO v_occ FROM finance_provision_occurrences o
+    JOIN finance_provision_rules r ON r.id=o.rule_id AND r.workspace_id=o.workspace_id
+    WHERE o.id=p_occurrence_id AND o.workspace_id=p_workspace_id;
+  IF NOT FOUND OR v_occ.status<>'paid' THEN
+    RAISE EXCEPTION 'Provisao sem pagamento ativo';
+  END IF;
+  SELECT id,value INTO v_movement_id,v_amount FROM finance_movements
+    WHERE workspace_id=p_workspace_id AND provision_occurrence_id=p_occurrence_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Registro vinculado nao encontrado'; END IF;
+  SELECT EXISTS(
+    SELECT 1 FROM finance_provision_record_links
+    WHERE workspace_id=p_workspace_id AND occurrence_id=p_occurrence_id
+      AND movement_id=v_movement_id
+  ) INTO v_linked;
+  SELECT coalesce(d.amount,0) INTO v_wallet
+    FROM finance_family_balance_debits d
+    WHERE d.workspace_id=p_workspace_id AND d.movement_id=v_movement_id;
+  v_wallet:=coalesce(v_wallet,0);
+  SELECT EXISTS(
+    SELECT 1 FROM finance_bank_transactions t
+    WHERE t.workspace_id=p_workspace_id
+      AND (t.movement_id=v_movement_id OR t.provision_occurrence_id=p_occurrence_id)
+  ) INTO v_bank_linked;
+  v_reference_needed:=v_occ.effective_mode='variable'
+    AND NOT EXISTS(SELECT 1 FROM finance_provision_occurrences later
+      WHERE later.workspace_id=p_workspace_id AND later.rule_id=v_occ.rule_id
+        AND later.sequence_no>v_occ.sequence_no AND later.status='paid')
+    AND NOT EXISTS(SELECT 1 FROM finance_provision_occurrences previous
+      WHERE previous.workspace_id=p_workspace_id AND previous.rule_id=v_occ.rule_id
+        AND previous.sequence_no<v_occ.sequence_no AND previous.status='paid');
+  RETURN jsonb_build_object('occurrence_id',p_occurrence_id,'paid_amount',v_amount,
+    'restored_wallet_amount',CASE WHEN v_linked THEN 0 ELSE v_wallet END,
+    'linked_existing_record',v_linked,
+    'needs_reference',v_reference_needed,'bank_linked',v_bank_linked);
+END;
+$preview$;
+REVOKE ALL ON FUNCTION axora_beta.axora_family_reverse_payment_preview(
+  uuid,bigint,bigint) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION axora_beta.axora_family_reverse_payment_preview(
+  uuid,bigint,bigint) TO service_role;
+
 COMMIT;
 NOTIFY pgrst,'reload schema';
