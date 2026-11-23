@@ -33,7 +33,7 @@ def test_wallet_account_selection_requires_payer_and_filters_accounts():
     assert 'account.profile_id!==payer' in js
     assert "rows.length===1" in js
     assert 'data-wallet-amount' in js
-    assert 'family.js?v=family-hidden-payment-20261123-r1' in html
+    assert 'family.js?v=family-reversal-20261123-r1' in html
     assert 'family.css?v=family-hidden-payment-20261123-r1' in html
     assert "#family-wallet-source-list>.family-wallet-source" in css
     assert "Escolha o responsável" in js
