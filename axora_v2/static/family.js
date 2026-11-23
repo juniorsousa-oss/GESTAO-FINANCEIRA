@@ -285,7 +285,8 @@ const AxoraFamily = (() => {
     if(split)split.hidden=!expense;
     form.querySelector("#family-entry-heading").textContent=form.dataset.occurrenceId?
       "Pagar provisão com rateio":expense?"Novo lançamento com rateio":"Nova entrada";
-    form.querySelector('[type="submit"]').textContent=expense?"Salvar rateio":"Salvar entrada";
+    form.querySelector('[type="submit"]').textContent=form.dataset.occurrenceId?
+      "Confirmar pagamento":expense?"Salvar rateio":"Salvar entrada";
     form.querySelector("[data-family-wallet]").hidden=!expense;
     form.querySelector("#family-income-wallet-fieldset").hidden=expense;
     const incomeChoice=form.querySelector('[name="income_balance_mode"][value="wallet"]');
