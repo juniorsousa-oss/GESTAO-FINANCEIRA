@@ -71,6 +71,7 @@ jobs:
           AXORA_SMOKE_URL=http://127.0.0.1:18081/ python axora_v2/tests/action_menu_browser_smoke.py
           AXORA_SMOKE_URL=http://127.0.0.1:18081/ python axora_v2/tests/mobile_clarity_browser_smoke.py
           AXORA_SMOKE_URL=http://127.0.0.1:18081/ python axora_v2/tests/pix_date_mobile_browser_smoke.py
+          AXORA_SMOKE_URL=http://127.0.0.1:18081/ python axora_v2/tests/family_entry_visibility_browser_smoke.py
       - run: docker build --tag axora-v2-ci .
       - name: Testar inicialização real da imagem
         run: |
