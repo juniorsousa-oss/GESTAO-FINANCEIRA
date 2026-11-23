@@ -597,7 +597,16 @@ function bind(){
     try{
       if(action==="new")editor(page);else if(action==="new-movement")editor("movements");
       else if(action==="edit")editor(kind,id);
-      else if(action==="delete"){if(confirm("Excluir este registro permanentemente?")){await api("/api/rows/"+kind+"/"+id,{method:"DELETE"});await refresh();showToast("Registro excluído.")}}
+      else if(action==="delete"){
+        if(kind==="movements"&&me?.family_enabled){
+          if(me.family_role!=="principal")throw Error("Exclusão restrita ao usuário principal.");
+          await window.AxoraFamily.openManualDeletion(Number(id));
+        }else if(confirm("Excluir este registro permanentemente?")){
+          await api("/api/rows/"+kind+"/"+id,{method:"DELETE"});
+          await refresh();
+          showToast("Registro excluído.");
+        }
+      }
       else if(action==="clear-filters"){filters={};render()}
       else if(action==="export")await doExport();
       else if(action==="preview-import"||action==="commit-import")await importAction(action);

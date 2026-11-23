@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AXORA">
   <link rel="manifest" href="/assets/pwa/manifest.json">
-  <link rel="stylesheet" href="/assets/family.css?v=reversal-modal-premium-20261123-r1">
+  <link rel="stylesheet" href="/assets/family.css?v=manual-delete-20261123-r1">
   <link rel="apple-touch-icon" sizes="192x192" href="/assets/pwa/icon-192.png">
   <meta name="description" content="AXORA — inteligência e controle financeiro, by Nexon Labs.">
   <title>AXORA | Acesso</title>
@@ -484,6 +484,47 @@
       <div class="dialog-actions"><button type="button" class="btn ghost" data-family-close>Cancelar</button><button class="btn primary" type="submit">Salvar rateio</button></div>
     </form>
   </dialog>
+  <dialog id="family-manual-delete-dialog"
+          class="family-dialog family-reversal-dialog family-manual-delete-dialog"
+          aria-labelledby="family-manual-delete-heading"
+          aria-describedby="family-manual-delete-intro">
+    <form id="family-manual-delete-form">
+      <div class="dialog-heading family-reversal-heading">
+        <div><span class="overline">AXORA · REGISTROS</span>
+          <h2 id="family-manual-delete-heading">Excluir registro manual</h2>
+        </div>
+        <button type="button" class="icon-button" data-manual-delete-close
+                aria-label="Fechar sem excluir o registro">×</button>
+      </div>
+      <div class="family-reversal-lead">
+        <span class="family-reversal-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7h16M10 4h4M7 7l1 13h8l1-13M10 11v6M14 11v6"/>
+          </svg>
+        </span>
+        <p id="family-manual-delete-intro">
+          Confira o efeito sobre a carteira antes de excluir este lançamento.
+        </p>
+      </div>
+      <dl class="family-reversal-facts">
+        <div><dt>Descrição</dt><dd id="family-manual-delete-description">—</dd></div>
+        <div><dt>Valor do registro</dt><dd id="family-manual-delete-amount">—</dd></div>
+        <div><dt>Efeito no saldo</dt><dd id="family-manual-delete-wallet">—</dd></div>
+        <div><dt>Resultado</dt><dd>Registro removido, com auditoria preservada</dd></div>
+      </dl>
+      <div class="family-reversal-explanation">
+        <strong>Atenção</strong>
+        <p id="family-manual-delete-explanation">O registro e seus rateios serão retirados do histórico ativo.</p>
+        <p class="family-reversal-audit-note">Nenhuma provisão será alterada. Operação restrita ao usuário principal.</p>
+      </div>
+      <p class="family-reversal-error" id="family-manual-delete-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-manual-delete-close>Cancelar</button>
+        <button type="submit" class="btn danger family-reversal-confirm">Excluir registro</button>
+      </div>
+    </form>
+  </dialog>
   <dialog id="family-reversal-dialog" class="family-dialog family-reversal-dialog"
           aria-labelledby="family-reversal-heading" aria-describedby="family-reversal-intro">
     <form id="family-reversal-form">
@@ -618,7 +659,7 @@
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/assets/action-menus.js?v=global-overlays-r1" defer></script>
-  <script src="/assets/app.js?v=reversal-modal-premium-20261123-r1" defer></script>
+  <script src="/assets/app.js?v=manual-delete-20261123-r1" defer></script>
   <script src="/assets/debts.js?v=debt-portfolio-r1" defer></script>
   <script src="/assets/provisions.js?v=mobile-audit-r1" defer></script>
   <script src="/assets/catalogs.js?v=split-modes-r1" defer></script>
@@ -626,7 +667,7 @@
   <script src="/assets/banking.js?v=mobile-audit-r1" defer></script>
   <script src="/assets/banking-advanced.js?v=bank-v4-advanced" defer></script>
   <script src="/assets/brand-kit.js?v=brand-icon-flash-r1" defer></script>
-  <script src="/assets/family.js?v=reversal-modal-premium-20261123-r1" defer></script>
+  <script src="/assets/family.js?v=manual-delete-20261123-r1" defer></script>
   <script src="/assets/ios-pwa-stability.js?v=20261118-pix-date-r1" defer></script>
 </body>
 </html>

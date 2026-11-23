@@ -736,6 +736,73 @@ const AxoraFamily = (() => {
       showToast("Pagamento desfeito, mas a atualização da tela falhou. Atualize a página.",true);
     }
   }
+  let manualDeleteLoading=false,manualDeleteSaving=false,manualDeleteContext=null;
+  function manualDeleteError(text){
+    const node=$("#family-manual-delete-error");
+    node.textContent=text||"";
+    node.hidden=!text;
+  }
+  async function openManualDeletion(movementId){
+    if(!own())throw Error("Somente o usuário principal pode excluir registros manuais.");
+    if(!Number.isSafeInteger(movementId)||movementId<1)
+      throw Error("Registro inválido.");
+    const dialog=$("#family-manual-delete-dialog");
+    if(dialog.open||manualDeleteLoading||manualDeleteSaving)return;
+    manualDeleteLoading=true;
+    try{
+      const preview=await api("/api/family/movements/"+movementId+"/delete-preview");
+      const delta=Number(preview.wallet_delta||0);
+      const amount=Number(preview.amount||0);
+      if(!Number.isFinite(delta)||!Number.isFinite(amount)||amount<=0)
+        throw Error("Não foi possível verificar o efeito deste lançamento.");
+      $("#family-manual-delete-description").textContent=String(preview.description||"Registro");
+      $("#family-manual-delete-amount").textContent=money(amount);
+      $("#family-manual-delete-wallet").textContent=delta>0?
+        money(delta)+" devolvidos às contas utilizadas.":delta<0?
+        money(-delta)+" retirados das contas que receberam a entrada.":
+        "Nenhum saldo será alterado.";
+      const original=Number(preview.credited_reversed||preview.debited_restored||0);
+      const difference=original>0 && Math.abs(amount-original)>0.001;
+      $("#family-manual-delete-explanation").textContent=
+        "O registro e os rateios serão removidos do histórico ativo."+
+        (difference?" O saldo será revertido pelo valor que foi realmente movimentado ("+
+          money(original)+"), não pelo valor atual do registro.":"");
+      manualDeleteError("");
+      manualDeleteContext={movementId};
+      dialog.showModal();
+    }finally{manualDeleteLoading=false}
+  }
+  async function submitManualDeletion(e){
+    e.preventDefault();
+    const dialog=$("#family-manual-delete-dialog");
+    if(!dialog.open||!manualDeleteContext||manualDeleteSaving)return;
+    manualDeleteError("");
+    const buttons=[...dialog.querySelectorAll("button")];
+    manualDeleteSaving=true;
+    buttons.forEach(button=>{button.disabled=true});
+    let outcome;
+    try{
+      outcome=await api("/api/rows/movements/"+manualDeleteContext.movementId,{
+        method:"DELETE"});
+    }catch(err){
+      manualDeleteError(err.message);
+      return;
+    }finally{
+      manualDeleteSaving=false;
+      buttons.forEach(button=>{button.disabled=false});
+    }
+    dialog.close();
+    showToast("Registro manual excluído."+
+      (Number(outcome.wallet_delta)!==0?" Saldo das contas atualizado.":""));
+    try{
+      await refresh();
+      if(Number(outcome.wallet_delta)!==0&&typeof loadBanking==="function")
+        await loadBanking(true);
+      await load(true);
+    }catch{
+      showToast("Registro excluído; atualize a página para atualizar os valores.",true);
+    }
+  }
   document.addEventListener("DOMContentLoaded",()=>{
     document.addEventListener("click",e=>{
       // Impede o diálogo antigo de quitação quando o rateio familiar está ativo.
@@ -795,6 +862,18 @@ const AxoraFamily = (() => {
       const button=e.target.querySelector('button[type="submit"]');button.disabled=true;
       saveProfile(e.target).catch(err=>showToast(err.message,true)).finally(()=>button.disabled=false);
     });
+    const manualDialog=$("#family-manual-delete-dialog");
+    manualDialog.addEventListener("cancel",e=>{
+      if(manualDeleteSaving)e.preventDefault();
+    });
+    manualDialog.addEventListener("close",()=>{
+      manualDeleteContext=null;
+      manualDeleteError("");
+    });
+    manualDialog.querySelectorAll("[data-manual-delete-close]").forEach(button=>{
+      button.addEventListener("click",()=>{if(!manualDeleteSaving)manualDialog.close()});
+    });
+    $("#family-manual-delete-form").addEventListener("submit",submitManualDeletion);
     const reverseDialog=reversalDialog();
     reverseDialog.addEventListener("cancel",e=>{
       if(reversalSaving)e.preventDefault();
@@ -906,7 +985,7 @@ const AxoraFamily = (() => {
       btn.closest("dialog").close();
     }));
   });
-  return {load,page:pageHtml,settingsPanel,openEntry,openVisibility,hasAccess,own,reset,
+  return {load,page:pageHtml,settingsPanel,openEntry,openVisibility,openManualDeletion,hasAccess,own,reset,
     profiles:()=>own()?people():[]};
 })();
 window.AxoraFamily=AxoraFamily;

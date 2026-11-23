@@ -155,5 +155,5 @@ def test_reversal_uses_axora_dialog_instead_of_native_browser_prompts():
     assert 'dialog.close()' in undo_js
     assert '.family-reversal-dialog .family-reversal-reference[hidden]' in css
     assert '@media(max-width:600px)' in css
-    assert 'family.css?v=reversal-modal-premium-20261123-r1' in html
-    assert 'family.js?v=reversal-modal-premium-20261123-r1' in html
+    assert 'family.css?v=manual-delete-20261123-r1' in html
+    assert 'family.js?v=manual-delete-20261123-r1' in html

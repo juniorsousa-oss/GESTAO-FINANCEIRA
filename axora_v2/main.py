@@ -302,17 +302,28 @@ def remove_row(kind: str, pk: int, user=Depends(authorized)):
     if not current:
         raise HTTPException(404, "Registro não localizado.")
     if kind == "movements":
+        # Em modo familiar a exclusão precisa ser atômica: rateios, lançamentos
+        # de saldo e vínculo ao banco não permitem um DELETE simples (FK RESTRICT).
         if user.get("_family"):
-            debited = db.call("GET", "finance_family_balance_debits", params={
-                "select": "movement_id", "workspace_id": "eq." + workspace,
+            ctx = family_service.require_principal(user)
+            if current[0].get("provision_occurrence_id"):
+                raise HTTPException(409,
+                    "Registro vinculado à provisão: use Desfazer pagamento.")
+            bank_links = db.call("GET", "finance_bank_transactions", params={
+                "select": "id", "workspace_id": "eq." + workspace,
                 "movement_id": "eq." + str(pk), "limit": 1,
             })
-            if debited:
+            if bank_links:
                 raise HTTPException(409,
-                    "Registro com débito em contas: não edite nem exclua isoladamente. "
-                    "É necessário estornar também os saldos.")
+                    "Desfaça primeiro a conciliação bancária deste registro.")
+            return db.call("POST", "rpc/axora_manual_delete_movement", data={
+                "p_workspace_id": ctx["workspace_id"],
+                "p_actor_id": ctx["user_id"],
+                "p_movement_id": pk,
+            })
         if current[0].get("provision_occurrence_id"):
-            raise HTTPException(409, "Registro vinculado à provisão; estorno controlado virá na próxima etapa.")
+            raise HTTPException(409,
+                "Registro vinculado à provisão: use Desfazer pagamento.")
         bank_links=db.call("GET","finance_bank_transactions",params={
             "select":"id","workspace_id":"eq."+workspace,
             "movement_id":"eq."+str(pk),"limit":1})

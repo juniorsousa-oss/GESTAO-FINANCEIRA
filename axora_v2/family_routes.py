@@ -298,6 +298,18 @@ def install(app, auth, authorized):
             "p_category": category, "p_label": payload["label"],
             "p_costs": costs, "p_payments": payments, **(wallet or {})})
 
+    @app.get("/api/family/movements/{movement_id}/delete-preview")
+    def manual_movement_delete_preview(movement_id: int, user=Depends(auth)):
+        """Titular consulta impacto na carteira antes de excluir registro manual."""
+        ctx = family_service.require_principal(user)
+        if movement_id < 1:
+            raise HTTPException(422, "Registro inválido.")
+        return db.call("POST", "rpc/axora_manual_delete_preview", data={
+            "p_workspace_id": ctx["workspace_id"],
+            "p_actor_id": ctx["user_id"],
+            "p_movement_id": movement_id,
+        })
+
     @app.get("/api/family/provisions/{rule_id}/shares")
     def planned_provision_shares(rule_id: int, user=Depends(auth)):
         """Somente o principal pode ver o rateio planejado de qualquer membro."""
