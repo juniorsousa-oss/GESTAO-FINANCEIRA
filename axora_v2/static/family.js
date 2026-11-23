@@ -652,9 +652,9 @@ const AxoraFamily = (() => {
     if(preview.needs_reference){
       const original=prompt("Provisão variável: informe o valor de referência que existia ANTES deste pagamento (R$). A reversão atualizará os próximos vencimentos:");
       if(original===null)return;
-      const normalized=String(original).trim().replace(/^R\\$\\s*/,"");
+      const normalized=String(original).trim().replace("R$","").trim();
       const value=Number(normalized.includes(",")?
-        normalized.replace(/\\./g,"").replace(",","."):normalized);
+        normalized.replaceAll(".","").replace(",","."):normalized);
       if(!Number.isFinite(value)||value<=0||value>999999999999.99||
          Math.abs(Math.round(value*100)-value*100)>0.00001)
         throw Error("Informe o valor anterior da provisão com até duas casas decimais.");
@@ -665,9 +665,10 @@ const AxoraFamily = (() => {
     const note=preview.linked_existing_record?
       "O registro original será preservado, apenas desvinculado da provisão.":
       "O registro criado pela quitação será retirado do histórico ativo.";
-    const message="Desfazer o pagamento de "+money(amount)+" e reabrir a provisão?\\n\\n"+
-      note+(refund>0?"\\nO valor de "+money(refund)+" será devolvido às contas usadas.":"\\nNenhum saldo bancário será alterado.")+
-      "\\nA operação será registrada na auditoria.";
+    const nl=String.fromCharCode(10);
+    const message="Desfazer o pagamento de "+money(amount)+" e reabrir a provisão?"+nl+nl+
+      note+(refund>0?nl+"O valor de "+money(refund)+" será devolvido às contas usadas.":nl+"Nenhum saldo bancário será alterado.")+
+      nl+"A operação será registrada na auditoria.";
     if(!confirm(message))return;
     const body={confirm:true};
     if(reference!==null)body.reference_value=reference;
